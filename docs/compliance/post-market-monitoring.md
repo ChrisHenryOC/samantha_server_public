@@ -303,7 +303,7 @@ the auditor sees the engine emit the same decision, with the same
 trace shape, against a fixed input — independent of the production
 runtime.
 
-### 4.5 Air-gapped audit modality (cut for v0)
+### 4.5 Air-gapped audit modality
 
 An ephemeral-Langfuse audit modality (spinning up Langfuse via
 `docker compose up`/`down` for occasions when no long-running instance
