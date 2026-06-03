@@ -3,7 +3,7 @@
 Articles, papers, tools, and standards referenced in the CONVEX 2026 talk
 "The Model Is Not the Product," plus further reading. This is the page the
 closing slide points to ("links to all articles, guides, etc. are in the
-README"). Draft for the `samantha_server_public` repo (GH-318).
+README").
 
 All 24 links verified live via tinyfish on 2026-06-02: every URL resolves and
 its page title matches the cited source (including the EU AI Act and FDA pages
@@ -77,29 +77,9 @@ that 403 to plain bots, the headless browser reaches them).
 ### Regulatory context (optional, pruned)
 
 The talk does not make regulatory claims on-slide; these two anchors are kept
-only as orientation for readers in regulated domains. The fuller US/EU list
-from the original draft was cut as out of scope.
+only as orientation for readers in regulated domains.
 
 - EU AI Act, Regulation (EU) 2024/1689
   <https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng>
 - FDA, Predetermined Change Control Plan (PCCP) final guidance, Dec 2024
   <https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence>
-
----
-
-## Editorial notes (remove before publishing)
-
-- **Decisions applied (2026-06-02):** OpenClaw reference omitted; Pi pinned to
-  pi.dev (kept); regulatory section pruned from ~18 links to 2 anchors.
-- **Slide-number citations removed** (deck not finalized): links are grouped by
-  theme, not by slide, so the page does not drift as slides move.
-- **Deck mismatch resolved:** the deck says "OpenCode," not "OpenClaw"; this
-  page links OpenCode (opencode.ai). The original draft's OpenClaw entry is
-  dropped.
-- **Dedup:** the original draft listed `martinfowler.com/articles/harness-engineering.html`
-  twice (once as "Harness engineering for coding agent users," once as the
-  Böckeler/Fowler "Agent = Model + Harness" framing). Merged into one entry.
-- **URL verification (GH-318 gate): DONE.** All 24 links verified live via
-  tinyfish 2026-06-02 (0 errors, titles confirmed). swebenchmobile.com and
-  matrix-os.com/whitepaper are real; the EU AI Act and FDA pages resolve via
-  headless browser despite 403-ing plain bots.
