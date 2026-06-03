@@ -98,15 +98,25 @@ def render_latency_box(
     fig, ax = plt.subplots(figsize=(11, 6))
     style.apply_style(fig, ax)
 
+    # On the dark theme the default black box lines/fliers vanish against the
+    # navy background; tint them light. Light theme keeps matplotlib defaults
+    # (empty kwargs) so existing renders are byte-stable.
+    _dark = style.active_theme() == "dark"
+    _line = style.subtitle_color()
+    _line_kw = {"color": _line} if _dark else {}
+    _box_kw = {"edgecolor": _line} if _dark else {}
+    _flier_kw = {"markerfacecolor": _line, "markeredgecolor": _line} if _dark else {}
+
     bp = ax.boxplot(
         box_data,
         positions=list(range(len(ordered_names))),
         widths=0.5,
         patch_artist=True,
         medianprops={"linewidth": 2.0, "color": "white"},
-        whiskerprops={"linewidth": 1.2},
-        capprops={"linewidth": 1.5},
-        flierprops={"marker": "o", "markersize": 4, "alpha": 0.5},
+        whiskerprops={"linewidth": 1.2, **_line_kw},
+        capprops={"linewidth": 1.5, **_line_kw},
+        boxprops=_box_kw,
+        flierprops={"marker": "o", "markersize": 4, "alpha": 0.5, **_flier_kw},
     )
 
     # Tint each box with the appropriate color.
@@ -133,7 +143,7 @@ def render_latency_box(
             va="bottom",
             fontsize=9,
             fontweight="bold",
-            color=style.GRAY_SUBTITLE,
+            color=style.subtitle_color(),
         )
     ax.set_ylabel(
         "latency (seconds)  (lower is better)",
@@ -155,7 +165,7 @@ def render_latency_box(
     )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor=style.bg_color())
     plt.close(fig)
 
 

@@ -69,13 +69,14 @@ def test_register_is_idempotent() -> None:
     render._register()
     second = dict(render._CHARTS)
     assert first == second
-    assert len(first) == 15
+    assert len(first) == 16
     assert "_example" in first
     assert "accuracy_ranking" in first
     assert "benchmark_bars" in first
     assert "category_heatmap" in first
     assert "quantization_card" in first
     assert "scaffolding_progression" in first
+    assert "tool_assisted_evolution" in first
     assert "latency_box" in first
     assert "model_radar" in first
     assert "refusal_distribution" in first

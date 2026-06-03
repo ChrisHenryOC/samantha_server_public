@@ -22,6 +22,7 @@ override the family before invoking style helpers.
 
 from __future__ import annotations
 
+import os
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -42,6 +43,51 @@ GRAY_SUBTITLE = "#6B7280"
 GRAY_GRID = "#E5E7EB"
 
 # ---------------------------------------------------------------------------
+# Theme (light default; opt-in dark via SAMANTHA_CHART_THEME=dark)
+# ---------------------------------------------------------------------------
+#
+# Non-destructive: the accessors below return the existing light values
+# unless SAMANTHA_CHART_THEME=dark, so default (light) renders are byte-stable.
+# Dark targets the deck's slide-master navy (#0A1628). Render dark variants to
+# a separate path (e.g. charts/output/dark/) so light PNGs are never clobbered.
+
+_DARK_BG = "#0A1628"  # deck slide-master background
+_DARK_INK = "#E5E7EB"  # primary text on dark
+_DARK_SUBTITLE = "#9AA7B2"  # muted text on dark (matches deck model-cell label)
+_DARK_GRID = "#22324A"  # faint gridline on dark
+_DARK_SPINE = "#3A4A63"  # axis spine on dark
+
+
+def active_theme() -> str:
+    """Current chart theme: "dark" iff SAMANTHA_CHART_THEME=dark, else "light"."""
+    return "dark" if os.environ.get("SAMANTHA_CHART_THEME", "").lower() == "dark" else "light"
+
+
+def bg_color() -> str:
+    """Figure/axes background: deck navy on dark, white on light."""
+    return _DARK_BG if active_theme() == "dark" else "white"
+
+
+def ink_color() -> str:
+    """Primary text/title color."""
+    return _DARK_INK if active_theme() == "dark" else "#111827"
+
+
+def subtitle_color() -> str:
+    """Secondary/label/footnote text color."""
+    return _DARK_SUBTITLE if active_theme() == "dark" else GRAY_SUBTITLE
+
+
+def grid_color() -> str:
+    """Gridline color."""
+    return _DARK_GRID if active_theme() == "dark" else GRAY_GRID
+
+
+def spine_color() -> str:
+    """Axis spine color."""
+    return _DARK_SPINE if active_theme() == "dark" else GRAY_GRID
+
+# ---------------------------------------------------------------------------
 # Module-level font configuration (set once at import, not per-call)
 # ---------------------------------------------------------------------------
 
@@ -52,6 +98,22 @@ plt.rcParams["font.sans-serif"] = [
     "Arial",
     "DejaVu Sans",
 ]
+
+# Dark-theme text/tick/spine defaults, set once at import and gated on the env
+# theme so light renders are untouched. This makes legends, axis labels, tick
+# labels, and any default-color text render light on the navy background
+# without a per-chart edit (only explicitly-colored dark elements still need
+# the theme accessors).
+if active_theme() == "dark":
+    plt.rcParams.update(
+        {
+            "text.color": _DARK_INK,
+            "axes.labelcolor": _DARK_SUBTITLE,
+            "xtick.color": _DARK_SUBTITLE,
+            "ytick.color": _DARK_SUBTITLE,
+            "axes.edgecolor": _DARK_SPINE,
+        }
+    )
 
 # ---------------------------------------------------------------------------
 # Core style application
@@ -65,22 +127,22 @@ def apply_style(fig: Figure, ax: Axes) -> None:
     draw calls inherit the correct defaults. Operates only on the given
     figure/axes objects — does NOT mutate any global matplotlib state.
     """
-    fig.patch.set_facecolor("white")
-    ax.set_facecolor("white")
+    fig.patch.set_facecolor(bg_color())
+    ax.set_facecolor(bg_color())
 
     # Remove top and right spines
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_color(GRAY_GRID)
-    ax.spines["bottom"].set_color(GRAY_GRID)
+    ax.spines["left"].set_color(spine_color())
+    ax.spines["bottom"].set_color(spine_color())
 
     # Grid — horizontal lines only, subtle
-    ax.yaxis.grid(True, color=GRAY_GRID, linewidth=0.8, zorder=0)
+    ax.yaxis.grid(True, color=grid_color(), linewidth=0.8, zorder=0)
     ax.xaxis.grid(False)
     ax.set_axisbelow(True)
 
     # Tick formatting
-    ax.tick_params(colors=GRAY_SUBTITLE, labelsize=10)
+    ax.tick_params(colors=subtitle_color(), labelsize=10)
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +182,7 @@ def set_title(ax: Axes, title: str, subtitle: str | None = None) -> None:
         transform=fig.transFigure,
         fontsize=16,
         fontweight="bold",
-        color="#111827",
+        color=ink_color(),
         va="bottom",
         ha="left",
     )
@@ -132,7 +194,7 @@ def set_title(ax: Axes, title: str, subtitle: str | None = None) -> None:
             subtitle,
             transform=fig.transFigure,
             fontsize=10,
-            color=GRAY_SUBTITLE,
+            color=subtitle_color(),
             va="bottom",
             ha="left",
         )
@@ -198,7 +260,7 @@ def add_footnote(fig: Figure, text: str) -> None:
         text,
         transform=fig.transFigure,
         fontsize=8,
-        color=GRAY_SUBTITLE,
+        color=subtitle_color(),
         va="bottom",
         ha="center",
         fontstyle="italic",

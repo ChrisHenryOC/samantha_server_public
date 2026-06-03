@@ -59,6 +59,7 @@ def _register() -> None:
     from samantha_charts.charts.routing_path_daily import render_routing_path_daily_chart
     from samantha_charts.charts.scaffolding_progression import (
         render_scaffolding_progression,
+        render_tool_assisted_evolution,
     )
     from samantha_charts.charts.swebench_mobile_6x import render_swebench_mobile_6x
 
@@ -72,6 +73,7 @@ def _register() -> None:
     _CHARTS["refusal_distribution"] = render_refusal_distribution_chart
     _CHARTS["routing_path_daily"] = render_routing_path_daily_chart
     _CHARTS["scaffolding_progression"] = render_scaffolding_progression
+    _CHARTS["tool_assisted_evolution"] = render_tool_assisted_evolution
     _CHARTS["receipt_sample"] = render_receipt_sample_chart
     _CHARTS["receipt_vs_trace"] = render_receipt_vs_trace_chart
     _CHARTS["receipt_coverage"] = render_receipt_coverage_chart

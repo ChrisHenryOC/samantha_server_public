@@ -21,8 +21,14 @@ from matplotlib.ticker import FuncFormatter
 
 from samantha_charts import style
 
-# Violet dashed reference line for the cloud baseline (matches the original).
-_CLOUD_COLOR = "#7C3AED"
+# Violet dashed reference line for the cloud baseline. Lighter on the dark
+# theme so the line and its label read against the navy background.
+_CLOUD_COLOR_LIGHT = "#7C3AED"
+_CLOUD_COLOR_DARK = "#A78BFA"
+
+
+def _cloud_color() -> str:
+    return _CLOUD_COLOR_DARK if style.active_theme() == "dark" else _CLOUD_COLOR_LIGHT
 
 # ---------------------------------------------------------------------------
 # Data model
@@ -68,6 +74,13 @@ def render_evolution(
     *,
     cloud_baseline: float | None = 95.0,
     cloud_label: str = "Cloud baseline (95%, unoptimized)",
+    title: str = "Accuracy Evolution: From Baseline to 100%",
+    subtitle: str = "Best local-model accuracy at each optimization stage, no fine-tuning",
+    footnote: str = (
+        "Stages 1-6 are POC eval accuracy; the final point is samantha_server stable "
+        "accuracy on the 149-fixture corpus. Every gain came from structuring "
+        "information and tools, not model fine-tuning."
+    ),
 ) -> None:
     """Render a connected accuracy-evolution chart to *output_path* (PNG).
 
@@ -108,9 +121,9 @@ def render_evolution(
         ax.axhline(
             cloud_baseline,
             linestyle="--",
-            color=_CLOUD_COLOR,
+            color=_cloud_color(),
             linewidth=1.0,
-            alpha=0.55,
+            alpha=0.8 if style.active_theme() == "dark" else 0.55,
             zorder=1,
         )
         ax.text(
@@ -120,7 +133,7 @@ def render_evolution(
             transform=ax.get_yaxis_transform(),
             fontsize=9,
             fontstyle="italic",
-            color=_CLOUD_COLOR,
+            color=_cloud_color(),
             va="bottom",
             ha="left",
             zorder=4,
@@ -158,7 +171,7 @@ def render_evolution(
             ha="center",
             va="top",
             fontsize=8,
-            color=style.GRAY_SUBTITLE,
+            color=style.subtitle_color(),
             zorder=4,
         )
 
@@ -184,20 +197,11 @@ def render_evolution(
         ha="right",
     )
 
-    style.set_title(
-        ax,
-        "Accuracy Evolution: From Baseline to 100%",
-        subtitle="Best local-model accuracy at each optimization stage, no fine-tuning",
-    )
-    style.add_footnote(
-        fig,
-        "Stages 1-6 are POC eval accuracy; the final point is samantha_server stable "
-        "accuracy on the 149-fixture corpus. Every gain came from structuring "
-        "information and tools, not model fine-tuning.",
-    )
+    style.set_title(ax, title, subtitle=subtitle)
+    style.add_footnote(fig, footnote)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor=style.bg_color())
     plt.close(fig)
 
 
@@ -223,3 +227,38 @@ def render_scaffolding_progression(output_path: Path) -> None:
         ),
     ]
     render_evolution(points, output_path)
+
+
+def render_tool_assisted_evolution(output_path: Path) -> None:
+    """The POC accuracy-evolution arc (CONVEX slide 26).
+
+    Recreates the gtan-samantha "Accuracy Evolution: From Baseline to
+    Tool-Assisted Routing" chart: six optimization stages, 62% to 99.8%,
+    ending green at the tool-assisted endpoint. Distinct from
+    ``render_scaffolding_progression`` (which adds the samantha_server 100%
+    endpoint as a seventh stage); this is the original six-stage POC story.
+    """
+    points = [
+        EvolutionPoint("No\noptimization", 62.0, "Llama 70B\nbaseline"),
+        EvolutionPoint("Prompt\ntuning", 86.0, "Llama 70B\n+ few-shot"),
+        EvolutionPoint("Skills-based\nrouting", 97.6, "Llama 70B\n+ skills"),
+        EvolutionPoint("Better model\nselection", 99.1, "Qwen3 32B\n+ skills"),
+        EvolutionPoint("Best model\nselection", 99.7, "Qwen 2.5\nCoder 32B"),
+        EvolutionPoint(
+            "Tool-assisted\nrouting",
+            99.8,
+            "Gemma 4 26B\n+ tool",
+            is_endpoint=True,
+        ),
+    ]
+    render_evolution(
+        points,
+        output_path,
+        title="Accuracy Evolution: From Baseline to Tool-Assisted Routing",
+        subtitle="Best local model state accuracy at each optimization stage, no fine-tuning",
+        footnote=(
+            "Every improvement came from how we structured the information and tools, "
+            "not from model fine-tuning. Skills-based prompting and the "
+            "list_applicable_rules tool were the two largest levers."
+        ),
+    )

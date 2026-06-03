@@ -141,14 +141,14 @@ def render_bars(
                 ha="center",
                 va="bottom",
                 fontsize=12,
-                color=style.GRAY_SUBTITLE,
+                color=style.subtitle_color(),
             )
 
     ax.set_xticks(gx)
     ax.set_xticklabels(groups, fontsize=12)
     ax.set_ylim(0, 124)
     ax.set_yticks([0, 20, 40, 60, 80, 100])
-    ax.set_ylabel("score %  (higher is better)", color=style.GRAY_SUBTITLE, fontsize=11)
+    ax.set_ylabel("score %  (higher is better)", color=style.subtitle_color(), fontsize=11)
 
     # Legend placed horizontally below the axes (in the spot the footnote
     # used to occupy); title and footnote intentionally removed.
@@ -163,7 +163,7 @@ def render_bars(
     )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor=style.bg_color())
     plt.close(fig)
 
 

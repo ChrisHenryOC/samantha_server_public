@@ -118,7 +118,7 @@ def render_spread(model: str, bars: list[HarnessBar], output_path: Path) -> None
             ha="left",
             fontsize=11,
             fontweight="bold",
-            color="#111827",
+            color=style.ink_color(),
             zorder=4,
         )
 
@@ -155,7 +155,7 @@ def render_spread(model: str, bars: list[HarnessBar], output_path: Path) -> None
     )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=100, bbox_inches="tight", facecolor=style.bg_color())
     plt.close(fig)
 
 
