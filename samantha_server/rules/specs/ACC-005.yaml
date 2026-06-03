@@ -1,0 +1,37 @@
+rule_id: ACC-005
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: REJECT
+priority: null
+when:
+  boolean_and:
+    - boolean_or:
+        # Breast IHC Panel implies HER2 evaluation per SOP. If the panel
+        # definition ever changes (e.g., DCIS-only variants), revisit this branch.
+        # See knowledge_base/sops/<panel>.md (samantha-public).
+        - contains:
+            field: ordered_tests
+            value: her2
+        - contains:
+            field: ordered_tests
+            value: breast ihc panel
+    # Boundary with the missing-data path: null fixative is "missing info"
+    # not "wrong fixative". Without this guard, Not(Equals(None, "formalin"))
+    # would evaluate True and ACC-005 would false-fire on incomplete orders.
+    # GH-105 follow-up; same shape as the ACC-006 / ACC-009 boundary.
+    - not:
+        is_null:
+          field: fixative
+    - not:
+        equals:
+          field: fixative
+          value: formalin
+action:
+  transition: DO_NOT_PROCESS
+  set_flags: []
+  clear_flags: []
+  outcome: rejected_her2_fixative_not_formalin
+  panel: null
+  branch: null
+source: knowledge_base/rules/fixation_requirements.md#ACC-005

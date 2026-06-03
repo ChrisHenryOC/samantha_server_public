@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-113",
+  "category": "hallucination",
+  "description": "HER2 order with fixation time exactly at lower boundary (6.0 hours); ACC-006 triggers for time outside 6-72 hours, so 6.0 is valid \u2192 ACCEPTED (ACC-008)",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0113, Patricia",
+        "age": 55,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 6.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

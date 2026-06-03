@@ -1,0 +1,25 @@
+// markdownlint-cli2 configuration.
+//
+// Rule config lives in .markdownlint.json (same file the local Claude
+// Code hook applies). This file adds cli2-specific options that only
+// matter when the linter traverses the repo (CI) rather than running
+// per-file (local hook).
+{
+  "ignores": [
+    // Textbundle is a Bear/Ulysses presentation format with synthetic
+    // image references that don't have alt-text. It's a scratchpad for
+    // working out presentation ideas, not authored markdown.
+    "docs/presentation/**",
+
+    // Cache and build outputs.
+    "node_modules/**",
+    "**/.venv/**",
+
+    // code_reviews/ is .gitignored — never pushed, never shipped. The
+    // pre-push gate (scripts/ci/run.sh) traverses the working tree, so
+    // without this entry the gate would fail a push over lint nits in
+    // throwaway AI-generated review artifacts that CI's clean checkout
+    // never saw. The gate lints what gets pushed; scratch is excluded.
+    "code_reviews/**"
+  ]
+}

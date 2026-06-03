@@ -1,0 +1,40 @@
+rule_id: IHC-001
+step: IHC
+applies_at: IHC_STAINING
+event_type: ihc_staining_complete
+severity: null
+priority: 1
+# Deepest-nested predicate in the corpus and the canonical fail-closed
+# null-semantics example. When fixation_time_hours is None, both
+# threshold_gte and threshold_lte return False (per primitive contract),
+# so the two surrounding Not(...) wrappers each return True and the
+# BooleanOr fires — HER2 is rejected, which is the safe verdict when
+# fixation cannot be verified.
+# See knowledge_base/rules/fixation_requirements.md#IHC-001.
+when:
+  boolean_and:
+    - equals:
+        field: event.her2_added_at_review
+        value: true
+    - boolean_or:
+        - not:
+            equals:
+              field: fixative
+              value: formalin
+        - not:
+            threshold_gte:
+              field: fixation_time_hours
+              value: 6.0
+        - not:
+            threshold_lte:
+              field: fixation_time_hours
+              value: 72.0
+action:
+  transition: IHC_STAINING
+  set_flags:
+    - HER2_FIXATION_REJECT
+  clear_flags: []
+  outcome: rejected_her2_late_fixation
+  panel: null
+  branch: null
+source: knowledge_base/rules/fixation_requirements.md#IHC-001

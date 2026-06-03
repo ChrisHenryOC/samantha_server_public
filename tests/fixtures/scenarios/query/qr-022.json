@@ -1,0 +1,220 @@
+{
+  "scenario_id": "QR-022",
+  "category": "query",
+  "tier": 4,
+  "description": "Prioritization \u2014 selecting top 3 signout cases by priority and age",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-2201",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2202",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2203",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2204",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2205",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2206",
+        "current_state": "RESULTING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2207",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T11:00:00Z"
+      },
+      {
+        "order_id": "ORD-2208",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-11T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2209",
+        "current_state": "ACCEPTED",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2210",
+        "current_state": "HE_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T16:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "What are the next three pathology signouts?",
+  "expected_output": {
+    "answer_type": "prioritized_list",
+    "order_ids": [
+      "ORD-2202",
+      "ORD-2204",
+      "ORD-2203"
+    ],
+    "reasoning": "Five orders are in the PATHOLOGIST_SIGNOUT state. Ranking by priority then age, the top three are: ORD-2202 (rush, Jan 14 10:00) and ORD-2204 (rush, Jan 14 14:00) \u2014 both rush cases \u2014 then ORD-2203 (routine, Jan 12 09:00) \u2014 the oldest of the remaining routine cases. ORD-2201 (Jan 13) and ORD-2205 (Jan 14) can wait."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "What are the next three pathology signouts?",
+        "orders": [
+          {
+            "order_id": "ORD-2201",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2202",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2203",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2204",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2205",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2206",
+            "current_state": "RESULTING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2207",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T11:00:00Z"
+          },
+          {
+            "order_id": "ORD-2208",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-11T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2209",
+            "current_state": "ACCEPTED",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2210",
+            "current_state": "HE_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T16:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-022"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "pathologist"
+}

@@ -1,0 +1,81 @@
+{
+ "_meta": {
+  "chart": "N2 benchmarks-vs-local (Slide 24b)",
+  "local_harness": "oMLX 0.3.9 Intelligence Benchmark, thinking OFF, batch 1, fixed-seed, restart between models, 2026-05-27",
+  "local_samples": {
+   "mmlu": 300,
+   "mmlu_pro": 200,
+   "gsm8k": 100,
+   "arc_challenge": 300
+  },
+  "notes": "local scores are our deployed quants under one harness (thinking off) -> lower than vendor-published best-config numbers (quantization + harness tax). published numbers are vendor/HF-card headline figures, full precision, cross-vendor harnesses (not strictly comparable). samantha = N=5 stable accuracy on the 149-fixture corpus.",
+  "incumbent": "Qwen3-Next-80B-A3B-Instruct-4bit"
+ },
+ "models": {
+  "Qwen3-Next-80B-A3B-Instruct-4bit": {
+   "local": {
+    "mmlu": 84.0,
+    "mmlu_pro": 63.5,
+    "gsm8k": 91.0,
+    "arc_challenge": 96.3,
+    "composite": 83.7
+   },
+   "published": {
+    "mmlu_pro": 80.6,
+    "gpqa": 72.9,
+    "livecodebench": 56.6,
+    "aime": 69.5
+   },
+   "samantha_stable_pct": 100.0
+  },
+  "Qwen3.5-35B-A3B-8bit": {
+   "local": {
+    "mmlu": 86.7,
+    "mmlu_pro": 61.0,
+    "gsm8k": 94.0,
+    "arc_challenge": 95.7,
+    "composite": 84.3
+   },
+   "published": {
+    "mmlu_pro": 85.3,
+    "gpqa": 84.2,
+    "livecodebench": 74.6,
+    "aime": 93.3
+   },
+   "samantha_stable_pct": 98.66
+  },
+  "gemma-4-26B-A4B-it-MLX-4bit": {
+   "local": {
+    "mmlu": 83.0,
+    "mmlu_pro": 69.0,
+    "gsm8k": 93.0,
+    "arc_challenge": 95.3,
+    "composite": 85.1
+   },
+   "published": {
+    "mmlu_pro": 82.6,
+    "gpqa": 82.3,
+    "livecodebench": 77.1,
+    "aime": 88.3
+   },
+   "samantha_stable_pct": 98.66
+  },
+  "Qwen2.5-Coder-32B-Instruct-MLX-4bit": {
+   "local": {
+    "mmlu": 75.7,
+    "mmlu_pro": 48.0,
+    "gsm8k": 95.0,
+    "arc_challenge": 88.7,
+    "composite": 76.8
+   },
+   "published": {
+    "mmlu_pro": 50.0,
+    "gpqa": 35.0,
+    "livecodebench": 31.4,
+    "humaneval": 92.7,
+    "_approx": true
+   },
+   "samantha_stable_pct": 96.64
+  }
+ }
+}

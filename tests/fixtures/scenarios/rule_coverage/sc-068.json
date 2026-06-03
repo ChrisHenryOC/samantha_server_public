@@ -1,0 +1,268 @@
+{
+  "scenario_id": "SC-068",
+  "category": "rule_coverage",
+  "description": "IHC-011: FISH external lab reports QNS \u2192 ORDER_TERMINATED_QNS",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0068, Vivian",
+        "age": 62,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 22.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 3,
+      "event_type": "processing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_EMBEDDING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 4,
+      "event_type": "embedding_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_SECTIONING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 5,
+      "event_type": "sectioning_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_QC",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 6,
+      "event_type": "sample_prep_qc",
+      "event_data": {
+        "outcome": "pass"
+      },
+      "expected_output": {
+        "next_state": "HE_STAINING",
+        "applied_rules": [
+          "SP-004"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 7,
+      "event_type": "he_staining_complete",
+      "event_data": {
+        "fixation_issue": false
+      },
+      "expected_output": {
+        "next_state": "HE_QC",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 8,
+      "event_type": "he_qc",
+      "event_data": {
+        "outcome": "pass"
+      },
+      "expected_output": {
+        "next_state": "PATHOLOGIST_HE_REVIEW",
+        "applied_rules": [
+          "HE-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 9,
+      "event_type": "pathologist_he_review",
+      "event_data": {
+        "diagnosis": "invasive_carcinoma"
+      },
+      "expected_output": {
+        "next_state": "IHC_STAINING",
+        "applied_rules": [
+          "HE-005"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 10,
+      "event_type": "ihc_staining_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "IHC_QC",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 11,
+      "event_type": "ihc_qc",
+      "event_data": {
+        "slides": [
+          {
+            "test": "ER",
+            "qc_result": "pass"
+          },
+          {
+            "test": "PR",
+            "qc_result": "pass"
+          },
+          {
+            "test": "HER2",
+            "qc_result": "pass"
+          },
+          {
+            "test": "Ki-67",
+            "qc_result": "pass"
+          }
+        ],
+        "all_slides_complete": true
+      },
+      "expected_output": {
+        "next_state": "IHC_SCORING",
+        "applied_rules": [
+          "IHC-002"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 12,
+      "event_type": "ihc_scoring",
+      "event_data": {
+        "scores": [
+          {
+            "test": "ER",
+            "value": "55%",
+            "equivocal": false
+          },
+          {
+            "test": "PR",
+            "value": "35%",
+            "equivocal": false
+          },
+          {
+            "test": "HER2",
+            "value": "2+",
+            "equivocal": true
+          },
+          {
+            "test": "Ki-67",
+            "value": "28%",
+            "equivocal": false
+          }
+        ],
+        "all_scores_complete": true,
+        "any_equivocal": true
+      },
+      "expected_output": {
+        "next_state": "SUGGEST_FISH_REFLEX",
+        "applied_rules": [
+          "IHC-007"
+        ],
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 13,
+      "event_type": "fish_decision",
+      "event_data": {
+        "approved": true
+      },
+      "expected_output": {
+        "next_state": "FISH_SEND_OUT",
+        "applied_rules": [
+          "IHC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 14,
+      "event_type": "fish_result",
+      "event_data": {
+        "result": "qns",
+        "status": "qns"
+      },
+      "expected_output": {
+        "next_state": "ORDER_TERMINATED_QNS",
+        "applied_rules": [
+          "IHC-011"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

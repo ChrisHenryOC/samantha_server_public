@@ -1,0 +1,1 @@
+{"also_matched":[],"applied_rule_id":"ACC-001","dispatched_rule_ids":["ACC-001"],"event_input_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","flags_added":[],"flags_cleared":[],"latency_us":42,"next_state":"HOLD","outcome":"hold_missing_name","primitive_traces":{}}

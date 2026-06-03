@@ -1,0 +1,222 @@
+{
+  "scenario_id": "QR-019",
+  "category": "query",
+  "tier": 3,
+  "description": "Flag reasoning \u2014 why HER2 testing was rejected for an order",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-1901",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1902",
+        "current_state": "HE_STAINING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-1903",
+        "current_state": "IHC_STAINING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-1904",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-11T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1905",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "HER2_FIXATION_REJECT"
+        ],
+        "created_at": "2025-01-13T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1906",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-1907",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-1908",
+        "current_state": "RESULTING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-1909",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-13T12:00:00Z"
+      },
+      {
+        "order_id": "ORD-1910",
+        "current_state": "SAMPLE_PREP_SECTIONING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T16:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Why was HER2 testing rejected for order ORD-1905?",
+  "expected_output": {
+    "answer_type": "order_status",
+    "order_ids": [
+      "ORD-1905"
+    ],
+    "reasoning": "ORD-1905 has the HER2_FIXATION_REJECT flag. This flag was set because the pathologist added HER2 testing at IHC review but the specimen's fixation was out of tolerance (rule IHC-001). When HER2 is added by the pathologist rather than ordered upfront, IHC-001 checks fixation parameters at the IHC stage. The specimen failed these requirements, so HER2 testing was rejected and the pathologist has been flagged."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Why was HER2 testing rejected for order ORD-1905?",
+        "orders": [
+          {
+            "order_id": "ORD-1901",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1902",
+            "current_state": "HE_STAINING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-1903",
+            "current_state": "IHC_STAINING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-1904",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-11T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1905",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "HER2_FIXATION_REJECT"
+            ],
+            "created_at": "2025-01-13T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1906",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-1907",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-1908",
+            "current_state": "RESULTING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-1909",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-13T12:00:00Z"
+          },
+          {
+            "order_id": "ORD-1910",
+            "current_state": "SAMPLE_PREP_SECTIONING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T16:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-019"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "pathologist"
+}

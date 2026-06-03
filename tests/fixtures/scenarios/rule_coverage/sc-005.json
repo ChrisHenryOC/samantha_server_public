@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-005",
+  "category": "rule_coverage",
+  "description": "ACC-002: Patient sex missing, order held for missing info",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0005, Robert",
+        "age": 48,
+        "sex": null,
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_HOLD",
+        "applied_rules": [
+          "ACC-002"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

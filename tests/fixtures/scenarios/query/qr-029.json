@@ -1,0 +1,54 @@
+{
+  "scenario_id": "QR-029",
+  "category": "query",
+  "tier": 1,
+  "description": "uncertain \u2014 query asks for billing status, which is not present in the database state provided to the model",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-291",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-03-02T08:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Is billing complete for ORD-291?",
+  "expected_output": {
+    "answer_type": "uncertain",
+    "order_ids": [],
+    "reasoning": "The database state does not include billing status information. Cannot determine whether billing is complete for ORD-291."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Is billing complete for ORD-291?",
+        "orders": [
+          {
+            "order_id": "ORD-291",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-03-02T08:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-029"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

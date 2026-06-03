@@ -1,0 +1,35 @@
+{
+  "scenario_id": "SC-016",
+  "category": "rule_coverage",
+  "description": "ACC-007: Billing missing, fixation at boundary 6.0hr",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0016, Sophia",
+        "age": 51,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 6.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_PROCEED",
+        "applied_rules": [
+          "ACC-007"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

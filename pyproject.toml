@@ -1,0 +1,143 @@
+[project]
+name = "samantha-server"
+version = "0.1.0"
+description = "Samantha server — deterministic rule engine for specimen routing"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.136.1",
+    "httpx>=0.28.1",
+    # G20 canonical-JSON stability: model_dump_json() output is load-bearing
+    # for receipt signing. Each Pydantic minor upgrade must be audited for
+    # serialization-order changes before bumping the lock file.
+    # GH-208: replay_to_langfuse writes directly to opentelemetry.trace._TRACER_PROVIDER
+    # to bypass the one-shot set_tracer_provider() lock. That attribute is a
+    # private name in opentelemetry-api — a major bump that renames or removes
+    # it must re-verify the save/restore mechanism in
+    # samantha_server/scenarios/replay.py:replay_to_langfuse and the sibling
+    # _replay_to_langfuse_with_release before merging the version bump.
+    "opentelemetry-api>=1.30.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.30.0",
+    "opentelemetry-sdk>=1.30.0",
+    "opentelemetry-semantic-conventions>=0.51b0",
+    "pydantic>=2.11,<3",
+    "pynacl>=1.6.2",
+    # Used by CLI entry points (samantha_server/_cli.py) so `uv run python -m
+    # samantha_server.scenarios.replay ...` reads `.env` from the project root
+    # without an explicit `set -a; source .env; set +a` step. Pinned directly
+    # (the former transitive source, pydantic-settings via mcp, was dropped in
+    # GH-356) so the direct use is honest.
+    "python-dotenv>=1.0",
+    "pyyaml>=6.0",
+    "uvicorn[standard]>=0.46.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=4",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    # psutil is used by scripts/qwen3_next_80b_memory_preflight.py
+    # (an operator-invoked memory smoke test) AND its unit tests in
+    # tests/scripts/. Kept out of [project] dependencies because no
+    # production runtime consumes psutil — only dev / test / operator
+    # paths do. dev-group placement means CI test runs install it
+    # while `uv sync --no-dev` production installs do not. GH-275 / PR
+    # #280 review.
+    "psutil>=5.9",
+    "types-psutil>=5.9",
+    "types-pyyaml>=6.0",
+    "hypothesis>=6.152.4",
+]
+# Apple Silicon only; opt-in via: uv sync --group local-llm
+# NOT installed on CI runners (--all-extras installs extras, not groups).
+local-llm = ["mlx-lm>=0.20"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Coverage runs in CI via a dedicated step (`pytest --cov=samantha_server --cov-report=term-missing`);
+# not in `addopts` so local pytest iteration and GH-8 micro-benchmarks are not
+# burdened with sys.settrace overhead. The [tool.coverage.report].fail_under = 100
+# gate remains authoritative whenever coverage is collected.
+#
+# Default filter excludes perf benchmarks and live-LLM / transport-specific tests.
+# - Perf tests opt in with: pytest -m perf
+# - Live LLM scenario tests opt in with: pytest -m live_llm (transport-agnostic;
+#   honours LLM_PROVIDER; failure to construct the client is the skip signal).
+# - Transport-specific tests opt in with: pytest -m local_mlx or -m local_omlx.
+# Convention follows https://docs.pytest.org/en/stable/how-to/mark.html
+#
+# CI inherits this addopts; transport-specific groups are not installed on CI
+# runners, so those tests would be skipped anyway — addopts makes the exclusion
+# explicit and prevents confusing "skipped" noise.
+addopts = "-m 'not perf and not live_llm and not local_mlx and not local_omlx and not langfuse'"
+markers = [
+    # The "perf" marker is reserved for tests under tests/perf/. Anywhere else
+    # would be silently dropped from the default pytest run via -m 'not perf'.
+    # A collection-time check in conftest.py (root) enforces this scope.
+    "perf: latency / throughput benchmarks — skipped by default and in CI",
+    # The "live_llm" marker is for transport-agnostic end-to-end scenario tests
+    # that run real inference against whatever LLM_PROVIDER selects. Failure to
+    # construct the client (LLMModelLoadError) is the skip signal — we no longer
+    # gate on importlib.util.find_spec("mlx_lm"). Run with: pytest -m live_llm.
+    "live_llm: live LLM inference (transport-agnostic) — excluded by default and in CI",
+    # The "local_mlx" marker is for tests that exercise the MLXClient transport
+    # specifically (the implementation detail genuinely matters). Requires the
+    # local-llm group: uv sync --group local-llm. Run with: pytest -m local_mlx.
+    "local_mlx: MLXClient transport tests — excluded by default and in CI",
+    # The "local_omlx" marker is for tests that require a running oMLX server
+    # on loopback. Run with: pytest -m local_omlx (requires oMLX running locally).
+    "local_omlx: live oMLX server tests — excluded by default and in CI",
+    # The "langfuse" marker (GH-124 Step 9) is for the loopback smoke test
+    # that confirms LANGFUSE_BASE_URL resolves and connects to a running
+    # Langfuse instance. Defends the dual-stack landmine where ``localhost``
+    # resolves to ``::1`` while docker-compose binds IPv4-only. Excluded
+    # from CI; release-checklist item run after ``docker compose up``.
+    "langfuse: live Langfuse loopback smoke test — release-checklist item",
+]
+
+[tool.coverage.run]
+source = ["samantha_server"]
+
+[tool.coverage.report]
+# Phase 1 scoping: 100% coverage required only for the locked primitive
+# catalog. Expand `include` as rules/, engine/, receipts/ gain logic.
+include = ["samantha_server/primitives/**/*"]
+fail_under = 100
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["samantha_server"]
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+# mlx-lm has no type stubs; ignore missing-imports when it IS installed
+# (local dev with the local-llm group). The import-not-found inline
+# comment handles the case where it is NOT installed (CI / default install).
+module = "mlx_lm"
+ignore_missing_imports = true
+
+[tool.hatch.build.targets.wheel]
+# Include runtime data assets so they are present when installed as a wheel.
+include = ["samantha_server/data/*.json"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "sample_size": 66,
+    "time_range": "2026-05-20 to 2026-05-27",
+    "note": "data generated during testing"
+  },
+  "refusal_counts": {
+    "refused_llm_unavailable": 14,
+    "refused_phi_boundary": 3,
+    "refused_no_skill_for_state": 9,
+    "refused_skill_unavailable": 5,
+    "refused_ungrounded_stage_a": 7,
+    "refused_ungrounded_stage_b": 6,
+    "refused_uncertain": 8,
+    "refused_unparseable": 3,
+    "refused_unparseable_response": 2,
+    "refused_rule_not_in_dispatch": 2,
+    "refused_undispatched_rule": 1,
+    "refused_internal_error": 4,
+    "other": 2
+  }
+}

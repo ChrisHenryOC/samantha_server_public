@@ -1,0 +1,47 @@
+# LLM-call rate panel (Plan § Step 11 panel #2).
+#
+# Fraction of decisions where the LLM was consulted, over rolling
+# 1h / 24h / 7d windows. Project-plan target: ≥95% deterministic
+# (≤5% LLM); the panel shows the live value against the threshold.
+#
+# 5% target source: `docs/plans/project-plan.md` § targets +
+# `docs/plans/phase-3-implementation.md` § Step 12
+# (DRIFT_ALARM_THRESHOLD default "0.05"). The phase-3 doc explicitly
+# calls the 5% a "planning placeholder; closeout records the
+# empirical adjustment" — meaning this value is expected to drift.
+# Update this YAML and the plan source together.
+#
+# Operator step: replicate this panel in the Langfuse v3 UI per the
+# README in this directory. Filter on the `langfuse.trace.metadata.routing_path`
+# OTel span attribute (Langfuse renders span attributes as
+# filterable dimensions), not the trace-dict's `routing_path` field
+# — they are distinct UI surfaces.
+
+name: llm_call_rate
+description: >-
+  Fraction of decisions routed through the LLM path over rolling
+  1h / 24h / 7d windows. Project-plan target: ≤5% LLM
+  (≥95% deterministic).
+panel_type: line_chart_with_threshold
+
+filters:
+  - field: langfuse.trace.metadata.environment
+    op: equals
+    value: production
+
+windows:
+  - 1h
+  - 24h
+  - 7d
+
+# Single global series; no group_by.
+metrics:
+  - field: langfuse.trace.metadata.routing_path
+    aggregation: rate
+    success_values:
+      - llm
+    # Threshold line: the project target. See header comment for
+    # source + drift policy.
+    threshold:
+      value: 0.05
+      label: "5% target"

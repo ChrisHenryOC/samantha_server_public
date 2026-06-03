@@ -1,0 +1,28 @@
+rule_id: ACC-008
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: ACCEPT
+priority: null
+when:
+  not:
+    boolean_or:
+      - rule_ref: ACC-001
+      - rule_ref: ACC-002
+      - rule_ref: ACC-003
+      - rule_ref: ACC-004
+      - rule_ref: ACC-005
+      - rule_ref: ACC-006
+      - rule_ref: ACC-007
+      - rule_ref: ACC-009
+      - rule_ref: ACC-010
+      - rule_ref: ACC-011
+      - rule_ref: ACC-012
+action:
+  transition: ACCEPTED
+  set_flags: []
+  clear_flags: []
+  outcome: accessioning_validations_passed
+  panel: null
+  branch: null
+source: knowledge_base/sops/accessioning.md#3.4

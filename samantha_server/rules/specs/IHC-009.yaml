@@ -1,0 +1,19 @@
+rule_id: IHC-009
+step: IHC
+applies_at: SUGGEST_FISH_REFLEX
+event_type: fish_decision
+severity: null
+priority: 9
+when:
+  equals:
+    field: event.approved
+    value: false
+action:
+  transition: RESULTING
+  set_flags: []
+  clear_flags:
+    - FISH_SUGGESTED
+  outcome: declined_fish_proceeded_resulting
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#7.4

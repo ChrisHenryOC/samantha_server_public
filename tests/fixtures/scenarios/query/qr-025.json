@@ -1,0 +1,242 @@
+{
+  "scenario_id": "QR-025",
+  "category": "query",
+  "tier": 5,
+  "description": "Cross-order reasoning \u2014 identifying orders with flags or issues needing resolution",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-2501",
+        "current_state": "RESULTING_HOLD",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "created_at": "2025-01-13T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2503",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2504",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "HER2_FIXATION_REJECT"
+        ],
+        "created_at": "2025-01-13T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2505",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T16:00:00Z"
+      },
+      {
+        "order_id": "ORD-2506",
+        "current_state": "SUGGEST_FISH_REFLEX",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "created_at": "2025-01-13T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2507",
+        "current_state": "SAMPLE_PREP_SECTIONING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "RECUT_REQUESTED"
+        ],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2508",
+        "current_state": "HE_STAINING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T12:00:00Z"
+      },
+      {
+        "order_id": "ORD-2509",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-11T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2510",
+        "current_state": "IHC_STAINING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "created_at": "2025-01-14T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2511",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T09:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Which orders have flags or issues that need resolution?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-2501",
+      "ORD-2504",
+      "ORD-2506",
+      "ORD-2507",
+      "ORD-2510"
+    ],
+    "reasoning": "Five orders have active flags requiring attention. ORD-2501 has MISSING_INFO_PROCEED and is blocked in RESULTING_HOLD \u2014 billing info must be received. ORD-2504 has HER2_FIXATION_REJECT \u2014 HER2 testing was rejected due to fixation out of tolerance. ORD-2506 has FISH_SUGGESTED \u2014 awaiting pathologist decision on FISH reflex testing. ORD-2507 has RECUT_REQUESTED \u2014 recuts were requested by the pathologist and sectioning is in progress. ORD-2510 has MISSING_INFO_PROCEED \u2014 billing info is missing and will block at resulting."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Which orders have flags or issues that need resolution?",
+        "orders": [
+          {
+            "order_id": "ORD-2501",
+            "current_state": "RESULTING_HOLD",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "MISSING_INFO_PROCEED"
+            ],
+            "created_at": "2025-01-13T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2503",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2504",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "HER2_FIXATION_REJECT"
+            ],
+            "created_at": "2025-01-13T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2505",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T16:00:00Z"
+          },
+          {
+            "order_id": "ORD-2506",
+            "current_state": "SUGGEST_FISH_REFLEX",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "FISH_SUGGESTED"
+            ],
+            "created_at": "2025-01-13T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2507",
+            "current_state": "SAMPLE_PREP_SECTIONING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "RECUT_REQUESTED"
+            ],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2508",
+            "current_state": "HE_STAINING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T12:00:00Z"
+          },
+          {
+            "order_id": "ORD-2509",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-11T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2510",
+            "current_state": "IHC_STAINING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [
+              "MISSING_INFO_PROCEED"
+            ],
+            "created_at": "2025-01-14T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2511",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T09:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-025"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

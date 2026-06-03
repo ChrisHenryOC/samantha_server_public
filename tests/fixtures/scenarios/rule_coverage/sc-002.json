@@ -1,0 +1,48 @@
+{
+  "scenario_id": "SC-002",
+  "category": "rule_coverage",
+  "description": "ACC-008: Fixation at upper boundary 72.0hr, accepted",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0002, Emily",
+        "age": 57,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 72.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

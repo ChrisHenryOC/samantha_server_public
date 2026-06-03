@@ -1,0 +1,34 @@
+{
+  "scenario_id": "SC-006",
+  "category": "rule_coverage",
+  "description": "ACC-002: Patient name and sex both missing; both HOLD rules fire, order held",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": null,
+        "age": 50,
+        "sex": null,
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_HOLD",
+        "applied_rules": [
+          "ACC-001",
+          "ACC-002"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

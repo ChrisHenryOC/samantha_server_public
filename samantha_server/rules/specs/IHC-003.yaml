@@ -1,0 +1,18 @@
+rule_id: IHC-003
+step: IHC
+applies_at: IHC_QC
+event_type: ihc_qc
+severity: null
+priority: 3
+when:
+  equals:
+    field: event.all_slides_complete
+    value: false
+action:
+  transition: IHC_QC
+  set_flags: []
+  clear_flags: []
+  outcome: held_ihc_slides_pending
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#6.3

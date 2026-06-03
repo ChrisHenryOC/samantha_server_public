@@ -1,0 +1,42 @@
+# Per-skill accuracy panel (Plan § Step 11 panel #1).
+#
+# For each skill, agreement rate over rolling 24h / 7d / 30d windows.
+# The dashboard's "headline accuracy signal" in production — the eval
+# harness has the receipt-level ground truth; production has the
+# `agreement` signal.
+#
+# Operator step: replicate this panel in the Langfuse v3 UI per the
+# README in this directory.
+
+name: per_skill_accuracy
+description: >-
+  Agreement rate per skill (skill_doc_hash) over rolling 24h / 7d / 30d
+  windows. Headline production accuracy signal.
+panel_type: line_chart
+
+filters:
+  - field: langfuse.trace.metadata.environment
+    op: equals
+    value: production
+
+windows:
+  - 24h
+  - 7d
+  - 30d
+
+group_by:
+  - skill_doc_hash
+
+metrics:
+  # Accuracy = fraction of events whose `agreement` indicates a
+  # successful match. v0 emits only deterministic_only / llm_only;
+  # the both_* values are reserved (see trace-schema.md). The metric
+  # treats deterministic_only AND llm_only AND both_agree as
+  # "successful" — both_agree contributes 0 in v0 and is forward-
+  # compatible when dual-routing lands.
+  - field: agreement
+    aggregation: rate
+    success_values:
+      - deterministic_only
+      - llm_only
+      - both_agree

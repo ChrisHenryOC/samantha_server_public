@@ -1,0 +1,16 @@
+{
+ "_meta": {
+  "chart": "SWE-Bench Mobile: same model, 6x across harnesses",
+  "source": "Tian et al., SWE-Bench Mobile, arXiv 2602.09540, Table 6 (Cross-Agent Model Comparison), corroborated by Appendix B (Complete Experimental Results)",
+  "model_fixed": "Claude Opus 4.5",
+  "metric": "Task Success Rate (%) on 50 production iOS tasks (449 test cases)",
+  "notes": "Same model across four coding agents; the only variable is the harness/agent. 12% (Cursor) vs 2% (OpenCode) = 6x gap. Commercial agents (Cursor, Codex, Claude Code) vs open-source (OpenCode)."
+ },
+ "model": "Claude Opus 4.5",
+ "harnesses": [
+  {"label": "Cursor", "success": 12, "commercial": true},
+  {"label": "Claude Code", "success": 8, "commercial": true},
+  {"label": "Codex", "success": 4, "commercial": true},
+  {"label": "OpenCode", "success": 2, "commercial": false}
+ ]
+}

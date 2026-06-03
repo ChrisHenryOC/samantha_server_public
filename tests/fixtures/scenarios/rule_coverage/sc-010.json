@@ -1,0 +1,34 @@
+{
+  "scenario_id": "SC-010",
+  "category": "rule_coverage",
+  "description": "ACC-004+ACC-005: Cytospin with alcohol fixative; both REJECT rules fire",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0010, Sarah",
+        "age": 58,
+        "sex": "F",
+        "specimen_type": "cytospin",
+        "anatomic_site": "breast",
+        "fixative": "alcohol",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [
+          "ACC-004",
+          "ACC-005"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

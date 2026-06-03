@@ -1,0 +1,22 @@
+rule_id: RES-001
+step: RESULTING
+applies_at: null
+event_type: resulting_review
+severity: null
+priority: 1
+# RES-001 reads the order-accumulated `flags` field set upstream by ACC-007.
+# Event-type dispatch (resulting_review only) is what keeps RES-001 from
+# preempting RES-002 on `missing_info_received` events — see
+# decision-gate.md § "Dispatch contract".
+when:
+  contains:
+    field: flags
+    value: MISSING_INFO_PROCEED
+action:
+  transition: RESULTING_HOLD
+  set_flags: []
+  clear_flags: []
+  outcome: held_resulting_pending_missing_info
+  panel: null
+  branch: null
+source: knowledge_base/sops/resulting.md#8.1

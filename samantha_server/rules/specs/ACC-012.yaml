@@ -1,0 +1,25 @@
+rule_id: ACC-012
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: HOLD
+priority: null
+when:
+  # Null anatomic_site is missing required clinical info. Mirrors
+  # ACC-001 (null patient_name) and ACC-002 (null patient_sex) — the order
+  # is held until accessioning staff supply the value.
+  #
+  # Disjointness with ACC-003 / ACC-011 / ACC-008: this rule fires
+  # only when anatomic_site is null; all other anatomic_site rules
+  # require non-null values (in_enum is fail-safe on null; ACC-011
+  # has an explicit Not(is_null) guard).
+  is_null:
+    field: anatomic_site
+action:
+  transition: MISSING_INFO_HOLD
+  set_flags: []
+  clear_flags: []
+  outcome: held_missing_anatomic_site
+  panel: null
+  branch: null
+source: knowledge_base/sops/accessioning.md#3.1

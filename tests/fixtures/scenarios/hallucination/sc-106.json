@@ -1,0 +1,34 @@
+{
+  "scenario_id": "SC-106",
+  "category": "hallucination",
+  "description": "Extra clinical context (BRCA1 mutation, prior mastectomy) should be ignored; no accessioning rule references clinical history \u2192 ACCEPTED (ACC-008)",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0106, Maria",
+        "age": 47,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true,
+        "clinical_notes": "BRCA1 mutation carrier. Prior contralateral mastectomy 2023. Family history: mother and maternal aunt with breast cancer."
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

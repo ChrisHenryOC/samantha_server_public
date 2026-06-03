@@ -1,0 +1,34 @@
+rule_id: ACC-003
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: REJECT
+priority: null
+when:
+  # Blacklist of definitively-out-of-scope anatomic sites for the
+  # breast histology workflow. Sites here are unambiguously not
+  # processable for breast-cancer pathology and produce an immediate
+  # DO_NOT_PROCESS verdict.
+  #
+  # Non-null guard is implicit: in_enum returns False on null
+  # (Equals primitive fail-safe semantics), so null routes via
+  # ACC-012 (HOLD) rather than ACC-003.
+  #
+  # GH-35-style canonicalization: values must be lowercase canonical.
+  # Casefolding happens at comparison time.
+  in_enum:
+    field: anatomic_site
+    values:
+      - lung
+      - liver
+      - colon
+      - brain
+      - prostate
+action:
+  transition: DO_NOT_PROCESS
+  set_flags: []
+  clear_flags: []
+  outcome: rejected_invalid_anatomic_site
+  panel: null
+  branch: null
+source: knowledge_base/sops/accessioning.md#3.2

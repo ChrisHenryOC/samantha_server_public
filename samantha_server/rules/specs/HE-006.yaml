@@ -1,0 +1,30 @@
+rule_id: HE-006
+step: PATHOLOGIST_HE_REVIEW
+applies_at: null
+event_type: pathologist_he_review
+severity: null
+priority: 2
+# Canonical action-handler-boundary example (decision-gate.md § "Action handler
+# boundary"): the predicate is the trivial diagnosis match; HER2-conditional
+# panel construction lives in the structured `panel` block below so the action
+# handler can build the runtime panel without rule-specific Python.  See
+# phase-1 plan § 6 — the rule is NOT split into HE-006a/HE-006b.
+when:
+  equals:
+    field: event.diagnosis
+    value: dcis
+action:
+  transition: IHC_STAINING
+  set_flags: []
+  clear_flags: []
+  outcome: proceeded_ihc_dcis
+  panel:
+    base: [ER, PR]
+    conditional:
+      - marker: HER2
+        when:
+          contains:
+            field: ordered_tests
+            value: her2
+  branch: null
+source: knowledge_base/rules/breast_ihc_panels.md#HE-006

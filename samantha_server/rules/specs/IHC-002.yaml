@@ -1,0 +1,18 @@
+rule_id: IHC-002
+step: IHC
+applies_at: IHC_QC
+event_type: ihc_qc
+severity: null
+priority: 2
+when:
+  equals:
+    field: event.all_slides_complete
+    value: true
+action:
+  transition: IHC_SCORING
+  set_flags: []
+  clear_flags: []
+  outcome: advanced_ihc_qc_passed
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#6.2

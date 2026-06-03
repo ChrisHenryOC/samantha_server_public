@@ -1,0 +1,18 @@
+rule_id: HE-004
+step: HE_QC
+applies_at: null
+event_type: he_qc
+severity: null
+priority: 4
+when:
+  equals:
+    field: event.outcome
+    value: fail_qns
+action:
+  transition: ORDER_TERMINATED_QNS
+  set_flags: []
+  clear_flags: []
+  outcome: aborted_he_qc_qns
+  panel: null
+  branch: null
+source: knowledge_base/sops/he_staining.md#4.4

@@ -1,0 +1,22 @@
+rule_id: IHC-005
+step: IHC
+applies_at: IHC_QC
+event_type: ihc_qc
+severity: null
+priority: 5
+when:
+  boolean_and:
+    - equals:
+        field: event.staining_failure
+        value: true
+    - equals:
+        field: event.tissue_available
+        value: false
+action:
+  transition: ORDER_TERMINATED_QNS
+  set_flags: []
+  clear_flags: []
+  outcome: aborted_ihc_qns
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#6.5

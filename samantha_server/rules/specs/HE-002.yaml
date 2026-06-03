@@ -1,0 +1,18 @@
+rule_id: HE-002
+step: HE_QC
+applies_at: null
+event_type: he_qc
+severity: null
+priority: 2
+when:
+  equals:
+    field: event.outcome
+    value: fail_restain
+action:
+  transition: HE_STAINING
+  set_flags: []
+  clear_flags: []
+  outcome: restained_he_qc_failed
+  panel: null
+  branch: null
+source: knowledge_base/sops/he_staining.md#4.2

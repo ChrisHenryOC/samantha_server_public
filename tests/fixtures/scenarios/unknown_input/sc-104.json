@@ -1,0 +1,35 @@
+{
+  "scenario_id": "SC-104",
+  "category": "unknown_input",
+  "description": "Completely empty order data (all fields missing/null). Five rules fire: ACC-001 (HOLD: missing name), ACC-002 (HOLD: missing sex), ACC-012 (HOLD: null anatomic_site, GH-234), ACC-007 (PROCEED: missing billing), ACC-010 (PROCEED: null specimen_type). HOLD severity wins over PROCEED; among the three HOLD-severity rules ACC-001 wins by glob order. next_state = MISSING_INFO_HOLD.",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": null,
+        "age": null,
+        "sex": null,
+        "specimen_type": null,
+        "anatomic_site": null,
+        "fixative": null,
+        "fixation_time_hours": null,
+        "ordered_tests": [],
+        "priority": null,
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_HOLD",
+        "applied_rules": [
+          "ACC-001",
+          "ACC-002",
+          "ACC-012",
+          "ACC-007",
+          "ACC-010"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

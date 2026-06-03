@@ -1,0 +1,146 @@
+{
+  "scenario_id": "QR-012",
+  "category": "query",
+  "tier": 2,
+  "description": "Order status \u2014 identifying what is blocking a held order",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-1201",
+        "current_state": "MISSING_INFO_HOLD",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1202",
+        "current_state": "SAMPLE_PREP_EMBEDDING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-1203",
+        "current_state": "HE_QC",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-1204",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-1205",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1206",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T10:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "What's blocking order ORD-1201?",
+  "expected_output": {
+    "answer_type": "order_status",
+    "order_ids": [
+      "ORD-1201"
+    ],
+    "reasoning": "ORD-1201 is in MISSING_INFO_HOLD state. The order is on hold because required information is missing from the requisition. Processing cannot continue until the missing information is received and the hold is resolved."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "What's blocking order ORD-1201?",
+        "orders": [
+          {
+            "order_id": "ORD-1201",
+            "current_state": "MISSING_INFO_HOLD",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1202",
+            "current_state": "SAMPLE_PREP_EMBEDDING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-1203",
+            "current_state": "HE_QC",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-1204",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-1205",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1206",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T10:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-012"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

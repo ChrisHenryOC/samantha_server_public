@@ -1,0 +1,28 @@
+rule_id: ACC-009
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: HOLD
+priority: null
+when:
+  boolean_and:
+    - boolean_or:
+        # Breast IHC Panel implies HER2 evaluation per SOP. If the panel
+        # definition ever changes (e.g., DCIS-only variants), revisit this branch.
+        # See knowledge_base/sops/<panel>.md (samantha-public).
+        - contains:
+            field: ordered_tests
+            value: her2
+        - contains:
+            field: ordered_tests
+            value: breast ihc panel
+    - is_null:
+        field: fixation_time_hours
+action:
+  transition: MISSING_INFO_HOLD
+  set_flags: []
+  clear_flags: []
+  outcome: held_missing_fixation_time
+  panel: null
+  branch: null
+source: knowledge_base/rules/fixation_requirements.md#ACC-009

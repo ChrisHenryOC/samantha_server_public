@@ -1,0 +1,164 @@
+{
+  "scenario_id": "QR-013",
+  "category": "query",
+  "tier": 2,
+  "description": "Order status \u2014 locating an order in the IHC scoring step",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-1301",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1302",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-13T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-1303",
+        "current_state": "SAMPLE_PREP_SECTIONING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-1304",
+        "current_state": "IHC_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-1305",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-1306",
+        "current_state": "HE_STAINING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1307",
+        "current_state": "RESULTING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T08:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Where is order ORD-1302 in the workflow?",
+  "expected_output": {
+    "answer_type": "order_status",
+    "order_ids": [
+      "ORD-1302"
+    ],
+    "reasoning": "ORD-1302 is in IHC_SCORING state. The IHC-stained slides have passed quality control and are currently being scored for biomarker expression levels (ER, PR, HER2, Ki-67). After scoring, results will proceed to the resulting step."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Where is order ORD-1302 in the workflow?",
+        "orders": [
+          {
+            "order_id": "ORD-1301",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1302",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-13T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-1303",
+            "current_state": "SAMPLE_PREP_SECTIONING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-1304",
+            "current_state": "IHC_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-1305",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-1306",
+            "current_state": "HE_STAINING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1307",
+            "current_state": "RESULTING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T08:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-013"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "histotech"
+}

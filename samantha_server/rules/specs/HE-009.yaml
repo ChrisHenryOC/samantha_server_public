@@ -1,0 +1,23 @@
+rule_id: HE-009
+step: PATHOLOGIST_HE_REVIEW
+applies_at: null
+event_type: pathologist_he_review
+severity: null
+priority: 5
+# Pathologist requests recuts (encoded as a diagnosis sentinel); routes back
+# to SAMPLE_PREP_SECTIONING and sets RECUT_REQUESTED so downstream resulting
+# rules can detect the recut path.  Pinned by SC-046's expected
+# flags=['RECUT_REQUESTED'].
+when:
+  equals:
+    field: event.diagnosis
+    value: recut_requested
+action:
+  transition: SAMPLE_PREP_SECTIONING
+  set_flags:
+    - RECUT_REQUESTED
+  clear_flags: []
+  outcome: requested_recuts
+  panel: null
+  branch: null
+source: knowledge_base/rules/breast_ihc_panels.md#HE-009

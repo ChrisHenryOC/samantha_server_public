@@ -1,0 +1,78 @@
+{
+  "scenario_id": "SC-022",
+  "category": "rule_coverage",
+  "description": "SP-003: Embedding fails, insufficient tissue (biopsy) \u2192 ORDER_TERMINATED_QNS (mid-chain)",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0022, Diana",
+        "age": 53,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 30.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 3,
+      "event_type": "processing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_EMBEDDING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 4,
+      "event_type": "embedding_complete",
+      "event_data": {
+        "outcome": "fail_qns"
+      },
+      "expected_output": {
+        "next_state": "ORDER_TERMINATED_QNS",
+        "applied_rules": [
+          "SP-003"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "scenario_id": "SC-T02",
+  "category": "multi_rule",
+  "description": "Fixture: multi-rule reject scenario",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": null,
+        "age": 55,
+        "sex": "M",
+        "specimen_type": "biopsy",
+        "anatomic_site": "lung",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": ["Breast IHC Panel"],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": ["ACC-001", "ACC-003"],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

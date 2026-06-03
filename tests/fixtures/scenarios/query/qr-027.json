@@ -1,0 +1,249 @@
+{
+  "scenario_id": "QR-027",
+  "category": "query",
+  "tier": 5,
+  "description": "Cross-order reasoning \u2014 orders waiting on external results",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-2701",
+        "current_state": "FISH_SEND_OUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "created_at": "2025-01-12T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2702",
+        "current_state": "ACCEPTED",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2703",
+        "current_state": "FISH_SEND_OUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "created_at": "2025-01-13T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2704",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T16:00:00Z"
+      },
+      {
+        "order_id": "ORD-2705",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2706",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2707",
+        "current_state": "RESULTING_HOLD",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "created_at": "2025-01-13T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2708",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-11T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2709",
+        "current_state": "HE_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2710",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T12:00:00Z"
+      },
+      {
+        "order_id": "ORD-2711",
+        "current_state": "MISSING_INFO_HOLD",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T07:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Which orders are waiting on external results?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-2701",
+      "ORD-2703"
+    ],
+    "reasoning": "ORD-2701 and ORD-2703 are waiting on external results. Both are in FISH_SEND_OUT state, meaning specimens have been sent to an external laboratory for FISH testing after equivocal HER2 IHC results. ORD-2701 (routine, sent out Jan 12) and ORD-2703 (rush, sent out Jan 13) are both awaiting FISH results from the external lab before they can proceed to resulting."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Which orders are waiting on external results?",
+        "orders": [
+          {
+            "order_id": "ORD-2701",
+            "current_state": "FISH_SEND_OUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "FISH_SUGGESTED"
+            ],
+            "created_at": "2025-01-12T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2702",
+            "current_state": "ACCEPTED",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2703",
+            "current_state": "FISH_SEND_OUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [
+              "FISH_SUGGESTED"
+            ],
+            "created_at": "2025-01-13T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2704",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T16:00:00Z"
+          },
+          {
+            "order_id": "ORD-2705",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2706",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2707",
+            "current_state": "RESULTING_HOLD",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "MISSING_INFO_PROCEED"
+            ],
+            "created_at": "2025-01-13T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2708",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-11T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2709",
+            "current_state": "HE_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2710",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T12:00:00Z"
+          },
+          {
+            "order_id": "ORD-2711",
+            "current_state": "MISSING_INFO_HOLD",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T07:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-027"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

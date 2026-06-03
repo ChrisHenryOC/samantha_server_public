@@ -1,0 +1,22 @@
+rule_id: RES-005
+step: RESULTING
+applies_at: null
+event_type: report_generated
+severity: null
+priority: 5
+# Final state transition: a successful report-generated event drives the
+# order to ORDER_COMPLETE.  Failure outcomes leave the order in
+# REPORT_GENERATION with applied_rules=[] (current behavior; revisited if
+# GH-15 lands a catch-all for retry/abort).
+when:
+  equals:
+    field: event.outcome
+    value: success
+action:
+  transition: ORDER_COMPLETE
+  set_flags: []
+  clear_flags: []
+  outcome: completed_order
+  panel: null
+  branch: null
+source: knowledge_base/sops/resulting.md#8.5

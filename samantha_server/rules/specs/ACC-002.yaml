@@ -1,0 +1,17 @@
+rule_id: ACC-002
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: HOLD
+priority: null
+when:
+  is_null:
+    field: patient_sex
+action:
+  transition: MISSING_INFO_HOLD
+  set_flags: []
+  clear_flags: []
+  outcome: held_missing_sex
+  panel: null
+  branch: null
+source: knowledge_base/sops/accessioning.md#3.1

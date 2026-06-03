@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "sample_size": 2516,
+    "time_range": "2026-05-20 to 2026-05-27 (missing days collapsed)",
+    "note": "data generated during testing; missing days collapsed"
+  },
+  "days": [
+    {"date": "2026-05-20", "deterministic": 380, "llm": 20},
+    {"date": "2026-05-21", "deterministic": 412, "llm": 18},
+    {"date": "2026-05-22", "deterministic": 395, "llm": 25},
+    {"date": "2026-05-25", "deterministic": 401, "llm": 16},
+    {"date": "2026-05-26", "deterministic": 388, "llm": 22},
+    {"date": "2026-05-27", "deterministic": 420, "llm": 19}
+  ]
+}

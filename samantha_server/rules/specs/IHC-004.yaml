@@ -1,0 +1,22 @@
+rule_id: IHC-004
+step: IHC
+applies_at: IHC_QC
+event_type: ihc_qc
+severity: null
+priority: 4
+when:
+  boolean_and:
+    - equals:
+        field: event.staining_failure
+        value: true
+    - equals:
+        field: event.tissue_available
+        value: true
+action:
+  transition: IHC_STAINING
+  set_flags: []
+  clear_flags: []
+  outcome: retried_ihc_staining_failed
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#6.4

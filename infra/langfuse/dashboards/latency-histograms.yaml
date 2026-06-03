@@ -1,0 +1,45 @@
+# Latency histograms panel (Plan § Step 11 panel #3).
+#
+# `latency_us.engine` and `latency_us.llm_call` p50 / p95 / p99 over
+# rolling windows. Per the trace-schema, `engine` is null on the LLM
+# path and `llm_call` is null on the deterministic path — the panel
+# excludes nulls per metric so the percentiles aren't skewed.
+#
+# Operator step: replicate this panel in the Langfuse v3 UI per the
+# README in this directory.
+
+name: latency_histograms
+description: >-
+  p50/p95/p99 of latency_us.engine (deterministic path) and
+  latency_us.llm_call (LLM path) over rolling 24h / 7d windows.
+panel_type: histogram
+
+filters:
+  - field: langfuse.trace.metadata.environment
+    op: equals
+    value: production
+
+windows:
+  - 24h
+  - 7d
+
+metrics:
+  - field: latency_us.engine
+    aggregation: percentiles
+    percentiles:
+      - 50
+      - 95
+      - 99
+    # Exclude nulls so the deterministic-path histogram isn't skewed
+    # by every LLM-routed event (where engine is null).
+    exclude_null: true
+
+  - field: latency_us.llm_call
+    aggregation: percentiles
+    percentiles:
+      - 50
+      - 95
+      - 99
+    # Symmetric: null on deterministic path; same exclusion rationale
+    # as the engine metric above.
+    exclude_null: true

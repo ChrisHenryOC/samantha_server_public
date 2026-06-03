@@ -1,0 +1,36 @@
+rule_id: SP-007
+step: SAMPLE_PREP
+applies_at: null
+event_type:
+  - sectioning_complete
+severity: null
+priority: 0
+# Clears RECUT_REQUESTED at recut completion (sectioning_complete success
+# while the order carries the flag set by HE-009). Per
+# knowledge_base/workflow_states.yaml flags.RECUT_REQUESTED.cleared_by:
+# "Recut completed". Priority 0 preempts SP-001 (priority 1) so SP-007
+# wins on the recut path; SP-001 still wins on first-pass sectioning.
+#
+# event_type scope: only sectioning_complete. The SOP's "Recut completed"
+# is broad in prose, but the recut work itself is the sectioning act —
+# subsequent post-recut events (sample_prep_qc, he_staining_complete,
+# he_qc, second pathologist_he_review) are the *consumption* of the recut,
+# not its completion. Keep the trigger narrow so the flag clears at the
+# earliest defensible point (matches SC-093 step 10 and SC-099 step 10).
+when:
+  boolean_and:
+    - equals:
+        field: event.outcome
+        value: success
+    - contains:
+        field: flags
+        value: RECUT_REQUESTED
+action:
+  transition: ADVANCE_SAMPLE_PREP
+  set_flags: []
+  clear_flags:
+    - RECUT_REQUESTED
+  outcome: completed_recut_cleared_flag
+  panel: null
+  branch: null
+source: knowledge_base/workflow_states.yaml#flags.RECUT_REQUESTED

@@ -1,0 +1,266 @@
+{
+  "scenario_id": "QR-024",
+  "category": "query",
+  "tier": 5,
+  "description": "Cross-order reasoning \u2014 identifying orders needing pathologist attention",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-2401",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2402",
+        "current_state": "ACCEPTED",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2403",
+        "current_state": "SUGGEST_FISH_REFLEX",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "created_at": "2025-01-13T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2404",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T16:00:00Z"
+      },
+      {
+        "order_id": "ORD-2405",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2406",
+        "current_state": "IHC_STAINING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2407",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2408",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-11T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2409",
+        "current_state": "RESULTING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2410",
+        "current_state": "HE_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T12:00:00Z"
+      },
+      {
+        "order_id": "ORD-2411",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T06:00:00Z"
+      },
+      {
+        "order_id": "ORD-2412",
+        "current_state": "FISH_SEND_OUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "created_at": "2025-01-12T10:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Do any orders need pathologist attention right now?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-2401",
+      "ORD-2407",
+      "ORD-2403",
+      "ORD-2405",
+      "ORD-2411"
+    ],
+    "reasoning": "Five orders require pathologist attention. ORD-2401 and ORD-2407 are in PATHOLOGIST_HE_REVIEW awaiting H&E slide review. ORD-2403 is in SUGGEST_FISH_REFLEX with a FISH_SUGGESTED flag \u2014 the pathologist must decide whether to approve FISH reflex testing for the equivocal HER2 result. ORD-2405 and ORD-2411 are in PATHOLOGIST_SIGNOUT awaiting final case signout."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Do any orders need pathologist attention right now?",
+        "orders": [
+          {
+            "order_id": "ORD-2401",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2402",
+            "current_state": "ACCEPTED",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2403",
+            "current_state": "SUGGEST_FISH_REFLEX",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "FISH_SUGGESTED"
+            ],
+            "created_at": "2025-01-13T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2404",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T16:00:00Z"
+          },
+          {
+            "order_id": "ORD-2405",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2406",
+            "current_state": "IHC_STAINING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2407",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2408",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-11T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2409",
+            "current_state": "RESULTING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2410",
+            "current_state": "HE_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T12:00:00Z"
+          },
+          {
+            "order_id": "ORD-2411",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T06:00:00Z"
+          },
+          {
+            "order_id": "ORD-2412",
+            "current_state": "FISH_SEND_OUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "FISH_SUGGESTED"
+            ],
+            "created_at": "2025-01-12T10:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-024"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "pathologist"
+}

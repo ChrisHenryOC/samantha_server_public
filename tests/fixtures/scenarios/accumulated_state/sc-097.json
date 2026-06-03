@@ -1,0 +1,276 @@
+{
+  "scenario_id": "SC-097",
+  "category": "accumulated_state",
+  "description": "MISSING_INFO_PROCEED flag set at accessioning persists through workflow to resulting hold",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0097, Helen",
+        "age": 44,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 7.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_PROCEED",
+        "applied_rules": [
+          "ACC-007"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 3,
+      "event_type": "processing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_EMBEDDING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 4,
+      "event_type": "embedding_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_SECTIONING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 5,
+      "event_type": "sectioning_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_QC",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 6,
+      "event_type": "sample_prep_qc",
+      "event_data": {
+        "outcome": "pass"
+      },
+      "expected_output": {
+        "next_state": "HE_STAINING",
+        "applied_rules": [
+          "SP-004"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 7,
+      "event_type": "he_staining_complete",
+      "event_data": {
+        "fixation_issue": false
+      },
+      "expected_output": {
+        "next_state": "HE_QC",
+        "applied_rules": [],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 8,
+      "event_type": "he_qc",
+      "event_data": {
+        "outcome": "pass"
+      },
+      "expected_output": {
+        "next_state": "PATHOLOGIST_HE_REVIEW",
+        "applied_rules": [
+          "HE-001"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 9,
+      "event_type": "pathologist_he_review",
+      "event_data": {
+        "diagnosis": "invasive_carcinoma"
+      },
+      "expected_output": {
+        "next_state": "IHC_STAINING",
+        "applied_rules": [
+          "HE-005"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 10,
+      "event_type": "ihc_staining_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "IHC_QC",
+        "applied_rules": [],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 11,
+      "event_type": "ihc_qc",
+      "event_data": {
+        "slides": [
+          {
+            "test": "ER",
+            "qc_result": "pass"
+          },
+          {
+            "test": "PR",
+            "qc_result": "pass"
+          },
+          {
+            "test": "HER2",
+            "qc_result": "pass"
+          },
+          {
+            "test": "Ki-67",
+            "qc_result": "pass"
+          }
+        ],
+        "all_slides_complete": true
+      },
+      "expected_output": {
+        "next_state": "IHC_SCORING",
+        "applied_rules": [
+          "IHC-002"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 12,
+      "event_type": "ihc_scoring",
+      "event_data": {
+        "scores": [
+          {
+            "test": "ER",
+            "value": "75%",
+            "equivocal": false
+          },
+          {
+            "test": "PR",
+            "value": "60%",
+            "equivocal": false
+          },
+          {
+            "test": "HER2",
+            "value": "1+",
+            "equivocal": false
+          },
+          {
+            "test": "Ki-67",
+            "value": "15%",
+            "equivocal": false
+          }
+        ],
+        "all_scores_complete": true,
+        "any_equivocal": false
+      },
+      "expected_output": {
+        "next_state": "RESULTING",
+        "applied_rules": [
+          "IHC-006"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 13,
+      "event_type": "resulting_review",
+      "event_data": {
+        "outcome": "hold"
+      },
+      "expected_output": {
+        "next_state": "RESULTING_HOLD",
+        "applied_rules": [
+          "RES-001"
+        ],
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

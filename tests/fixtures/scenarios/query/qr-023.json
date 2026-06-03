@@ -1,0 +1,330 @@
+{
+  "scenario_id": "QR-023",
+  "category": "query",
+  "tier": 5,
+  "description": "Cross-order reasoning — enumerating orders rejected by ACC-006 for HER2 fixation time outside the clinical [6.0, 72.0]h tolerance. Reframed (2026-05-15) from prior 'approaching the 72-hour limit' phrasing, which implied a running clock; fixation is a fixed-duration historical event and the borderline-band concept (FIXATION_WARNING / GH-175) is deferred post-POC. The reframe makes the question deterministic against ACC-006 as written. ORD-2311 is a deliberate state/content-decoupling control: it sits in DO_NOT_PROCESS with in-range fixation, so a model that filters on state alone returns a superset and only narrows correctly by reading fixation_time_hours — the field GH-226 Slice B plumbed for this fixture.",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-2301",
+        "current_state": "DO_NOT_PROCESS",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": 96.0,
+        "created_at": "2025-01-15T06:00:00Z"
+      },
+      {
+        "order_id": "ORD-2302",
+        "current_state": "ACCESSIONING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "ordered_tests": [
+          "H&E"
+        ],
+        "fixation_time_hours": 24.0,
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2303",
+        "current_state": "DO_NOT_PROCESS",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": 84.0,
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2304",
+        "current_state": "ACCESSIONING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": 12.0,
+        "created_at": "2025-01-15T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2305",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": 18.0,
+        "created_at": "2025-01-15T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-2306",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "H&E"
+        ],
+        "fixation_time_hours": null,
+        "created_at": "2025-01-14T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2307",
+        "current_state": "HE_STAINING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": null,
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2308",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": null,
+        "created_at": "2025-01-12T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2309",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "H&E"
+        ],
+        "fixation_time_hours": null,
+        "created_at": "2025-01-13T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2310",
+        "current_state": "DO_NOT_PROCESS",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": 4.0,
+        "created_at": "2025-01-15T05:00:00Z"
+      },
+      {
+        "order_id": "ORD-2311",
+        "current_state": "DO_NOT_PROCESS",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "INADEQUATE_SAMPLE_REJECTION"
+        ],
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "fixation_time_hours": 30.0,
+        "created_at": "2025-01-15T04:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Which orders failed the HER2 fixation time requirement?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-2301",
+      "ORD-2303",
+      "ORD-2310"
+    ],
+    "reasoning": "Rule ACC-006 rejects orders with HER2 evaluation (Breast IHC Panel includes HER2) when fixation_time_hours is outside the [6.0, 72.0]h clinical tolerance. Three orders violate this requirement and were transitioned to DO_NOT_PROCESS: ORD-2301 (96.0h, over the 72h ceiling), ORD-2303 (84.0h, over the 72h ceiling), and ORD-2310 (4.0h, under the 6h floor). ORD-2304 (12.0h) and ORD-2305 (18.0h) have Breast IHC Panel ordered but fixation is within tolerance. ORD-2311 is in DO_NOT_PROCESS but its fixation (30.0h) is within tolerance and its flag (INADEQUATE_SAMPLE_REJECTION) names the actual rejection reason — it is not a HER2 fixation failure. Orders with only H&E (ORD-2302, ORD-2306, ORD-2309) are not subject to ACC-006. ORD-2307 and ORD-2308 are past the ACCESSIONING gate where ACC-006 applies; their null fixation reflects post-accessioning data shedding, not an active fixation check."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Which orders failed the HER2 fixation time requirement?",
+        "orders": [
+          {
+            "order_id": "ORD-2301",
+            "current_state": "DO_NOT_PROCESS",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": 96.0,
+            "created_at": "2025-01-15T06:00:00Z"
+          },
+          {
+            "order_id": "ORD-2302",
+            "current_state": "ACCESSIONING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "ordered_tests": [
+              "H&E"
+            ],
+            "fixation_time_hours": 24.0,
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2303",
+            "current_state": "DO_NOT_PROCESS",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": 84.0,
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2304",
+            "current_state": "ACCESSIONING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": 12.0,
+            "created_at": "2025-01-15T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2305",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": 18.0,
+            "created_at": "2025-01-15T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-2306",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "H&E"
+            ],
+            "fixation_time_hours": null,
+            "created_at": "2025-01-14T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2307",
+            "current_state": "HE_STAINING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": null,
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2308",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": null,
+            "created_at": "2025-01-12T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2309",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "H&E"
+            ],
+            "fixation_time_hours": null,
+            "created_at": "2025-01-13T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2310",
+            "current_state": "DO_NOT_PROCESS",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": 4.0,
+            "created_at": "2025-01-15T05:00:00Z"
+          },
+          {
+            "order_id": "ORD-2311",
+            "current_state": "DO_NOT_PROCESS",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "INADEQUATE_SAMPLE_REJECTION"
+            ],
+            "ordered_tests": [
+              "Breast IHC Panel"
+            ],
+            "fixation_time_hours": 30.0,
+            "created_at": "2025-01-15T04:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-023"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "histotech"
+}

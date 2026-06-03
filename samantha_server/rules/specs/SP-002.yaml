@@ -1,0 +1,24 @@
+rule_id: SP-002
+step: SAMPLE_PREP
+applies_at: null
+event_type:
+  - processing_complete
+  - embedding_complete
+  - sectioning_complete
+severity: null
+priority: 2
+when:
+  equals:
+    field: event.outcome
+    value: failure
+action:
+  # RETRY_SAMPLE_PREP is a symbolic transition. The kernel (GH-15) resolves
+  # the actual retry state from current_state at dispatch time (loops back
+  # to the same SAMPLE_PREP_* sub-state).
+  transition: RETRY_SAMPLE_PREP
+  set_flags: []
+  clear_flags: []
+  outcome: retried_sample_prep_step
+  panel: null
+  branch: null
+source: knowledge_base/sops/sample_prep.md#2.2

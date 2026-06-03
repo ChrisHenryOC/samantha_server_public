@@ -1,0 +1,128 @@
+{
+  "scenario_id": "QR-014",
+  "category": "query",
+  "tier": 2,
+  "description": "Order status \u2014 checking if an order has been rejected",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-1401",
+        "current_state": "DO_NOT_PROCESS",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-1402",
+        "current_state": "ACCEPTED",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1403",
+        "current_state": "HE_STAINING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-1404",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-1405",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T08:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Has order ORD-1401 been rejected?",
+  "expected_output": {
+    "answer_type": "order_status",
+    "order_ids": [
+      "ORD-1401"
+    ],
+    "reasoning": "Yes, ORD-1401 is in DO_NOT_PROCESS state and has been rejected. The DO_NOT_PROCESS state is a terminal state indicating the specimen was rejected during accessioning and will not proceed through the workflow."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Has order ORD-1401 been rejected?",
+        "orders": [
+          {
+            "order_id": "ORD-1401",
+            "current_state": "DO_NOT_PROCESS",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-1402",
+            "current_state": "ACCEPTED",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1403",
+            "current_state": "HE_STAINING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-1404",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-1405",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T08:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-014"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

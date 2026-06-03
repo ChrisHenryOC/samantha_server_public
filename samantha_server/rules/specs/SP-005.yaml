@@ -1,0 +1,19 @@
+rule_id: SP-005
+step: SAMPLE_PREP
+applies_at: null
+event_type: sample_prep_qc
+severity: null
+priority: 5
+when:
+  in_enum:
+    field: event.outcome
+    values:
+      - fail_tissue_available
+action:
+  transition: SAMPLE_PREP_SECTIONING
+  set_flags: []
+  clear_flags: []
+  outcome: retried_sample_prep_sectioning
+  panel: null
+  branch: null
+source: knowledge_base/sops/sample_prep.md#3.2

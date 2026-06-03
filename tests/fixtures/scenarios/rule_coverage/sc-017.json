@@ -1,0 +1,48 @@
+{
+  "scenario_id": "SC-017",
+  "category": "rule_coverage",
+  "description": "SP-001: Grossing success \u2192 SAMPLE_PREP_PROCESSING",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0017, Hannah",
+        "age": 55,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

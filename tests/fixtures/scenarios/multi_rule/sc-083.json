@@ -1,0 +1,34 @@
+{
+  "scenario_id": "SC-083",
+  "category": "multi_rule",
+  "description": "HOLD vs PROCEED priority: missing sex (ACC-002, HOLD) + missing billing (ACC-007, PROCEED) \u2192 MISSING_INFO_HOLD; HOLD beats PROCEED",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0083, Dana",
+        "age": 41,
+        "sex": null,
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_HOLD",
+        "applied_rules": [
+          "ACC-002",
+          "ACC-007"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

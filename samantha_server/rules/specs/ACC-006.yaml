@@ -1,0 +1,42 @@
+rule_id: ACC-006
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: REJECT
+priority: null
+when:
+  boolean_and:
+    - boolean_or:
+        # Breast IHC Panel implies HER2 evaluation per SOP. If the panel
+        # definition ever changes (e.g., DCIS-only variants), revisit this branch.
+        # See knowledge_base/sops/<panel>.md (samantha-public).
+        - contains:
+            field: ordered_tests
+            value: her2
+        - contains:
+            field: ordered_tests
+            value: breast ihc panel
+    # Boundary with the missing-data path: ACC-009 owns the null-fixation
+    # case (MISSING_INFO_HOLD); ACC-006 only triggers on out-of-range values.
+    # Without this guard, both Not(threshold_gte) and Not(threshold_lte)
+    # evaluate True on None (fail-closed primitives) and ACC-006 false-fires.
+    - not:
+        is_null:
+          field: fixation_time_hours
+    - boolean_or:
+        - not:
+            threshold_gte:
+              field: fixation_time_hours
+              value: 6.0
+        - not:
+            threshold_lte:
+              field: fixation_time_hours
+              value: 72.0
+action:
+  transition: DO_NOT_PROCESS
+  set_flags: []
+  clear_flags: []
+  outcome: rejected_fixation_out_of_tolerance
+  panel: null
+  branch: null
+source: knowledge_base/rules/fixation_requirements.md#ACC-006

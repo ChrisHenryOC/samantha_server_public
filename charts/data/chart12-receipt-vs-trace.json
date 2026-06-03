@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "join_key": "event_input_hash",
+    "event_input_hash": "2cb5603bc342ff93ff5c3f0336ba546c88ddf3a178a68dc5d855edcc6d02b4ee",
+    "source": "receipts sqlite + Langfuse, same decision"
+  },
+  "receipt": {
+    "receipt_id": "01KSK99SMCK1HZC7EMXDH3Z1YJ",
+    "applied_rule_id": "ACC-009",
+    "outcome": "held_missing_fixation_time",
+    "next_state": "MISSING_INFO_HOLD",
+    "signer_key_id": "v1",
+    "signed_at_utc": "2026-05-26T23:18:14.924788+00:00"
+  },
+  "trace": {
+    "trace_id": "416b754c56c7229993f3df1f7a6535b3",
+    "name": "SC-105",
+    "timestamp": "2026-05-26T23:25:24.838Z",
+    "outcome": "held_missing_fixation_time",
+    "routing_path": "deterministic",
+    "next_state": "MISSING_INFO_HOLD",
+    "event_input_hash": "2cb5603bc342ff93ff5c3f0336ba546c88ddf3a178a68dc5d855edcc6d02b4ee"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_id": "LR-002",
+  "category": "llm_review",
+  "description": "Ambiguous specimen (imprint) -> ACC-010 routes to PENDING_LLM_REVIEW; LLM rejects -> DO_NOT_PROCESS",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "Test, Bob",
+        "age": 60,
+        "sex": "M",
+        "specimen_type": "imprint",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": ["ER"],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "PENDING_LLM_REVIEW",
+        "applied_rules": ["ACC-010"],
+        "flags": ["LLM_REVIEW_REQUESTED"],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "order_received",
+      "event_data": {},
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm",
+        "llm_disposition": "rejected"
+      }
+    }
+  ]
+}

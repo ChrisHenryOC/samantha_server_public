@@ -1,0 +1,30 @@
+rule_id: RES-003
+step: RESULTING
+applies_at: null
+event_type: resulting_review
+severity: null
+priority: 3
+# RES-003 fires only when the resulting review event reports `advance` AND
+# the order carries no MISSING_INFO_PROCEED flag.  RES-001 (priority 1)
+# preempts RES-003 on the same `resulting_review` event whenever the flag
+# is set, so the second clause is redundant for dispatch but pinned here
+# for receipt-grade traceability — the predicate must fail loudly if a
+# future kernel change breaks the priority ordering.
+# Scenario vocabulary: 'advance' means "proceed to pathologist signout".
+when:
+  boolean_and:
+    - equals:
+        field: event.outcome
+        value: advance
+    - not:
+        contains:
+          field: flags
+          value: MISSING_INFO_PROCEED
+action:
+  transition: PATHOLOGIST_SIGNOUT
+  set_flags: []
+  clear_flags: []
+  outcome: advanced_pathologist_signout
+  panel: null
+  branch: null
+source: knowledge_base/sops/resulting.md#8.3

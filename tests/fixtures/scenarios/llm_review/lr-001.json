@@ -1,0 +1,41 @@
+{
+  "scenario_id": "LR-001",
+  "category": "llm_review",
+  "description": "Ambiguous specimen (frozen_section) -> ACC-010 routes to PENDING_LLM_REVIEW; LLM accepts -> ACCEPTED",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "Test, Alice",
+        "age": 45,
+        "sex": "F",
+        "specimen_type": "frozen_section",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": ["ER", "PR"],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "PENDING_LLM_REVIEW",
+        "applied_rules": ["ACC-010"],
+        "flags": ["LLM_REVIEW_REQUESTED"],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "order_received",
+      "event_data": {},
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm",
+        "llm_disposition": "accepted"
+      }
+    }
+  ]
+}

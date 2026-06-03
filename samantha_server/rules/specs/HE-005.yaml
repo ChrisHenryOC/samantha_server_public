@@ -1,0 +1,20 @@
+rule_id: HE-005
+step: PATHOLOGIST_HE_REVIEW
+applies_at: null
+event_type: pathologist_he_review
+severity: null
+priority: 1
+when:
+  equals:
+    field: event.diagnosis
+    value: invasive_carcinoma
+action:
+  transition: IHC_STAINING
+  set_flags: []
+  clear_flags: []
+  outcome: proceeded_ihc_invasive_carcinoma
+  panel:
+    base: [ER, PR, HER2, Ki-67]
+    conditional: []
+  branch: null
+source: knowledge_base/rules/breast_ihc_panels.md#HE-005

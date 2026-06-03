@@ -1,0 +1,128 @@
+{
+  "scenario_id": "QR-011",
+  "category": "query",
+  "tier": 2,
+  "description": "Order status \u2014 checking if a completed order is done",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-1101",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1102",
+        "current_state": "REPORT_GENERATION",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-13T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-1103",
+        "current_state": "ACCEPTED",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1104",
+        "current_state": "HE_STAINING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-1105",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T07:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Is order ORD-1101 done?",
+  "expected_output": {
+    "answer_type": "order_status",
+    "order_ids": [
+      "ORD-1101"
+    ],
+    "reasoning": "Yes, ORD-1101 is in ORDER_COMPLETE state. The final report has been generated and the order is fully complete."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Is order ORD-1101 done?",
+        "orders": [
+          {
+            "order_id": "ORD-1101",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1102",
+            "current_state": "REPORT_GENERATION",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-13T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-1103",
+            "current_state": "ACCEPTED",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1104",
+            "current_state": "HE_STAINING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-1105",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T07:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-011"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

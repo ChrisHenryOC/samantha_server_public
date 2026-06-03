@@ -1,0 +1,136 @@
+{
+  "scenario_id": "SC-034",
+  "category": "rule_coverage",
+  "description": "HE-003: H&E QC fails, recut needed, tissue available \u2192 SAMPLE_PREP_SECTIONING",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0034, Ingrid",
+        "age": 55,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 12.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "rush",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 3,
+      "event_type": "processing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_EMBEDDING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 4,
+      "event_type": "embedding_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_SECTIONING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 5,
+      "event_type": "sectioning_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_QC",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 6,
+      "event_type": "sample_prep_qc",
+      "event_data": {
+        "outcome": "pass"
+      },
+      "expected_output": {
+        "next_state": "HE_STAINING",
+        "applied_rules": [
+          "SP-004"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 7,
+      "event_type": "he_staining_complete",
+      "event_data": {
+        "fixation_issue": false
+      },
+      "expected_output": {
+        "next_state": "HE_QC",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 8,
+      "event_type": "he_qc",
+      "event_data": {
+        "outcome": "fail_recut"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_SECTIONING",
+        "applied_rules": [
+          "HE-003"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+ "_meta": {
+  "chart": "Chart 1: model accuracy ranking",
+  "source": "Locked N=5 stable baseline, 2026-05-26",
+  "notes": "Stable accuracy = a fixture passing all 5 sweeps over the full 149-fixture corpus. Values from docs/presentation/current-truth.md, verified against results/baselines/post-fix-isolated-*.txt."
+ },
+ "models": [
+  {"label": "Qwen3-Next-80B-A3B-Instruct-4bit", "passed": 149, "total": 149, "incumbent": true},
+  {"label": "Qwen3.5-35B-A3B-8bit", "passed": 147, "total": 149, "incumbent": false},
+  {"label": "gemma-4-26B-A4B-it-MLX-4bit", "passed": 147, "total": 149, "incumbent": false},
+  {"label": "Qwen2.5-Coder-32B-Instruct-MLX-4bit", "passed": 144, "total": 149, "incumbent": false}
+ ]
+}

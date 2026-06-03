@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-107",
+  "category": "hallucination",
+  "description": "Unrecognized test name 'PD-L1' in ordered_tests; no accessioning rule validates test names \u2192 ACCEPTED (ACC-008)",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0107, Janet",
+        "age": 62,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "PD-L1"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

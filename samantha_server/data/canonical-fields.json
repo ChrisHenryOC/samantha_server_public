@@ -1,0 +1,55 @@
+{
+  "_comment": "Pick lists for string-field canonicalization. All values are in canonical (casefolded, trimmed) form. See docs/rule-breakdown/canonical-fields.md for policy.",
+  "specimen_type": [
+    "biopsy",
+    "core_needle_biopsy",
+    "excision",
+    "lumpectomy",
+    "mastectomy",
+    "re_excision",
+    "vacuum_assisted_biopsy",
+    "resection",
+    "fna",
+    "fine_needle_aspiration",
+    "cytology",
+    "cytospin",
+    "cell_block",
+    "bone_marrow_aspirate",
+    "body_fluid",
+    "touch_prep",
+    "direct_smear",
+    "thinprep",
+    "surepath",
+    "brushing",
+    "washing",
+    "swab"
+  ],
+  "anatomic_site": [
+    "breast",
+    "left breast",
+    "right breast",
+    "axillary lymph node",
+    "chest wall",
+    "lung",
+    "skin overlying breast"
+  ],
+  "fixative": [
+    "formalin",
+    "alcohol",
+    "fresh"
+  ],
+  "priority": [
+    "routine",
+    "stat",
+    "rush"
+  ],
+  "ordered_tests": [
+    "her2",
+    "breast ihc panel",
+    "er",
+    "pr",
+    "ki-67",
+    "h&e",
+    "pd-l1"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-014",
+  "category": "rule_coverage",
+  "description": "ACC-006: Fixation over 72hr (73.0hr), all else valid",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0014, Olivia",
+        "age": 60,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 73.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [
+          "ACC-006"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

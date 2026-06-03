@@ -1,0 +1,18 @@
+rule_id: IHC-011
+step: IHC
+applies_at: FISH_SEND_OUT
+event_type: fish_result
+severity: null
+priority: 11
+when:
+  equals:
+    field: event.status
+    value: qns
+action:
+  transition: ORDER_TERMINATED_QNS
+  set_flags: []
+  clear_flags: []
+  outcome: aborted_fish_qns
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#7.6

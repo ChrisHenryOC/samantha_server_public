@@ -1,0 +1,222 @@
+{
+  "scenario_id": "QR-018",
+  "category": "query",
+  "tier": 3,
+  "description": "Flag reasoning \u2014 what must happen before an order can be released",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-1801",
+        "current_state": "IHC_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-1802",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1803",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-1804",
+        "current_state": "RESULTING_HOLD",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "created_at": "2025-01-12T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1805",
+        "current_state": "SAMPLE_PREP_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T16:00:00Z"
+      },
+      {
+        "order_id": "ORD-1806",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-11T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-1807",
+        "current_state": "HE_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T12:00:00Z"
+      },
+      {
+        "order_id": "ORD-1808",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-13T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-1809",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-1810",
+        "current_state": "RESULTING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T14:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "What needs to happen before order ORD-1804 can be released?",
+  "expected_output": {
+    "answer_type": "order_status",
+    "order_ids": [
+      "ORD-1804"
+    ],
+    "reasoning": "ORD-1804 is in RESULTING_HOLD due to the MISSING_INFO_PROCEED flag. The missing billing information that was noted at accessioning (ACC-007) must be received. Once the information is provided, the flag can be cleared per rule RES-002, allowing the order to advance from RESULTING_HOLD to RESULTING and then proceed to pathologist signout."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "What needs to happen before order ORD-1804 can be released?",
+        "orders": [
+          {
+            "order_id": "ORD-1801",
+            "current_state": "IHC_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-1802",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1803",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-1804",
+            "current_state": "RESULTING_HOLD",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "MISSING_INFO_PROCEED"
+            ],
+            "created_at": "2025-01-12T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1805",
+            "current_state": "SAMPLE_PREP_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T16:00:00Z"
+          },
+          {
+            "order_id": "ORD-1806",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-11T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-1807",
+            "current_state": "HE_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T12:00:00Z"
+          },
+          {
+            "order_id": "ORD-1808",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-13T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-1809",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-1810",
+            "current_state": "RESULTING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T14:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-018"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

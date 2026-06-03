@@ -1,0 +1,25 @@
+rule_id: SP-001
+step: SAMPLE_PREP
+applies_at: null
+event_type:
+  - grossing_complete
+  - processing_complete
+  - embedding_complete
+  - sectioning_complete
+severity: null  # SP rules dispatch by priority; severity is unused for non-ACCESSIONING steps
+priority: 1
+when:
+  equals:
+    field: event.outcome
+    value: success
+action:
+  # ADVANCE_SAMPLE_PREP is a symbolic transition. The kernel (GH-15) resolves
+  # the actual next state from current_state at dispatch time:
+  # SAMPLE_PREP_PROCESSING → SAMPLE_PREP_EMBEDDING → SAMPLE_PREP_SECTIONING → SAMPLE_PREP_QC.
+  transition: ADVANCE_SAMPLE_PREP
+  set_flags: []
+  clear_flags: []
+  outcome: advanced_sample_prep_step
+  panel: null
+  branch: null
+source: knowledge_base/sops/sample_prep.md#2.1

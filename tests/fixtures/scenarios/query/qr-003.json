@@ -1,0 +1,147 @@
+{
+  "scenario_id": "QR-003",
+  "category": "query",
+  "tier": 1,
+  "description": "Simple lookup \u2014 orders needing H&E quality control review",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-301",
+        "current_state": "HE_QC",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-302",
+        "current_state": "HE_STAINING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-303",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-304",
+        "current_state": "HE_QC",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-305",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-306",
+        "current_state": "IHC_STAINING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T10:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "What orders need H&E QC right now?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-301",
+      "ORD-304"
+    ],
+    "reasoning": "Orders in HE_QC state are awaiting H&E quality control review. ORD-301 and ORD-304 are both in HE_QC state."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "What orders need H&E QC right now?",
+        "orders": [
+          {
+            "order_id": "ORD-301",
+            "current_state": "HE_QC",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-302",
+            "current_state": "HE_STAINING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-303",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-304",
+            "current_state": "HE_QC",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-305",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-306",
+            "current_state": "IHC_STAINING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T10:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-003"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "histotech"
+}

@@ -1,0 +1,44 @@
+{
+  "scenario_id": "LR-005",
+  "category": "llm_review",
+  "description": "Ambiguous anatomic site 'chest wall' in recurrence context (biopsy + ER/PR) -> ACC-011 routes to PENDING_LLM_REVIEW; LLM accepts -> ACCEPTED",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-LR005, Carol",
+        "age": 62,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "chest wall",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "ER",
+          "PR"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "PENDING_LLM_REVIEW",
+        "applied_rules": ["ACC-011"],
+        "flags": ["LLM_REVIEW_REQUESTED"],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "order_received",
+      "event_data": {},
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm",
+        "llm_disposition": "accepted"
+      }
+    }
+  ]
+}

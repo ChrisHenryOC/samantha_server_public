@@ -1,0 +1,37 @@
+{
+  "scenario_id": "SC-082",
+  "category": "multi_rule",
+  "description": "All accessioning defects: missing name + missing sex + invalid site + bad fixation + no billing \u2192 DO_NOT_PROCESS, applied_rules lists all 5 matching rules",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": null,
+        "age": 55,
+        "sex": null,
+        "specimen_type": "biopsy",
+        "anatomic_site": "lung",
+        "fixative": "formalin",
+        "fixation_time_hours": 5.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [
+          "ACC-003",
+          "ACC-006",
+          "ACC-001",
+          "ACC-002",
+          "ACC-007"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

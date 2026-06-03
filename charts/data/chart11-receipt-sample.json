@@ -1,0 +1,76 @@
+{
+  "_meta": {
+    "source": "results/receipts/convex-incumbent.sqlite (real sweep)",
+    "verification": "valid",
+    "time_range": "2026-05-26T23:15:00Z to 2026-05-26T23:26:00Z"
+  },
+  "receipt": {
+    "receipt_id": "01KSK99SMCK1HZC7EMXDH3Z1YJ",
+    "scenario_id": "SC-105",
+    "applied_rule_id": "ACC-009",
+    "outcome": "held_missing_fixation_time",
+    "next_state": "MISSING_INFO_HOLD",
+    "signer_key_id": "v1",
+    "signature_truncated": "06f82793282dc6df\u2026a7d5210b8c9fab08",
+    "signature_bytes": 64,
+    "signed_at_utc": "2026-05-26T23:18:14.924788+00:00",
+    "latency_us": 164,
+    "primitive_traces": {
+      "ACC-007": {
+        "primitive": "Equals",
+        "field": "billing_info_present",
+        "expected": false,
+        "actual": false,
+        "result": true,
+        "children": []
+      },
+      "ACC-009": {
+        "primitive": "BooleanAnd",
+        "field": null,
+        "expected": null,
+        "actual": null,
+        "result": true,
+        "children": [
+          {
+            "primitive": "BooleanOr",
+            "field": null,
+            "expected": null,
+            "actual": null,
+            "result": true,
+            "children": [
+              {
+                "primitive": "Contains",
+                "field": "ordered_tests",
+                "expected": "her2",
+                "actual": [
+                  "Breast IHC Panel"
+                ],
+                "result": false,
+                "children": []
+              },
+              {
+                "primitive": "Contains",
+                "field": "ordered_tests",
+                "expected": "breast ihc panel",
+                "actual": [
+                  "Breast IHC Panel"
+                ],
+                "result": true,
+                "children": []
+              }
+            ]
+          },
+          {
+            "primitive": "IsNull",
+            "field": "fixation_time_hours",
+            "expected": null,
+            "actual": null,
+            "result": true,
+            "children": []
+          }
+        ]
+      }
+    },
+    "verification": "valid"
+  }
+}

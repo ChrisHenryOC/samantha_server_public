@@ -1,0 +1,93 @@
+{
+  "scenario_id": "SC-020",
+  "category": "rule_coverage",
+  "description": "SP-002: Sectioning fails, tissue available (excision) \u2192 retry SAMPLE_PREP_SECTIONING (self-loop)",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0020, Margaret",
+        "age": 67,
+        "sex": "F",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 48.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 3,
+      "event_type": "processing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_EMBEDDING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 4,
+      "event_type": "embedding_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_SECTIONING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 5,
+      "event_type": "sectioning_complete",
+      "event_data": {
+        "outcome": "failure"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_SECTIONING",
+        "applied_rules": [
+          "SP-002"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

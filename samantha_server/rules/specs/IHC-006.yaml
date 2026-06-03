@@ -1,0 +1,22 @@
+rule_id: IHC-006
+step: IHC
+applies_at: IHC_SCORING
+event_type: ihc_scoring
+severity: null
+priority: 6
+when:
+  boolean_and:
+    - equals:
+        field: event.all_scores_complete
+        value: true
+    - equals:
+        field: event.any_equivocal
+        value: false
+action:
+  transition: RESULTING
+  set_flags: []
+  clear_flags: []
+  outcome: advanced_ihc_scoring_complete
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#7.1

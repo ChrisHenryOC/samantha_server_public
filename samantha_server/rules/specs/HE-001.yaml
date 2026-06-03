@@ -1,0 +1,18 @@
+rule_id: HE-001
+step: HE_QC
+applies_at: null
+event_type: he_qc
+severity: null  # HE rules dispatch by priority; severity is unused for non-ACCESSIONING steps
+priority: 1
+when:
+  equals:
+    field: event.outcome
+    value: pass
+action:
+  transition: PATHOLOGIST_HE_REVIEW
+  set_flags: []
+  clear_flags: []
+  outcome: advanced_he_qc_passed
+  panel: null
+  branch: null
+source: knowledge_base/sops/he_staining.md#4.1

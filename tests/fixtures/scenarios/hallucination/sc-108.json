@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-108",
+  "category": "hallucination",
+  "description": "Unusual demographics (19-year-old male) for breast specimen; no rule rejects based on age or sex value (ACC-002 only fires when sex is missing) \u2192 ACCEPTED (ACC-008)",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0108, James",
+        "age": 19,
+        "sex": "M",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

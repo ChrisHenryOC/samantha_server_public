@@ -1,0 +1,48 @@
+{
+  "scenario_id": "SC-089",
+  "category": "multi_rule",
+  "description": "False-positive probe: fixation at exactly 72.0hr boundary, HER2 ordered \u2192 ACCEPTED (boundary is valid, ACC-008 only)",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0089, Gloria",
+        "age": 66,
+        "sex": "F",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 72.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

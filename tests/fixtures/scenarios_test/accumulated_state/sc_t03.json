@@ -1,0 +1,42 @@
+{
+  "scenario_id": "SC-T03",
+  "category": "accumulated_state",
+  "description": "Fixture: two-step accumulated flags scenario",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-T03, Bob",
+        "age": 60,
+        "sex": "M",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": ["Breast IHC Panel"],
+        "priority": "routine",
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_PROCEED",
+        "applied_rules": ["ACC-007"],
+        "flags": ["MISSING_INFO_PROCEED"],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": ["SP-001"],
+        "flags": ["MISSING_INFO_PROCEED"],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

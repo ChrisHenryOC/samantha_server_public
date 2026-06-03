@@ -1,0 +1,33 @@
+{
+  "_meta": {
+    "metric": "stable accuracy (N=5) on the 149-fixture vendored corpus",
+    "source": "results/baselines/*.txt sweep summaries",
+    "note": "samantha_server-era accuracy milestones; each point is a real sweep summary"
+  },
+  "points": [
+    {
+      "date": "2026-05-15",
+      "label": "gemma-4-26B locked baseline",
+      "accuracy_pct": 98.66,
+      "passed": 147,
+      "total": 149,
+      "sweep_file": "post-fix-isolated-gemma-4-26B-n5.txt"
+    },
+    {
+      "date": "2026-05-16",
+      "label": "Qwen3-Next-80B swap",
+      "accuracy_pct": 100.0,
+      "passed": 149,
+      "total": 149,
+      "sweep_file": "convex-perf-Qwen3-Next-80B-A3B-Instruct-4bit-n5.txt"
+    },
+    {
+      "date": "2026-05-21",
+      "label": "oMLX v0.3.9 verification",
+      "accuracy_pct": 100.0,
+      "passed": 149,
+      "total": 149,
+      "sweep_file": "post-omlx-0.3.9-incumbent-only-n5.txt"
+    }
+  ]
+}

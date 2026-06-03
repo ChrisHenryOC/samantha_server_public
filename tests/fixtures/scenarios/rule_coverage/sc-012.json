@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-012",
+  "category": "rule_coverage",
+  "description": "ACC-005: Alcohol fixative, different patient; domain generalization",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0012, Emily",
+        "age": 62,
+        "sex": "M",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "alcohol",
+        "fixation_time_hours": 48.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [
+          "ACC-005"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

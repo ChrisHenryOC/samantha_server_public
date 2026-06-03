@@ -1,0 +1,185 @@
+{
+  "scenario_id": "QR-002",
+  "category": "query",
+  "tier": 1,
+  "description": "Simple lookup \u2014 orders currently in sample preparation",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-201",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-202",
+        "current_state": "ACCEPTED",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-15T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-203",
+        "current_state": "SAMPLE_PREP_EMBEDDING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-204",
+        "current_state": "SAMPLE_PREP_SECTIONING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-205",
+        "current_state": "HE_STAINING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-206",
+        "current_state": "SAMPLE_PREP_QC",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T11:00:00Z"
+      },
+      {
+        "order_id": "ORD-207",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-208",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T08:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Which orders are currently going through sample prep?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-201",
+      "ORD-203",
+      "ORD-204",
+      "ORD-206"
+    ],
+    "reasoning": "Orders in sample preparation include those in SAMPLE_PREP_PROCESSING, SAMPLE_PREP_EMBEDDING, SAMPLE_PREP_SECTIONING, and SAMPLE_PREP_QC states. ORD-201 is in processing, ORD-203 in embedding, ORD-204 in sectioning, and ORD-206 in QC."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Which orders are currently going through sample prep?",
+        "orders": [
+          {
+            "order_id": "ORD-201",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-202",
+            "current_state": "ACCEPTED",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-15T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-203",
+            "current_state": "SAMPLE_PREP_EMBEDDING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-204",
+            "current_state": "SAMPLE_PREP_SECTIONING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-205",
+            "current_state": "HE_STAINING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-206",
+            "current_state": "SAMPLE_PREP_QC",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T11:00:00Z"
+          },
+          {
+            "order_id": "ORD-207",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-208",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T08:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-002"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "histotech"
+}

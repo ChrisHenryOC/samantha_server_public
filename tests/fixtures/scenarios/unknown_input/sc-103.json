@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-103",
+  "category": "unknown_input",
+  "description": "Missing fixation time for HER2 order \u2192 MISSING_INFO_HOLD; null fixation time is missing data (not an out-of-range value), so the order is held until fixation time is provided",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0103, Betty",
+        "age": 51,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": null,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_HOLD",
+        "applied_rules": [
+          "ACC-009"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

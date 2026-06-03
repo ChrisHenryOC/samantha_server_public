@@ -1,0 +1,21 @@
+rule_id: ACC-007
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: PROCEED
+priority: null
+when:
+  equals:
+    field: billing_info_present
+    value: false
+action:
+  transition: MISSING_INFO_PROCEED
+  # MISSING_INFO_PROCEED is set as a flag (not just a transition target) so downstream
+  # resulting rules can detect that billing info was still unresolved at accessioning.
+  set_flags:
+    - MISSING_INFO_PROCEED
+  clear_flags: []
+  outcome: proceeding_missing_billing
+  panel: null
+  branch: null
+source: knowledge_base/sops/accessioning.md#3.1

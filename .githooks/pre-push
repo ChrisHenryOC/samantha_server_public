@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Pre-push gate — runs the full local CI pass before any push.
+#
+# Enabled once per clone via: scripts/bootstrap/setup-local-ci.sh
+# (which sets core.hooksPath=.githooks). Replaces the former GitHub
+# Actions CI. Bypass in a genuine emergency with `git push --no-verify`.
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+exec "$REPO_ROOT/scripts/ci/run.sh"

@@ -1,0 +1,38 @@
+# Gitleaks fingerprint ignore file.
+#
+# Each line is a gitleaks fingerprint string (format:
+# `<commit-sha>:<file-path>:<rule-id>:<line-number>`) that suppresses
+# a known false-positive — typically a realistic-but-fake key in a
+# test fixture or example.
+#
+# How fingerprints work (gitleaks v8.x):
+#
+# - The fingerprint is **commit-scoped**: it incorporates the commit
+#   SHA where the match was found, plus the file path, rule ID, and
+#   line number. Each new commit that contains a matching string gets
+#   its own distinct fingerprint, so editing a file does NOT
+#   automatically invalidate prior entries.
+# - This means a `.gitleaksignore` entry **permanently** suppresses
+#   one specific (commit, file, rule, line) combination. If the
+#   fixture moves to a new line (or a new commit), gitleaks emits a
+#   new finding that requires a separate review and a new entry.
+# - The CI workflow runs `actions/checkout` with `fetch-depth: 0`,
+#   so the full history is scanned. An entry suppressing an old
+#   commit's finding stays in effect across re-scans.
+#
+# To add an entry after a known false positive:
+#   1. Run `gitleaks detect --source . --verbose` locally.
+#   2. Copy the offending fingerprint from the output (already in the
+#      correct format).
+#   3. Add the line here with a comment explaining why the match is
+#      a false positive.
+#   4. Get reviewer sign-off — gitleaks-bypass entries are
+#      reviewer-visible by design.
+#
+# **On positive findings in production code**: under the free private
+# plan there is no push protection, so a real key has reached
+# GitHub.com infrastructure even if the PR is closed unmerged.
+# Rotate the key immediately, then add a `.gitleaksignore` entry only
+# if a legitimate fixture is the source. Never add an ignore entry
+# without rotating the key first when there's any chance the value
+# is real.

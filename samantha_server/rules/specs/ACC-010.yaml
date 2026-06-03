@@ -1,0 +1,64 @@
+rule_id: ACC-010
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: PROCEED
+priority: null
+when:
+  # Fall-through predicate: fires when specimen_type is neither in ACC-004's
+  # blacklist (cytology-class) NOR in the histology whitelist (well-known
+  # accepted types). Catches both ambiguous-but-known types and cases where
+  # the LIS pick list has evolved faster than this project's known lists.
+  #
+  # Disjointness with ACC-004 is guaranteed by the first Not(in_enum) clause:
+  # if specimen_type is on the blacklist, ACC-004 (REJECT) wins; ACC-010 cannot
+  # also fire for the same value (SEVERITY_ORDER enforces REJECT > PROCEED).
+  #
+  # The two enum values lists (blacklist and whitelist) govern specimen routing.
+  boolean_and:
+    - not:
+        in_enum:
+          field: specimen_type
+          values:
+            # ACC-004 blacklist — cytology-class specimens incompatible with
+            # the histology workflow. Must stay in sync with ACC-004.yaml.
+            - fna
+            - fine_needle_aspiration
+            - cytology
+            - cytospin
+            - cell_block
+            - bone_marrow_aspirate
+            - body_fluid
+            - touch_prep
+            - direct_smear
+            - thinprep
+            - surepath
+            - brushing
+            - washing
+            - swab
+    - not:
+        in_enum:
+          field: specimen_type
+          values:
+            # Whitelist v1 — histology-compatible specimen types known to ACC
+            # as explicitly acceptable. Specimens on this list bypass LLM review
+            # and proceed to ACCEPTED via ACC-008.
+            # Invariant: every value here must also appear in canonical-fields.json
+            # under specimen_type. Run TestSpecimenTypeNoDrift to verify no drift.
+            - biopsy
+            - core_needle_biopsy
+            - lumpectomy
+            - mastectomy
+            - excision
+            - re_excision
+            - vacuum_assisted_biopsy
+            - resection
+action:
+  transition: PENDING_LLM_REVIEW
+  set_flags:
+    - LLM_REVIEW_REQUESTED
+  clear_flags: []
+  outcome: proceeding_pending_llm_review
+  panel: null
+  branch: null
+source: docs/plans/phase-2-implementation.md#step-8

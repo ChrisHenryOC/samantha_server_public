@@ -1,0 +1,249 @@
+{
+  "scenario_id": "QR-026",
+  "category": "query",
+  "tier": 5,
+  "description": "Cross-order reasoning \u2014 identifying orders in administrative-hold states (MISSING_INFO_HOLD, RESULTING_HOLD); if new admin-hold states are added, update `order_ids` accordingly",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-2601",
+        "current_state": "MISSING_INFO_HOLD",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-10T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2602",
+        "current_state": "ACCEPTED",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2603",
+        "current_state": "RESULTING_HOLD",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "MISSING_INFO_PROCEED"
+        ],
+        "created_at": "2025-01-09T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2604",
+        "current_state": "SAMPLE_PREP_PROCESSING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-15T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-2605",
+        "current_state": "FISH_SEND_OUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "created_at": "2025-01-08T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2606",
+        "current_state": "HE_STAINING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-2607",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-2608",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-2609",
+        "current_state": "PATHOLOGIST_HE_REVIEW",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-14T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-2610",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T06:00:00Z"
+      },
+      {
+        "order_id": "ORD-2611",
+        "current_state": "SUGGEST_FISH_REFLEX",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [
+          "FISH_SUGGESTED"
+        ],
+        "created_at": "2025-01-10T14:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "Which orders are in administrative-hold states?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-2603",
+      "ORD-2601"
+    ],
+    "reasoning": "Two orders are in administrative-hold states. ORD-2603 (created Jan 9) is in RESULTING_HOLD \u2014 the result is blocked pending MISSING_INFO_PROCEED resolution. ORD-2601 (created Jan 10) is in MISSING_INFO_HOLD \u2014 required patient information has not been provided. All other orders are in active workflow states (ACCEPTED, SAMPLE_PREP_PROCESSING, HE_STAINING, IHC_SCORING, PATHOLOGIST_HE_REVIEW, PATHOLOGIST_SIGNOUT, FISH_SEND_OUT, SUGGEST_FISH_REFLEX, ORDER_COMPLETE) and are not administrative holds."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "Which orders are in administrative-hold states?",
+        "orders": [
+          {
+            "order_id": "ORD-2601",
+            "current_state": "MISSING_INFO_HOLD",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-10T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2602",
+            "current_state": "ACCEPTED",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2603",
+            "current_state": "RESULTING_HOLD",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "MISSING_INFO_PROCEED"
+            ],
+            "created_at": "2025-01-09T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2604",
+            "current_state": "SAMPLE_PREP_PROCESSING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-15T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-2605",
+            "current_state": "FISH_SEND_OUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "FISH_SUGGESTED"
+            ],
+            "created_at": "2025-01-08T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2606",
+            "current_state": "HE_STAINING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-2607",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-2608",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-2609",
+            "current_state": "PATHOLOGIST_HE_REVIEW",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-14T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-2610",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T06:00:00Z"
+          },
+          {
+            "order_id": "ORD-2611",
+            "current_state": "SUGGEST_FISH_REFLEX",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [
+              "FISH_SUGGESTED"
+            ],
+            "created_at": "2025-01-10T14:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-026"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "lab_manager"
+}

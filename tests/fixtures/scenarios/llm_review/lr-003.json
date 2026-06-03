@@ -1,0 +1,41 @@
+{
+  "scenario_id": "LR-003",
+  "category": "llm_review",
+  "description": "Novel specimen (intraoperative_consult) -> ACC-010 routes to PENDING_LLM_REVIEW; LLM escalates -> PENDING_HUMAN_REVIEW",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "Test, Carol",
+        "age": 52,
+        "sex": "F",
+        "specimen_type": "intraoperative_consult",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": ["ER", "HER2"],
+        "priority": "stat",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "PENDING_LLM_REVIEW",
+        "applied_rules": ["ACC-010"],
+        "flags": ["LLM_REVIEW_REQUESTED"],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "order_received",
+      "event_data": {},
+      "expected_output": {
+        "next_state": "PENDING_HUMAN_REVIEW",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm",
+        "llm_disposition": "escalated"
+      }
+    }
+  ]
+}

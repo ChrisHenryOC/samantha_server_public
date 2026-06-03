@@ -1,0 +1,53 @@
+{
+  "scenario_id": "SC-112",
+  "category": "hallucination",
+  "description": "Extra metadata fields in grossing event (gross_description, tissue dimensions, weight); model should ignore extra fields and advance normally via SP-001",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0112, Karen",
+        "age": 58,
+        "sex": "F",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 36.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success",
+        "gross_description": "Irregular firm mass with stellate borders, white-tan cut surface, focal areas of necrosis",
+        "tissue_dimensions_cm": "2.3 x 1.8 x 1.5",
+        "tissue_weight_grams": 4.7,
+        "margin_status": "close (0.2cm posterior)",
+        "lymph_node_count": 2
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

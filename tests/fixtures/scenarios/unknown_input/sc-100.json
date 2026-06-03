@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-100",
+  "category": "unknown_input",
+  "description": "FNA specimen type \u2192 DO_NOT_PROCESS (ACC-004); FNA is incompatible with histology workflow",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0100, Judith",
+        "age": 43,
+        "sex": "F",
+        "specimen_type": "FNA",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [
+          "ACC-004"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "scenario_id": "QR-028",
+  "category": "query",
+  "tier": 1,
+  "description": "no_orders \u2014 query against a database with zero orders matching the criteria (all in terminal states)",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-281",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-03-01T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-282",
+        "current_state": "ORDER_COMPLETE",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-03-01T09:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "What orders are ready for grossing?",
+  "expected_output": {
+    "answer_type": "no_orders",
+    "order_ids": [],
+    "reasoning": "No orders are in the ACCEPTED state. Both ORD-281 and ORD-282 have completed processing (ORDER_COMPLETE)."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "What orders are ready for grossing?",
+        "orders": [
+          {
+            "order_id": "ORD-281",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-03-01T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-282",
+            "current_state": "ORDER_COMPLETE",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-03-01T09:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-028"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "accessioner"
+}

@@ -1,0 +1,18 @@
+rule_id: IHC-010
+step: IHC
+applies_at: FISH_SEND_OUT
+event_type: fish_result
+severity: null
+priority: 10
+when:
+  equals:
+    field: event.status
+    value: success
+action:
+  transition: RESULTING
+  set_flags: []
+  clear_flags: []
+  outcome: advanced_resulting_fish_received
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#7.5

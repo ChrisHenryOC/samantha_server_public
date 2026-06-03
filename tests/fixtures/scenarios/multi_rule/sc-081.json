@@ -1,0 +1,34 @@
+{
+  "scenario_id": "SC-081",
+  "category": "multi_rule",
+  "description": "Multiple accessioning defects: missing name (ACC-001) + bad fixation time (ACC-006) \u2192 DO_NOT_PROCESS; REJECT beats HOLD",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": null,
+        "age": 49,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 5.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [
+          "ACC-006",
+          "ACC-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

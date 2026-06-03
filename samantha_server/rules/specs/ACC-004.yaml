@@ -1,0 +1,41 @@
+rule_id: ACC-004
+step: ACCESSIONING
+applies_at: null
+event_type: order_received
+severity: REJECT
+priority: null
+when:
+  # Blacklist of cytology-class specimens incompatible with the histology
+  # workflow.  Anything not on this list either matches the implicit
+  # whitelist (handled by ACC-008's "no other ACC rule fires" terminal
+  # accept) or is unrecognized — see issue #34 follow-up for the planned
+  # three-way disposition that routes unrecognized types to LLM review.
+  #
+  # GH-35: uppercase variants (e.g. "FNA") are intentionally absent.
+  # Equals/InEnum casefold at comparison time (canonicalization), so
+  # only the lowercase canonical form is needed in the values list.
+  in_enum:
+    field: specimen_type
+    values:
+      - fna
+      - fine_needle_aspiration
+      - cytology
+      - cytospin
+      - cell_block
+      - bone_marrow_aspirate
+      - body_fluid
+      - touch_prep
+      - direct_smear
+      - thinprep
+      - surepath
+      - brushing
+      - washing
+      - swab
+action:
+  transition: DO_NOT_PROCESS
+  set_flags: []
+  clear_flags: []
+  outcome: rejected_incompatible_cytology_specimen
+  panel: null
+  branch: null
+source: knowledge_base/sops/accessioning.md#3.2

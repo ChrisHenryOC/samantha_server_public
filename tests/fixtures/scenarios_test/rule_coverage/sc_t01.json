@@ -1,0 +1,29 @@
+{
+  "scenario_id": "SC-T01",
+  "category": "rule_coverage",
+  "description": "Fixture: standard accept scenario",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-T01, Jane",
+        "age": 45,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": ["Breast IHC Panel"],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": ["ACC-008"],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

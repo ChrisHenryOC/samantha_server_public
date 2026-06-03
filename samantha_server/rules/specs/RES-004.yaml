@@ -1,0 +1,26 @@
+rule_id: RES-004
+step: RESULTING
+applies_at: null
+event_type: pathologist_signout
+severity: null
+priority: 4
+# Pathologist signout supplies the list of reportable tests; the predicate
+# guards against malformed events with a missing key (Not(IsNull) returns
+# False, so the kernel stalls at PATHOLOGIST_SIGNOUT instead of advancing
+# to REPORT_GENERATION with an empty payload).
+#
+# Polarity note: same as RES-002 — `IsNull` is the failure-side primitive
+# in this corpus (see docs/rules/conventions.md), so present-field checks
+# wear the outer `Not`.  Pinned in tests/rules/test_res_specs.py § D.
+when:
+  not:
+    is_null:
+      field: event.reportable_tests
+action:
+  transition: REPORT_GENERATION
+  set_flags: []
+  clear_flags: []
+  outcome: advanced_report_generation
+  panel: null
+  branch: null
+source: knowledge_base/sops/resulting.md#8.4

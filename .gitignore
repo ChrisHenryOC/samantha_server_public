@@ -1,0 +1,92 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+
+# Type checkers / linters
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Environments
+.env
+.env.local
+.envrc
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# SQLite databases (generated at runtime — receipts.db lives here)
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime data (receipt DB, server logs, RAG indices)
+data/
+# Package data assets are tracked (negates the broad data/ rule above)
+!samantha_server/data/
+# charts/ subpackage data module is source code, not runtime data
+!charts/src/samantha_charts/data/
+# charts/ committed chart datasets back the committed PNGs (small, reproducible)
+!charts/data/
+
+# Cryptographic keys (Ed25519 signing key generated at first startup)
+keys/
+
+# Evaluation / replay results
+results/
+results*/
+
+# Code review artifacts (written by /review-pr command)
+code_reviews/
+
+# Local notes
+notes/
+
+# Playwright MCP scratch (screenshots, accessibility snapshots) —
+# Claude Code uses .playwright-mcp/ as the working dir for the
+# browser MCP server; nothing in here is intended to ship.
+.playwright-mcp/
+
+# Local Claude settings (user-specific permissions and MCP enables)
+.claude/settings.local.json
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code session state (per-session lock files)
+.claude/scheduled_tasks.lock

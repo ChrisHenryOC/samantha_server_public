@@ -1,0 +1,34 @@
+{
+  "scenario_id": "SC-105",
+  "category": "unknown_input",
+  "description": "Missing fixation time for HER2 order with missing billing \u2192 MISSING_INFO_HOLD; ACC-009 (null fixation time) outranks ACC-007 (missing billing) because HOLD > PROCEED",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0105, Diane",
+        "age": 63,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": null,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "MISSING_INFO_HOLD",
+        "applied_rules": [
+          "ACC-009",
+          "ACC-007"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+rule_id: SP-006
+step: SAMPLE_PREP
+applies_at: null
+event_type: sample_prep_qc
+severity: null
+priority: 6
+when:
+  equals:
+    field: event.outcome
+    value: fail_qns
+action:
+  transition: ORDER_TERMINATED_QNS
+  set_flags: []
+  clear_flags: []
+  outcome: aborted_sample_prep_qc_qns
+  panel: null
+  branch: null
+source: knowledge_base/sops/sample_prep.md#3.3

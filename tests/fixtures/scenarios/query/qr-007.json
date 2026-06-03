@@ -1,0 +1,147 @@
+{
+  "scenario_id": "QR-007",
+  "category": "query",
+  "tier": 1,
+  "description": "Simple lookup \u2014 orders ready for pathologist signout",
+  "database_state": {
+    "orders": [
+      {
+        "order_id": "ORD-701",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T08:00:00Z"
+      },
+      {
+        "order_id": "ORD-702",
+        "current_state": "RESULTING",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-13T09:00:00Z"
+      },
+      {
+        "order_id": "ORD-703",
+        "current_state": "IHC_SCORING",
+        "specimen_type": "resection",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-14T07:00:00Z"
+      },
+      {
+        "order_id": "ORD-704",
+        "current_state": "PATHOLOGIST_SIGNOUT",
+        "specimen_type": "excision",
+        "anatomic_site": "breast",
+        "priority": "rush",
+        "flags": [],
+        "created_at": "2025-01-13T10:00:00Z"
+      },
+      {
+        "order_id": "ORD-705",
+        "current_state": "REPORT_GENERATION",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-12T14:00:00Z"
+      },
+      {
+        "order_id": "ORD-706",
+        "current_state": "ACCEPTED",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "priority": "routine",
+        "flags": [],
+        "created_at": "2025-01-15T08:00:00Z"
+      }
+    ],
+    "slides": []
+  },
+  "query": "What cases are ready for the pathologist to sign out?",
+  "expected_output": {
+    "answer_type": "order_list",
+    "order_ids": [
+      "ORD-701",
+      "ORD-704"
+    ],
+    "reasoning": "Orders in PATHOLOGIST_SIGNOUT state are ready for the pathologist to review and sign out the final report. ORD-701 and ORD-704 are in this state."
+  },
+  "events": [
+    {
+      "step": 1,
+      "event_type": "clinical_query",
+      "event_data": {
+        "query": "What cases are ready for the pathologist to sign out?",
+        "orders": [
+          {
+            "order_id": "ORD-701",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T08:00:00Z"
+          },
+          {
+            "order_id": "ORD-702",
+            "current_state": "RESULTING",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-13T09:00:00Z"
+          },
+          {
+            "order_id": "ORD-703",
+            "current_state": "IHC_SCORING",
+            "specimen_type": "resection",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-14T07:00:00Z"
+          },
+          {
+            "order_id": "ORD-704",
+            "current_state": "PATHOLOGIST_SIGNOUT",
+            "specimen_type": "excision",
+            "anatomic_site": "breast",
+            "priority": "rush",
+            "flags": [],
+            "created_at": "2025-01-13T10:00:00Z"
+          },
+          {
+            "order_id": "ORD-705",
+            "current_state": "REPORT_GENERATION",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-12T14:00:00Z"
+          },
+          {
+            "order_id": "ORD-706",
+            "current_state": "ACCEPTED",
+            "specimen_type": "biopsy",
+            "anatomic_site": "breast",
+            "priority": "routine",
+            "flags": [],
+            "created_at": "2025-01-15T08:00:00Z"
+          }
+        ],
+        "scenario_id": "QR-007"
+      },
+      "expected_output": {
+        "next_state": "ACCESSIONING",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "llm"
+      }
+    }
+  ],
+  "user_role": "pathologist"
+}

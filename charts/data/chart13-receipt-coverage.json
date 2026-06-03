@@ -1,0 +1,10 @@
+{
+  "_meta": {
+    "time_range": "2026-05-26T23:15:00Z to 2026-05-26T23:26:00Z",
+    "source": "receipts sqlite + Langfuse"
+  },
+  "decisions": 4545,
+  "receipts": 4545,
+  "traces": 4545,
+  "coverage_pct": 100.0
+}

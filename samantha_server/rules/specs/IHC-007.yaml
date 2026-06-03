@@ -1,0 +1,23 @@
+rule_id: IHC-007
+step: IHC
+applies_at: IHC_SCORING
+event_type: ihc_scoring
+severity: null
+priority: 7
+when:
+  boolean_and:
+    - equals:
+        field: event.all_scores_complete
+        value: true
+    - equals:
+        field: event.any_equivocal
+        value: true
+action:
+  transition: SUGGEST_FISH_REFLEX
+  set_flags:
+    - FISH_SUGGESTED
+  clear_flags: []
+  outcome: suggested_fish_reflex
+  panel: null
+  branch: null
+source: knowledge_base/sops/ihc_staining.md#7.2

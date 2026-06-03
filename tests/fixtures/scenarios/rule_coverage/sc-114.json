@@ -1,0 +1,31 @@
+{
+  "scenario_id": "SC-114",
+  "category": "rule_coverage",
+  "description": "ACC-011: ambiguous canonical anatomic site 'skin overlying breast' -> PENDING_LLM_REVIEW",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0114, Jane",
+        "age": 52,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "skin overlying breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "PENDING_LLM_REVIEW",
+        "applied_rules": ["ACC-011"],
+        "flags": ["LLM_REVIEW_REQUESTED"],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

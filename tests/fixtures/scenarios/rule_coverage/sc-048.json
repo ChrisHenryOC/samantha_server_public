@@ -1,0 +1,176 @@
+{
+  "scenario_id": "SC-048",
+  "category": "rule_coverage",
+  "description": "IHC-001: HER2 added at pathologist review, fixation out of tolerance \u2192 reject HER2 slide, set HER2_FIXATION_REJECT flag",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0048, Alice",
+        "age": 55,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 5.0,
+        "ordered_tests": [
+          "ER",
+          "PR",
+          "Ki-67"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "ACCEPTED",
+        "applied_rules": [
+          "ACC-008"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 2,
+      "event_type": "grossing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_PROCESSING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 3,
+      "event_type": "processing_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_EMBEDDING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 4,
+      "event_type": "embedding_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_SECTIONING",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 5,
+      "event_type": "sectioning_complete",
+      "event_data": {
+        "outcome": "success"
+      },
+      "expected_output": {
+        "next_state": "SAMPLE_PREP_QC",
+        "applied_rules": [
+          "SP-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 6,
+      "event_type": "sample_prep_qc",
+      "event_data": {
+        "outcome": "pass"
+      },
+      "expected_output": {
+        "next_state": "HE_STAINING",
+        "applied_rules": [
+          "SP-004"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 7,
+      "event_type": "he_staining_complete",
+      "event_data": {
+        "fixation_issue": false
+      },
+      "expected_output": {
+        "next_state": "HE_QC",
+        "applied_rules": [],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 8,
+      "event_type": "he_qc",
+      "event_data": {
+        "outcome": "pass"
+      },
+      "expected_output": {
+        "next_state": "PATHOLOGIST_HE_REVIEW",
+        "applied_rules": [
+          "HE-001"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 9,
+      "event_type": "pathologist_he_review",
+      "event_data": {
+        "diagnosis": "invasive_carcinoma",
+        "added_markers": [
+          "HER2"
+        ]
+      },
+      "expected_output": {
+        "next_state": "IHC_STAINING",
+        "applied_rules": [
+          "HE-005"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    },
+    {
+      "step": 10,
+      "event_type": "ihc_staining_complete",
+      "event_data": {
+        "outcome": "partial",
+        "her2_added_at_review": true,
+        "fixation_out_of_tolerance": true,
+        "her2_rejected": true
+      },
+      "expected_output": {
+        "next_state": "IHC_STAINING",
+        "applied_rules": [
+          "IHC-001"
+        ],
+        "flags": [
+          "HER2_FIXATION_REJECT"
+        ],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

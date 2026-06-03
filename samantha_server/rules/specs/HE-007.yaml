@@ -1,0 +1,27 @@
+rule_id: HE-007
+step: PATHOLOGIST_HE_REVIEW
+applies_at: null
+event_type: pathologist_he_review
+severity: null
+priority: 3
+# breast_ihc_panels.md HE-007: pathologist-customized panel — the system
+# routes the order to IHC but does not select markers.  panel: null reflects
+# this; the action handler must read event.ihc_panel from the pathologist
+# review event when one is supplied.
+# Diagnosis values pinned from the imported scenario corpus
+# (~/source/samantha-public/scenarios/): suspicious_atypical (SC-042/043/069)
+# and lobular_carcinoma_in_situ (SC-109).
+when:
+  in_enum:
+    field: event.diagnosis
+    values:
+      - suspicious_atypical
+      - lobular_carcinoma_in_situ
+action:
+  transition: IHC_STAINING
+  set_flags: []
+  clear_flags: []
+  outcome: proceeded_ihc_pathologist_panel
+  panel: null
+  branch: null
+source: knowledge_base/rules/breast_ihc_panels.md#HE-007

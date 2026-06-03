@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SC-007",
+  "category": "rule_coverage",
+  "description": "ACC-003: Invalid anatomic site (lung), order rejected",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0007, William",
+        "age": 65,
+        "sex": "F",
+        "specimen_type": "biopsy",
+        "anatomic_site": "lung",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": true
+      },
+      "expected_output": {
+        "next_state": "DO_NOT_PROCESS",
+        "applied_rules": [
+          "ACC-003"
+        ],
+        "flags": [],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

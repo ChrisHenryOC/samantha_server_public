@@ -1,0 +1,25 @@
+rule_id: HE-008
+step: PATHOLOGIST_HE_REVIEW
+applies_at: null
+event_type: pathologist_he_review
+severity: null
+priority: 4
+# Canonical clear_flags example (per issue #12).  Every imported HE-008
+# scenario (SC-044, SC-045, SC-087, SC-111) expects flags=[] after the rule
+# fires, so the example is the field's presence and shape rather than a
+# non-trivial flag list.  CANCEL_IHC_BENIGN does not construct an IHC panel.
+# Flag cleanup on terminal-ish transitions (e.g. clearing RECUT_REQUESTED
+# carried in from a prior HE-009 firing on the recut→benign workflow) is
+# the kernel's responsibility, not the rule's — see GH-15.
+when:
+  equals:
+    field: event.diagnosis
+    value: benign
+action:
+  transition: RESULTING
+  set_flags: []
+  clear_flags: []
+  outcome: cancelled_ihc_benign
+  panel: null
+  branch: null
+source: knowledge_base/rules/breast_ihc_panels.md#HE-008

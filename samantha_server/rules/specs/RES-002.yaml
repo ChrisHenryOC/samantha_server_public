@@ -1,0 +1,32 @@
+rule_id: RES-002
+step: RESULTING
+applies_at: null
+event_type: missing_info_received
+severity: null
+priority: 2
+# Canonical receipt-branching example (decision-gate.md § "Action handler
+# boundary"): the predicate fires whenever a `missing_info_received` event
+# carries an `info_type`, and the action handler picks `cleared` (proceed)
+# or `still_held` (remain on hold) at runtime by re-evaluating the order's
+# flags.  `action.branch` records the two-branch *family* (pipe-separated
+# legal values) the action handler may emit; the kernel (GH-15) records
+# the chosen branch as the receipt sub-outcome.  RESOLVE_MISSING_INFO is a
+# symbolic transition resolved by the kernel from the chosen branch.
+#
+# Polarity note: `Not(IsNull(...))` is intentional — the corpus picks
+# `IsNull` as the failure-side primitive (per docs/rules/conventions.md
+# and the "missing field" rules in ACC-001/002/009), so present-field
+# checks pay the `Not` cost.  Don't replace with a hypothetical
+# `IsNotNull` primitive without auditing the corpus first.
+when:
+  not:
+    is_null:
+      field: event.info_type
+action:
+  transition: RESOLVE_MISSING_INFO
+  set_flags: []
+  clear_flags: []
+  outcome: evaluated_missing_info_received
+  panel: null
+  branch: cleared|still_held
+source: knowledge_base/sops/resulting.md#8.2
