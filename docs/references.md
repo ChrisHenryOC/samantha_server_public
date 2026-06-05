@@ -5,6 +5,7 @@ reading, organized by subject.
 
 ## The Samantha project
 
+- CHenry Ventures (Substack home) <https://chenryventures.substack.com/>
 - AI and Laboratory Workflow, Part 1 (Substack)
   <https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-1>
 - AI and Laboratory Workflow, Part 2 (Substack)
