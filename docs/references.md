@@ -46,6 +46,9 @@ reading, organized by subject.
 - OpenTelemetry (OTel / OTLP), the telemetry standard the engine exports
   with <https://opentelemetry.io>
 - Langfuse, the OTLP-native trace backend <https://langfuse.com>
+- Langfuse Workshop, the AI engineering loop end to end (hands-on tracing,
+  prompt management, monitoring, datasets, experiments, evaluation)
+  <https://langfuse.com/workshop>
 - Anthropic, "Writing Effective Tools for Agents" (the tool-design lesson
   behind the one typed tool, `list_applicable_rules`)
   <https://www.anthropic.com/engineering/writing-tools-for-agents>
