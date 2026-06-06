@@ -9,7 +9,7 @@ priority: 3
 # this; the action handler must read event.ihc_panel from the pathologist
 # review event when one is supplied.
 # Diagnosis values pinned from the imported scenario corpus
-# (~/source/samantha-public/scenarios/): suspicious_atypical (SC-042/043/069)
+# (tests/fixtures/scenarios/): suspicious_atypical (SC-042/043/069)
 # and lobular_carcinoma_in_situ (SC-109).
 when:
   in_enum:

@@ -38,7 +38,8 @@ Verify before pushing any change that touches the engine:
 - **PHI boundary** — any LLM-payload construction strips or hashes PHI
   fields. Exception: `order_id` is deliberately a pass-through. It is a
   synthetic LIS identifier (not a HIPAA Safe Harbor element) and the
-  model runs on a local MLX server inside the local trust boundary.
+  model runs on oMLX (a local OpenAI-compatible MLX server) inside the
+  local trust boundary.
   `patient_name` and `patient_sex` remain STRIPPED; `event_data_hash`
   remains HASHED.
 
@@ -61,8 +62,8 @@ There is no remote CI. The gate is enforced locally by the
 push. Enable it once per clone with
 [`scripts/bootstrap/setup-local-ci.sh`](scripts/bootstrap/setup-local-ci.sh)
 (sets `core.hooksPath=.githooks` and installs the non-Python gate tools
-`gitleaks` and `markdownlint-cli2`). The pytest portion probes a local
-MLX server, so the LLM-path tests require one to be running.
+`gitleaks` and `markdownlint-cli2`). The pytest portion probes oMLX, so
+the LLM-path tests require it running.
 
 **`uv lock --locked` failure.** Run `uv lock`, commit the updated
 `uv.lock`, and re-run the gate. The failure means `pyproject.toml` and

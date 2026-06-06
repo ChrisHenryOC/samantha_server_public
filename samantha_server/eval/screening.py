@@ -1,7 +1,7 @@
 """GH-156: pinned screening-subset scenario allow-list.
 
 The 33-fixture screening subset is the literal union of `DISC_SCENARIOS`
-+ `HALL_SCENARIOS` from `~/source/samantha/scripts/run_phase1_screen.sh`
++ `HALL_SCENARIOS` from the upstream POC's `scripts/run_phase1_screen.sh`
 (25 discriminating + 8 hallucination). Pinning it in code lets the
 parity CLI consume the subset without reaching outside the repo at
 runtime; a drift test in `tests/eval/test_screening_subset.py` keeps

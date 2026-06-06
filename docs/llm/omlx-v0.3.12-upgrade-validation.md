@@ -58,8 +58,8 @@ the included 143/143 and the overall 149/149 are 100%, so the headline
 
 **Corpus-path note.** The baseline is the vendored corpus at
 `tests/fixtures/scenarios/`, which the `/replay-scenarios` command
-targets. It is not `$SAMANTHA_POC_CORPUS_PATH`
-(`~/source/samantha/scenarios`): that env var points at the separate
+targets. It is not `$SAMANTHA_POC_CORPUS_PATH`: that env var points at
+the separate
 public parity-discovery corpus, which ships older ground truth (expects
 pre-ACC-010/011/012 outcomes), enumerates fewer scenarios, and lacks the
 `llm_review` category. Replaying the baseline against the public corpus
