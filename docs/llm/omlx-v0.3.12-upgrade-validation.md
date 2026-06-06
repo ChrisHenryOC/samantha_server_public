@@ -1,4 +1,4 @@
-# oMLX v0.3.9 to v0.3.12 upgrade validation (GH-352)
+# oMLX v0.3.9 to v0.3.12 upgrade validation
 
 **Date:** 2026-05-28
 **Box:** lab/CI host (64 GiB unified memory, `iogpu.wired_limit_mb` unset)
@@ -20,7 +20,7 @@ against the locked corpus baseline.
 | `settings.json` `memory` block migrated to tier schema, no stale keys | Pass |
 | Corpus replay holds at locked 149/149 stable (N=5) | Pass (149/149 stable, 745/745 raw) |
 | No memory-stability regression under high-context 80B | Pass (no eviction, throttle, abort, or panic) |
-| GH-288 reassessed via post-upgrade `cached_tokens` probe | Still blocked (expected) |
+| Prefix-cache telemetry reassessed via post-upgrade `cached_tokens` probe | Still blocked (expected) |
 
 ## Settings schema migration
 
@@ -91,16 +91,16 @@ model at this context peaks well under the 51.8 GB clamp, so the
 `balanced` tier is sufficient. On a 64 GiB box, wiring 56 GB to the GPU
 would leave only about 8 GB for the rest of the system, so Apple's
 conservative default is the safer choice unless a future workload
-approaches the clamp. Tuning the tier is out of scope per GH-352.
+approaches the clamp. Tuning the tier is out of scope for this upgrade.
 
-## GH-288 reassessment
+## Prefix-cache telemetry reassessment
 
-GH-288 (oMLX prefix-cache telemetry) stays blocked. Two identical
+oMLX prefix-cache telemetry stays blocked. Two identical
 659-token-prefix calls back to back both report
 `usage.prompt_tokens_details.cached_tokens = 0`, and the `/v1/responses`
 endpoint exists but does not populate cached-token telemetry either. No
 commit in the 0.3.9 to 0.3.12 range touches the populator, so the
-upgrade does not unblock GH-288, as expected.
+upgrade does not unblock prefix-cache telemetry, as expected.
 
 ## Rollback
 

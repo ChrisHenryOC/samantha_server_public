@@ -19,7 +19,7 @@ Run before bringing the orchestrator up against any real traffic.
 - [ ] **Single-worker invariant** — confirm `WEB_CONCURRENCY=1` in
       the deployment env. The orchestrator hard-fails at startup
       when `> 1` (G2). Any opt-in surface for multi-worker is a
-      future change tied to the GH-111 SQLite swap, not a deploy-time
+      future change tied to the SQLite swap, not a deploy-time
       config knob.
 - [ ] **`.env` populated from
       [`.env.example`](../../.env.example).** All required env vars

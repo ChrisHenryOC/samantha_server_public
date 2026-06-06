@@ -159,7 +159,7 @@ reader of `models/context.py` doesn't infer the gap is an oversight.
 
 | flag | tracking issue | predicate (from upstream SOP) |
 |------|----------------|--------------------------------|
-| `FIXATION_WARNING` | GH-175 (split from GH-169) | HER2-bearing order, `next_state == "ACCEPTED"`, `fixation_time_hours` not null, AND fixation in 6.0–8.0 h or 68.0–72.0 h. Authoritative source: the POC knowledge base (`knowledge_base/skills/accessioning.md`). Vocabulary added in PR #176; emitter rule design pending architectural decision (rule-spec schema extension vs. new co-firing rule vs. post-evaluate action handler). |
+| `FIXATION_WARNING` | Deferred | HER2-bearing order, `next_state == "ACCEPTED"`, `fixation_time_hours` not null, AND fixation in 6.0–8.0 h or 68.0–72.0 h. Authoritative source: the POC knowledge base (`knowledge_base/skills/accessioning.md`). Vocabulary is defined; emitter rule design pending architectural decision (rule-spec schema extension vs. new co-firing rule vs. post-evaluate action handler). |
 
 ## SOP coverage map
 

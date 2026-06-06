@@ -48,7 +48,7 @@ A rule's `when:` predicate must reference fields that exist on the
 `Order` model (`samantha_server/models/context.py`) or via `event.<key>`
 namespacing on `Event.event_data`. The `SpecimenContext.field()` accessor
 returns `None` for any unknown name via a `getattr` fallback, which means
-typos are silent at evaluate time. PR #29 caught one such case (ACC-002
+typos are silent at evaluate time. Review caught one such case (ACC-002
 referenced `sex` instead of `patient_sex`); the round-trip behavioral test
 in `tests/rules/test_acc_specs.py` is the runtime guard.
 

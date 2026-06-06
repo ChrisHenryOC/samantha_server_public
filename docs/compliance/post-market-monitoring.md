@@ -132,9 +132,9 @@ LLM-payload construction passes through `phi_safe`
   carry an HIPAA Safe Harbor reidentification risk.
 
 OTel span attributes are gated by an allowlist
-(`samantha_server/observability/otel.py::_SAMANTHA_ATTRS`). As of GH-196
-the allowlist includes `gen_ai.completion` (stamped unconditionally) and
-`gen_ai.prompt`; GH-363 makes prompt stamping default-on (suppressed only
+(`samantha_server/observability/otel.py::_SAMANTHA_ATTRS`). The
+allowlist includes `gen_ai.completion` (stamped unconditionally) and
+`gen_ai.prompt`; prompt stamping is default-on (suppressed only
 by `SAMANTHA_STAMP_PROMPT=0/false/no/off`). Both the prompt and the
 completion are therefore sent to the self-hosted Langfuse instance by
 default. This is bounded by topology, not redaction: inference is
@@ -325,8 +325,8 @@ gap-list is:
 
 | Gap | Tracked at | Disposition |
 |---|---|---|
-| Multi-worker `_session_state` SQLite swap | [GH-111](https://github.com/ChrisHenryOC/samantha_server/issues/111) (closed, NOT_PLANNED — re-open trigger: multi-worker deployment) | v0 hard-fails on `WEB_CONCURRENCY > 1` (G2). Single-worker FastAPI is the documented v0 deployment shape. |
-| Programmatic skill-body PHI scan at discover-time | [GH-110](https://github.com/ChrisHenryOC/samantha_server/issues/110) (closed, NOT_PLANNED — re-open trigger: skill-doc PHI incident surfaced via observability) | The `phi_safe` transform handles per-decision payloads; skill bodies are author-vetted today. The discover-time scan is a defense-in-depth follow-up, not a v0 blocker. |
+| Multi-worker `_session_state` SQLite swap | Deferred (NOT_PLANNED — re-open trigger: multi-worker deployment) | v0 hard-fails on `WEB_CONCURRENCY > 1` (G2). Single-worker FastAPI is the documented v0 deployment shape. |
+| Programmatic skill-body PHI scan at discover-time | Deferred (NOT_PLANNED — re-open trigger: skill-doc PHI incident surfaced via observability) | The `phi_safe` transform handles per-decision payloads; skill bodies are author-vetted today. The discover-time scan is a defense-in-depth follow-up, not a v0 blocker. |
 | RBAC identity model | Not separately tracked; v0 token issuance is manual | Tokens carry capabilities, not identities. Production deployment requires a per-operator identity model so audit logs attribute decisions to operators, not to "the bearer of a `receipts:read` token". |
 | Unscoped `GET /receipts` enumeration | Not separately tracked; v0 receipts API has no per-token scoping | Any valid `receipts:read` token can enumerate the **full receipt corpus** via offset/limit pagination. There is no per-token receipt-scope or owner filter. v0 mitigates by treating `receipts:read` token issuance as a privileged manual operation; production deployment requires either a scoped capability (e.g. `receipts:read:owner=<id>`) or an identity-aware filter on the list endpoint. |
 

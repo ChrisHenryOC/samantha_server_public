@@ -230,9 +230,8 @@ Skills are agentskills.io playbooks under
      `Jane Doe` style placeholders, and made-up MRNs / DOBs / SSNs.
      There is no programmatic check at the skill-loader boundary at
      POC stage; PR review is the enforcement seam, and a discover-time
-     scan is a queued production-hardening follow-up
-     ([GH-110](https://github.com/ChrisHenryOC/samantha_server/issues/110)
-     — closed as deferred).
+     scan is a queued production-hardening follow-up (closed as
+     deferred).
 4. **Place under `samantha_server/skills/specs/<skill_name>/`.** One
    directory per skill. The `SKILL.md` filename is mandatory; the
    loader globs for it during discovery.

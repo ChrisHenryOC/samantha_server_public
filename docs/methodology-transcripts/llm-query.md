@@ -89,7 +89,7 @@ boundary between raw `SpecimenContext` and the LLM call:
 - Fields in `_ORDER_PASS_THROUGH` (`order_id`, `specimen_type`,
   `anatomic_site`, `fixative`, `fixation_time_hours`, `ordered_tests`,
   `priority`, `billing_info_present`, `age`) pass verbatim into
-  `SafeOrder`. Note: `order_id` is now pass-through (GH-367, see below).
+  `SafeOrder`. Note: `order_id` is now pass-through (see below).
 - `patient_name` and `patient_sex` are stripped entirely; no
   representation reaches the prompt.
 - `event.event_data` is HMAC-hashed into `event_data_hash`; the raw
@@ -98,9 +98,9 @@ boundary between raw `SpecimenContext` and the LLM call:
   scenario, so the guard is a no-op here — the boundary check is
   exercised in [`llm-unknown.md`](llm-unknown.md).
 
-**GH-367 order_id trust-boundary note:** `order_id` is a synthetic LIS
+**`order_id` trust-boundary note:** `order_id` is a synthetic LIS
 identifier (not a HIPAA Safe Harbor element). The model runs on oMLX
-inside the local trust boundary (same topology as GH-363). The raw
+inside the local trust boundary. The raw
 `order_id` now passes through verbatim to `SafeOrder.order_id`; no
 HMAC hash is required within this deployment. `patient_name` and
 `patient_sex` remain STRIPPED; `event_data_hash` remains HASHED.
@@ -132,7 +132,7 @@ The `SafeContext` JSON the assistant fed into the prompt for QR-001:
 then assembles two blocks in deterministic order: `<query>` (the
 literal query text, XML-escaped) followed by `<skill>` (the verbatim
 `query-routing` skill body). An optional `<orders>` block (canonical
-JSON of `database_state.orders`) appends when present. Per GH-225, the
+JSON of `database_state.orders`) appends when present. The
 `<similar_scenarios>` and `<safe_context>` blocks are no longer
 emitted: the production `scenarios_index` is empty (so similar
 scenarios always rendered `(none available)`) and `ctx.order` is a
@@ -334,7 +334,7 @@ The transcript above is searchable and the audit list returns clean:
 |---------------------------------------------------|-------------------------------------------------------------------------|--------|
 | `age` (HIPAA Safe Harbor age ≤ 89)                | `null` in `SafeContext`                                                 | OK     |
 | Raw `patient_name` string outside `_ORDER_PASS_THROUGH` documentation | absent — `Order.patient_name=None` at construction              | OK     |
-| Raw `order_id` string in prompt body              | present (GH-367: pass-through, synthetic LIS id, local trust boundary) | OK     |
+| Raw `order_id` string in prompt body              | present (pass-through, synthetic LIS id, local trust boundary) | OK     |
 | Field outside `_ORDER_PASS_THROUGH` in prompt body | absent — `<safe_context>` carries only allowlisted fields              | OK     |
 
 The query path is the cleanest of the three LLM-bound categories on
@@ -348,7 +348,7 @@ populated `patient_name` and demonstrates the visible disappearance.
 > body example, the LLM response text, and the fixture's
 > `expected_output` reference `ORD-101`, `ORD-103`, and `ORD-105`.
 > These are the bound order's identifier and sibling order identifiers
-> in the hypothetical `database_state` payload. Since GH-367, the
+> in the hypothetical `database_state` payload. The
 > bound `order_id` passes through verbatim into `SafeOrder.order_id`
 > (synthetic LIS id, local trust boundary). The fixture-side IDs are
 > part of a hypothetical `database_state` payload describing the lab's

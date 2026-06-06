@@ -122,7 +122,7 @@ This transcript captures step 5.
 `phi_safe(ctx)` strips/hashes PHI. The visible PHI in § 1
 (`"TESTPATIENT-0106, Maria"`, `"F"`, the entire raw `event.event_data`)
 does not survive into the safe context. `order_id` now passes through
-verbatim (GH-367: synthetic LIS id, local trust boundary):
+verbatim (synthetic LIS id, local trust boundary):
 
 ```json
 {
@@ -373,7 +373,7 @@ transcript bodies:
 | `age` (HIPAA Safe Harbor age ≤ 89)                                    | `47` in `SafeContext` — allowlisted under `_ORDER_PASS_THROUGH`                                                                             | OK     |
 | Raw `patient_name` string in prompt body or receipt                   | absent — the literal name appears only in the *raw* `SpecimenContext` setup section (§ 1) to demonstrate the strip                          | OK     |
 | Raw `patient_sex` string in prompt body or receipt                    | absent — `"F"` appears only in the raw setup section                                                                                        | OK     |
-| Raw `order_id` string (`"ORD-0106"`) in prompt body                   | present (GH-367: pass-through, synthetic LIS id, local trust boundary)                                                                      | OK     |
+| Raw `order_id` string (`"ORD-0106"`) in prompt body                   | present (pass-through, synthetic LIS id, local trust boundary)                                                                      | OK     |
 | Raw `clinical_notes` text (BRCA1, mastectomy, family history)         | absent — only `event_data_hash` (HMAC) appears, exactly as designed for hallucination defence                                               | OK     |
 | Field outside `_ORDER_PASS_THROUGH` in prompt body                    | absent — the `<safe_context>` JSON carries only allowlisted fields                                                                          | OK     |
 

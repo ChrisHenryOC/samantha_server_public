@@ -9,7 +9,7 @@
 The full 42-rule corpus from [`inventory.md`](inventory.md) is expressible
 with **9 atomic primitives**, only **one** of which (`Contains`) is a new
 addition versus the candidate set in the issue.
-(Count updated from 40 → 41 by GH-35 sweep, then 41 → 42 by GH-34 ACC-010.) The original `LengthGTE`
+(Count updated from 40 → 41, then 41 → 42 (ACC-010).) The original `LengthGTE`
 candidate was dropped (no rule needed it); `ThresholdGT` / `ThresholdLT`
 were collapsed into negations of `ThresholdLTE` / `ThresholdGTE`; and
 `IsNotNull` was inverted to `IsNull` so the dominant "missing X" rules
@@ -139,7 +139,7 @@ all-pass-defines-accept logic. The threshold pair is the only numeric
 comparison in the corpus and lives entirely in the four fixation rules
 (ACC-005, ACC-006, ACC-009, IHC-001).
 
-GH-34 (ACC-010) increased the `Not` and `BooleanAnd` counts by 1 each and
+ACC-010 increased the `Not` and `BooleanAnd` counts by 1 each and
 the `InEnum` count by 2 — the fall-through predicate requires two negated
 `InEnum` nodes joined by `BooleanAnd` to express "not on blacklist AND not
 on whitelist".

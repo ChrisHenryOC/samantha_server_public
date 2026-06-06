@@ -1,4 +1,4 @@
-# Langfuse dashboards (Phase 3 Step 11 / GH-126)
+# Langfuse dashboards (Phase 3 Step 11)
 
 Three v0 panels driving the post-market monitoring story:
 
@@ -72,18 +72,18 @@ operator.
 
 ## Replay vs production
 
-Per Step 13 (GH-128, not yet shipped) the orchestrator will tag every
+Per Step 13 (not yet shipped) the orchestrator will tag every
 trace with `langfuse.trace.metadata.environment ∈ {"production", "replay"}`. Each
 v0 panel's filter pins `production`. An auditor or demo operator who
 wants to visualise replay data instead duplicates the dashboard in
 Langfuse, swaps the filter to `replay`, and saves under a separate
 name — no need to touch the production-default YAMLs.
 
-### Pre-GH-128: preemptive filter caveat
+### Preemptive filter caveat
 
-Until GH-128 ships, the `langfuse.trace.metadata.environment` attribute is **unset
+Until Step 13 ships, the `langfuse.trace.metadata.environment` attribute is **unset
 on every span**. The panel filter is preemptive — wired into the
-YAMLs now so the GH-128 PR is a single-attribute change rather than
+YAMLs now so the Step 13 change is a single-attribute change rather than
 an N-dashboards change.
 
 **Caveat (operator-visible):** Langfuse v3.172.0's exact
@@ -91,15 +91,15 @@ equality-filter semantics for absent attributes are not documented.
 There are two possible behaviours:
 
 - **Strict equality** — filters on absent attributes match nothing.
-  Every panel shows 0 events until GH-128 lands. **Workaround:** on
+  Every panel shows 0 events until Step 13 lands. **Workaround:** on
   first import, set the filter to "is set OR equals production"
   (or temporarily disable the filter) and remove the workaround when
-  GH-128 ships.
+  Step 13 ships.
 - **Pass-through on missing** — filters on absent attributes match
   every event. Every panel shows production data correctly today; no
   workaround needed.
 
-The release-checklist gate (`pytest -m langfuse` from GH-124) does
+The release-checklist gate (`pytest -m langfuse`) does
 not cover dashboard rendering. Verify which behaviour your Langfuse
 build exhibits by importing one panel after a real corpus replay
 and checking whether events appear.
@@ -108,4 +108,4 @@ and checking whether events appear.
 
 - Trace schema: [`docs/observability/trace-schema.md`](../../../docs/observability/trace-schema.md)
 - Schema test: [`tests/observability/test_dashboard_schema.py`](../../../tests/observability/test_dashboard_schema.py)
-- Step 13 (replay tagging): [GH-128](https://github.com/ChrisHenryOC/samantha_server/issues/128)
+- Step 13 (replay tagging): not yet shipped
