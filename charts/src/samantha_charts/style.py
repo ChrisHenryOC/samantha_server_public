@@ -1,6 +1,6 @@
 """gtan-samantha aesthetic helpers for matplotlib figures.
 
-Design reference: ~/source/gtan-samantha/drafts/charts/chart*.png
+Design reference: the gtan-samantha reference chart drafts.
 
 Visual language:
 - Bold left-aligned title + small gray subtitle (sample size / hardware)

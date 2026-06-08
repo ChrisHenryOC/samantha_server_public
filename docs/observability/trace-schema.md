@@ -3,10 +3,10 @@
 The canonical shape that every dispatched event produces in Langfuse.
 The schema is the durable contract behind:
 
-- the dashboards (Step 11 / GH-126),
-- the drift alarm (Step 12 / GH-127),
-- the eval-harness replay tags (Step 13 / GH-128), and
-- the post-market-monitoring story (Step 14 / GH-129).
+- the dashboards (Step 11),
+- the drift alarm (Step 12),
+- the eval-harness replay tags (Step 13), and
+- the post-market-monitoring story (Step 14).
 
 The serializer lives at
 [`samantha_server/observability/trace.py`](../../samantha_server/observability/trace.py)
@@ -63,7 +63,7 @@ the same decision when the routing crossed both. v0 emits **only**
 
 ### Why `both_*` is reserved
 
-GH-34's three-way disposition is a deterministic→LLM *handoff*: the
+The three-way disposition is a deterministic→LLM *handoff*: the
 engine routes ambiguous specimen types into the
 `PENDING_LLM_REVIEW` state, where the LLM handler then produces the
 decision. Both layers are involved sequentially, but only one of them
@@ -140,7 +140,7 @@ names are also valid targets for dashboard filters.
 | `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens` | LLM child span |
 | `gen_ai.request.temperature` / `gen_ai.request.max_tokens` | LLM child span |
 | `gen_ai.response.finish_reasons` | LLM child span; omitted when absent |
-| `langfuse.trace.metadata.environment` | parent span; `production` / `replay` / `parity`. Canonical dashboard-filter surface for environment discrimination. (GH-183 moved this off `samantha.environment` to the consolidated `langfuse.trace.metadata.*` surface.) |
+| `langfuse.trace.metadata.environment` | parent span; `production` / `replay` / `parity`. Canonical dashboard-filter surface for environment discrimination. (This was moved off `samantha.environment` to the consolidated `langfuse.trace.metadata.*` surface.) |
 | `langfuse.trace.metadata.routing_path` | parent span; `deterministic` / `llm` |
 | `langfuse.trace.metadata.next_state` | parent span |
 | `langfuse.trace.metadata.outcome` | parent span |

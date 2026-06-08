@@ -126,24 +126,54 @@ def render_latency_box(
 
     ax.set_xticks(list(range(len(ordered_names))))
     ax.set_xticklabels(labels, fontsize=10)
-    ax.set_ylim(bottom=0)
+    ax.set_xlim(-0.7, len(ordered_names) - 1 + 0.7)
 
-    # Annotate each box's median just above the top whisker.  Compute the
-    # offset after ylim is final so the percentage-of-range calculation is
-    # stable regardless of autoscaling order.
+    # Headroom above the tallest box for the "slowest sample" labels.
+    overall_max = max(max(samples) for samples in box_data)
+    ax.set_ylim(0, overall_max * 1.12)
+
+    # Reserve room beneath the axis for the stacked median labels that sit
+    # under each model name (drawn below in axis-fraction y).
+    fig.subplots_adjust(bottom=0.24)
+
     y_range = ax.get_ylim()[1] - ax.get_ylim()[0]
+    xtrans = ax.get_xaxis_transform()  # x in data coords, y in axis fraction
     for i, name in enumerate(ordered_names):
-        med = statistics.median(data[name])
-        y_top = max(data[name])
+        samples = data[name]
+        med = statistics.median(samples)
+        y_max = max(samples)
+        # Slowest sample, just above the top whisker / fliers (uncaptioned).
         ax.text(
             i,
-            y_top + 0.03 * y_range,
-            f"{med:.1f}s",
+            y_max + 0.015 * y_range,
+            f"{y_max:.1f}s",
             ha="center",
             va="bottom",
-            fontsize=9,
-            fontweight="bold",
+            fontsize=8,
             color=style.subtitle_color(),
+        )
+        # Median stacked under the model name: a small "median" caption, then
+        # the value in bold at the model-name font size.
+        ax.text(
+            i,
+            -0.072,
+            "median",
+            transform=xtrans,
+            ha="center",
+            va="top",
+            fontsize=7.5,
+            color=style.subtitle_color(),
+        )
+        ax.text(
+            i,
+            -0.112,
+            f"{med:.1f}s",
+            transform=xtrans,
+            ha="center",
+            va="top",
+            fontsize=10,
+            fontweight="bold",
+            color=style.ink_color(),
         )
     ax.set_ylabel(
         "latency (seconds)  (lower is better)",

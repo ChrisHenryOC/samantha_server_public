@@ -2,7 +2,7 @@
 
 Walks one or more `AccuracyReport` instances (multi-model sweep) and
 emits the published-shape JSON + markdown rollup that the parity CLI
-ships against `~/source/samantha/results/model_selection_phase1/
+ships against the upstream POC's `results/model_selection_phase1/
 summary.json`.
 
 Per the discovery memo (PR #167):

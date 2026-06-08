@@ -1,13 +1,13 @@
 """GH-156: SCREENING_SCENARIO_IDS pin + drift guard.
 
 The 33-fixture screening allow-list is the literal union of `DISC_SCENARIOS`
-+ `HALL_SCENARIOS` in `~/source/samantha/scripts/run_phase1_screen.sh`. The
++ `HALL_SCENARIOS` in the upstream POC's `scripts/run_phase1_screen.sh`. The
 parity CLI consumes `SCREENING_SCENARIO_IDS` at runtime; this test
 diffs the pinned set against the upstream script when present, so a
 drift in the upstream literal surfaces immediately rather than silently
 producing a wrong-shape parity report.
 
-Skip semantics: when `~/source/samantha/scripts/run_phase1_screen.sh`
+Skip semantics: when the upstream POC's `scripts/run_phase1_screen.sh`
 isn't available (CI, fresh checkout, contributor without the private
 repo), the test skips cleanly. The pinned constant remains the
 authoritative source for the parity CLI; the drift test is a developer
@@ -22,12 +22,10 @@ from pathlib import Path
 
 import pytest
 
-# `SAMANTHA_REPO_PATH` overrides the search path so contributors with the
-# upstream repo checked out elsewhere still get the drift guard. The
-# committed default is the original developer's path; everyone else falls
-# back to the env-var lookup or the test cleanly skips.
-_DEFAULT_SAMANTHA_REPO = Path("~/source/samantha").expanduser()
-_SAMANTHA_REPO = Path(os.environ.get("SAMANTHA_REPO_PATH") or _DEFAULT_SAMANTHA_REPO)
+# Set `SAMANTHA_REPO_PATH` to a local checkout of the upstream POC repo to
+# enable the drift guard. Unset by default, so on CI, a fresh checkout, or a
+# contributor without that repo, the test cleanly skips.
+_SAMANTHA_REPO = Path(os.environ.get("SAMANTHA_REPO_PATH", "upstream-poc-repo")).expanduser()
 _UPSTREAM_SCRIPT = _SAMANTHA_REPO / "scripts" / "run_phase1_screen.sh"
 
 
@@ -42,7 +40,7 @@ def test_screening_scenario_ids_pinned_count_is_33() -> None:
 
 
 def test_screening_scenario_ids_match_upstream_script() -> None:
-    """Drift guard against `~/source/samantha/scripts/run_phase1_screen.sh`.
+    """Drift guard against the upstream POC's `scripts/run_phase1_screen.sh`.
 
     Parses `DISC_SCENARIOS=...` and `HALL_SCENARIOS=...` literals from
     the script; the union must equal the pinned constant. Skipped when

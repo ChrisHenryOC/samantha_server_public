@@ -108,7 +108,7 @@ when:
   # (Equals primitive fail-safe semantics), so null routes via
   # ACC-012 (HOLD) rather than ACC-003.
   #
-  # GH-35-style canonicalization: values must be lowercase canonical.
+  # Canonicalization: values must be lowercase canonical.
   # Casefolding happens at comparison time.
   in_enum:
     field: anatomic_site

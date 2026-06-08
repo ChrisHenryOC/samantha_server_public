@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from scripts.vendor_scenarios import VendorResult, _load_overrides, vendor  # noqa: E402
 
-_SAMANTHA_PUBLIC_SCENARIOS = Path.home() / "source" / "samantha-public" / "scenarios"
+_SAMANTHA_PUBLIC_SCENARIOS = Path("samantha-public") / "scenarios"
 _REPO_FIXTURE_SCENARIOS = Path(__file__).parent.parent / "fixtures" / "scenarios"
 
 
@@ -718,7 +718,7 @@ def test_vendor_no_unannounced_divergences_against_upstream() -> None:
     upstream without an entry in .vendor-overrides.json, this test will fail,
     making the regression visible before any silent overwrite can occur.
 
-    Skipped on machines where ~/source/samantha-public/scenarios does not exist.
+    Skipped when the upstream samantha-public/scenarios corpus is not available locally.
     """
     result = vendor(_SAMANTHA_PUBLIC_SCENARIOS, _REPO_FIXTURE_SCENARIOS, dry_run=True)
 

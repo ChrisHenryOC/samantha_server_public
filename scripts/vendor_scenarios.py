@@ -212,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--source",
         type=Path,
-        default=Path.home() / "source" / "samantha-public" / "scenarios",
+        default=Path("samantha-public") / "scenarios",
         help="Source scenarios root directory",
     )
     parser.add_argument(

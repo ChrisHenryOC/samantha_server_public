@@ -10,7 +10,7 @@ Two event_type families:
     (current_state PATHOLOGIST_HE_REVIEW).
 
 Outcome and diagnosis literal values are pinned to the values that appear
-in the imported scenarios (see ~/source/samantha-public/scenarios/), not
+in the imported scenarios (see tests/fixtures/scenarios/), not
 the descriptive labels in inventory.md/categorization.md, so that the
 rules actually fire when scenarios are replayed.
 """

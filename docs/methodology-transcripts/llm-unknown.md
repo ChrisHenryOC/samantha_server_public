@@ -121,8 +121,8 @@ implements the strip:
 - `_ORDER_PASS_THROUGH` (`order_id`, `specimen_type`, `anatomic_site`,
   `fixative`, `fixation_time_hours`, `ordered_tests`, `priority`,
   `billing_info_present`, `age`) survives verbatim. Note: `order_id`
-  is now pass-through (GH-367: synthetic LIS id, local trust boundary).
-- `_HASHED_PHI_FIELDS` is now empty by design (GH-367: `order_id` was
+  is now pass-through (synthetic LIS id, local trust boundary).
+- `_HASHED_PHI_FIELDS` is now empty by design (`order_id` was
   the only member and is now pass-through).
 - `_STRIPPED_PHI_FIELDS` (`patient_name`, `patient_sex`) is dropped
   entirely — `SafeOrder` has no field for either.
@@ -161,7 +161,7 @@ prompt:
 Note what is **not** there: no `patient_name` field at any level (the
 "Jane Doe" string from the raw `Order` and from `event.event_data` is
 nowhere in the JSON), no `patient_sex` field. The `order_id` now
-appears verbatim (GH-367: synthetic LIS id, local oMLX trust boundary).
+appears verbatim (synthetic LIS id, local oMLX trust boundary).
 
 `build_clarification_prompt`
 ([`handlers.py`](../../samantha_server/llm/handlers.py)) then
@@ -333,7 +333,7 @@ both are gone. Auditing the transcript bodies:
 | `age` (HIPAA Safe Harbor age ≤ 89)                                          | `42` in `SafeContext` — allowlisted under `_ORDER_PASS_THROUGH`                                                                             | OK     |
 | Raw `patient_name` string in prompt body or receipt                         | absent — `"Jane Doe"` appears only in the *raw* `SpecimenContext` setup section to demonstrate the strip                                    | OK     |
 | Raw `patient_sex` string in prompt body or receipt                          | absent — `"F"` appears only in the raw setup section                                                                                        | OK     |
-| Raw `order_id` string (`"ORD-200"`) in prompt body                          | present (GH-367: pass-through, synthetic LIS id, local trust boundary)                                                                      | OK     |
+| Raw `order_id` string (`"ORD-200"`) in prompt body                          | present (pass-through, synthetic LIS id, local trust boundary)                                                                      | OK     |
 | Raw `event.event_data` payload (carries `patient_name`) in prompt body      | absent — only `event_data_hash` (HMAC) appears                                                                                              | OK     |
 | Field outside `_ORDER_PASS_THROUGH` in prompt body                          | absent — the `<safe_context>` JSON carries only allowlisted fields                                                                          | OK     |
 

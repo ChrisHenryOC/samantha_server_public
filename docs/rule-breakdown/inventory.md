@@ -2,7 +2,7 @@
 
 ## Provenance & method
 
-This inventory was built against `~/source/samantha-public` at the snapshot taken
+This inventory was built against the upstream `samantha-public` repo at the snapshot taken
 on 2026-04-25. The canonical source-of-truth for rule definitions is
 `knowledge_base/workflow_states.yaml`; rules are loaded into Python by
 `src/workflow/state_machine.py` (`class Rule`, line 80) and surfaced into LLM
@@ -25,7 +25,7 @@ The `fields_referenced` column was derived by:
 1. Reading the rule's `trigger` text in `workflow_states.yaml`.
 2. Cross-checking against the actual `event_data` keys present in scenarios
    that list the rule under `expected_output.applied_rules` (parsed from every
-   JSON file under `~/source/samantha-public/scenarios/`).
+   JSON file under `tests/fixtures/scenarios/`).
 3. Using the simulator (`src/simulator/order_generator.py`) only as a secondary
    reference — many of its `target_rules=(...)` templates encode order-level
    shortcuts that don't survive into the scenario events.
@@ -57,7 +57,7 @@ lists the simulator-supplied booleans so the implementer can match scenarios
 verbatim, with the underlying raw fields where they differ.
 
 The `covering_scenarios` column was generated programmatically by parsing
-every JSON file under `~/source/samantha-public/scenarios/` and collecting
+every JSON file under `tests/fixtures/scenarios/` and collecting
 scenarios whose `events[].expected_output.applied_rules` contains the rule_id
 (across all subdirs: `rule_coverage/`, `multi_rule/`, `accumulated_state/`,
 `hallucination/`, `query/`, `unknown_input/`, `unknown_inputs/`).
@@ -159,7 +159,7 @@ reader of `models/context.py` doesn't infer the gap is an oversight.
 
 | flag | tracking issue | predicate (from upstream SOP) |
 |------|----------------|--------------------------------|
-| `FIXATION_WARNING` | GH-175 (split from GH-169) | HER2-bearing order, `next_state == "ACCEPTED"`, `fixation_time_hours` not null, AND fixation in 6.0–8.0 h or 68.0–72.0 h. Authoritative source: `~/source/samantha/knowledge_base/skills/accessioning.md`. Vocabulary added in PR #176; emitter rule design pending architectural decision (rule-spec schema extension vs. new co-firing rule vs. post-evaluate action handler). |
+| `FIXATION_WARNING` | Deferred | HER2-bearing order, `next_state == "ACCEPTED"`, `fixation_time_hours` not null, AND fixation in 6.0–8.0 h or 68.0–72.0 h. Authoritative source: the POC knowledge base (`knowledge_base/skills/accessioning.md`). Vocabulary is defined; emitter rule design pending architectural decision (rule-spec schema extension vs. new co-firing rule vs. post-evaluate action handler). |
 
 ## SOP coverage map
 
