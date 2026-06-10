@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 #
 # Currently the only safe matcher is ``query`` — every file under
 # ``tests/fixtures/scenarios/query/`` carries it. ``database_state`` was
-# previously included but removed (see PR #96 review M-02): it is plausible
+# previously included but removed: it is plausible
 # metadata for a workflow-adjacent file, so an accidentally-corrupted
 # workflow scenario that lost ``events`` but retained ``database_state``
 # would be silently skipped instead of surfacing as malformed. If a future
@@ -73,13 +73,13 @@ class ScenarioStep:
     expected_next_state: str
     expected_applied_rules: tuple[str, ...]
     expected_flags: tuple[str, ...]
-    # GH-171 / PR #179 review M2: corpus annotation of which engine path the
+    # Corpus annotation of which engine path the
     # step is expected to flow through (`"deterministic"` or `"llm"`). Loaded
     # only when present in the JSON; treated as advisory by `_verdict_for_step`
     # — None means "don't compare" so older fixtures without the field
     # remain valid input.
     expected_routing_path: str | None = None
-    # GH-184: LLM disposition expected by this step (only for llm_review
+    # LLM disposition expected by this step (only for llm_review
     # fixtures where the step carries ``expected_output.llm_disposition``).
     # None for all other step types; consumers treat None as "no assertion".
     llm_disposition: str | None = None
@@ -91,31 +91,31 @@ class Scenario:
     category: str  # rule_coverage / multi_rule / accumulated_state / etc.
     description: str
     steps: tuple[ScenarioStep, ...]
-    # GH-184: top-level expected_output block from query fixtures
+    # Top-level expected_output block from query fixtures
     # (``answer_type``, ``order_ids``, etc.). Not present in workflow
     # scenarios that lack a top-level expected_output key. Consumers
     # treat None as "no top-level assertion required".
     raw_expected_output: dict[str, Any] | None = None
-    # GH-233: "now" anchor for temporal-reasoning queries. When present in
+    # "now" anchor for temporal-reasoning queries. When present in
     # the fixture, loaded verbatim. When absent, computed as
     # max(events[0].event_data.orders[*].created_at) + 24h (ISO-8601 with Z).
     # None when no orders with created_at are present and no explicit value
     # was set. Prompt builders emit <prompt_timestamp> only when non-None.
     prompt_timestamp: str | None = None
-    # GH-227: role of the user making the query. When present in the fixture,
+    # Role of the user making the query. When present in the fixture,
     # loaded verbatim (validated against VALID_USER_ROLES). When absent, None.
     user_role: UserRole | None = None
 
     @property
     def expected_query_content(self) -> frozenset[str] | None:
-        """GH-194 Slice 2: typed accessor for the top-level expected order_ids.
+        """Typed accessor for the top-level expected order_ids.
 
         Returns ``frozenset[str]`` when ``raw_expected_output`` is present and
         ``order_ids`` is a list of strings. Returns ``None`` when
         ``raw_expected_output`` is absent or ``order_ids`` is missing/malformed
         (with a WARNING log on malformed payloads).
 
-        **Dual semantic** (GH-220): for ``answer_type=="order_list"`` fixtures
+        **Dual semantic**: for ``answer_type=="order_list"`` fixtures
         the frozenset is a *filter result* (orders matching the query). For
         ``answer_type=="order_status"`` fixtures the frozenset is the *subject
         of the question* (the single order_id being asked about). Callers
@@ -139,7 +139,7 @@ class Scenario:
 
     @property
     def expected_query_sequence(self) -> tuple[str, ...] | None:
-        """GH-222: typed accessor for the top-level expected order_ids as a ranked sequence.
+        """Typed accessor for the top-level expected order_ids as a ranked sequence.
 
         Returns ``tuple[str, ...]`` when ``raw_expected_output`` is present and
         ``order_ids`` is a list of strings. Returns ``None`` when
@@ -251,7 +251,7 @@ def _parse_step(raw_event: dict[str, Any]) -> ScenarioStep:
         expected_applied_rules=tuple(expected.get("applied_rules") or []),
         expected_flags=tuple(expected.get("flags") or []),
         expected_routing_path=expected.get("routing_path"),
-        # GH-184: llm_disposition is optional; only llm_review steps carry it.
+        # llm_disposition is optional; only llm_review steps carry it.
         llm_disposition=expected.get("llm_disposition"),
     )
 
@@ -284,21 +284,21 @@ def _parse_scenario(path: Path, raw: dict[str, Any]) -> Scenario:
     Adding a new Scenario / ScenarioStep field is the right move if any of
     these become engine-relevant; silent drop is the current intent.
 
-    GH-184: ``raw_expected_output`` is now also preserved. Query fixtures
+    ``raw_expected_output`` is now also preserved. Query fixtures
     carry a top-level ``expected_output`` block with ``answer_type`` and
-    ``order_ids`` that the engine content gate (GH-194) consumes to score
+    ``order_ids`` that the engine content gate consumes to score
     query/llm_review responses. Workflow scenarios without a top-level
     ``expected_output`` key leave the field as None.
     """
     category = path.parent.name
     steps = tuple(sorted((_parse_step(e) for e in raw["events"]), key=lambda s: s.step_index))
-    # GH-184 fix-review M9: preserve empty dict as {} (not coerced to None).
+    # Preserve empty dict as {} (not coerced to None).
     # raw_expected_output=None means "expected_output key absent from fixture".
     # raw_expected_output={} means "key present but empty — no assertion defined yet".
     # The prior `raw_eo if raw_eo else None` silently coerced {} to None, hiding
     # fixtures where the author intended to fill in order_ids later.
     raw_eo: dict[str, Any] | None = raw.get("expected_output")
-    # GH-233: explicit prompt_timestamp wins; fall back to default computation.
+    # Explicit prompt_timestamp wins; fall back to default computation.
     # Validate explicit values as ISO-8601 here so a fixture typo surfaces as
     # a malformed-scenario file rather than silently corrupting the prompt
     # and the receipt's prompt_timestamp_hash downstream.
@@ -317,7 +317,7 @@ def _parse_scenario(path: Path, raw: dict[str, Any]) -> Scenario:
     prompt_timestamp: str | None = (
         explicit_ts if explicit_ts is not None else _default_prompt_timestamp(raw)
     )
-    # GH-227: explicit user_role; validate against VALID_USER_ROLES.
+    # Explicit user_role; validate against VALID_USER_ROLES.
     # Adjacent to prompt_timestamp handling for symmetry.
     # PR243 S8: when BOTH scenario-level user_role AND a step's event_data.user_role
     # are present, raise if they conflict (idempotent match is allowed).

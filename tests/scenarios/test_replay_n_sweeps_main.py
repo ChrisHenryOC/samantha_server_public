@@ -1,4 +1,4 @@
-"""Tests for N-sweep loop wired into main() (GH-262 Slice 4).
+"""Tests for N-sweep loop wired into main().
 
 Verifies:
 - --n-sweeps=3 causes replay() to be called 3 times

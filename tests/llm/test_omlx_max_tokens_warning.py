@@ -1,4 +1,4 @@
-"""Tests for GH-321: WARNING log when oMLX output reaches max_tokens.
+"""Tests for WARNING log when oMLX output reaches max_tokens.
 
 S1.1 — complete() emits WARNING when output_tokens == max_tokens.
 S1.2 — complete_json() emits WARNING when output_tokens == max_tokens.

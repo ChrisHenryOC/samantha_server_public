@@ -1,4 +1,4 @@
-"""Integration tests for RBAC wiring on /events and /version endpoints (GH-119 slice 4/7).
+"""Integration tests for RBAC wiring on /events and /version endpoints (slice 4/7).
 
 Verifies:
 - POST /events requires events:submit capability.

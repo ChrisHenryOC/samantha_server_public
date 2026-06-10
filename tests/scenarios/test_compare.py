@@ -1,4 +1,4 @@
-"""Tests for the multi-model comparison reporter (GH-141 part 3).
+"""Tests for the multi-model comparison reporter.
 
 Test payloads use ``"kind"`` for the discriminated-union field —
 matching the production receipt-payload shape (Pydantic serializes

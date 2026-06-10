@@ -1,8 +1,8 @@
 """Tests for TraceContext dataclass and stamp_trace_attributes().
 
-Slice 1 of GH-182: regression-pin the union attribute set before migrating
+Slice 1 of regression-pin the union attribute set before migrating
 call sites. Each test corresponds to a specific mapping rule in the union
-table defined in the GH-182 issue.
+table defined in the issue.
 """
 
 from __future__ import annotations
@@ -26,13 +26,13 @@ def _make_tracer_with_exporter() -> tuple[object, InMemorySpanExporter]:
 
 
 def test_stamp_trace_attributes_full_union_scenario_id_path() -> None:
-    """Scenario-id path: all fields except session_id — exact key set per GH-183.
+    """Scenario-id path: all fields except session_id — exact key set.
 
-    GH-183: canonical dashboard surface is langfuse.trace.metadata.*. The 7
+    Canonical dashboard surface is langfuse.trace.metadata.*. The 7
     dual-stamped samantha.* keys are dropped. Surviving samantha.* keys are
     engine-internal only.
 
-    GH-183 Slice 4: session_id and scenario_id are mutually exclusive — only
+    session_id and scenario_id are mutually exclusive — only
     scenario_id is set here (the sweep/replay scenario-id path).
     run_id wins over sweep_run_id for langfuse.release.
     """
@@ -64,24 +64,24 @@ def test_stamp_trace_attributes_full_union_scenario_id_path() -> None:
     assert len(spans) == 1
     attrs = dict(spans[0].attributes or {})
 
-    # scenario_id: langfuse fields only (GH-183 drops samantha.scenario_id)
-    assert "samantha.scenario_id" not in attrs, "GH-183: samantha.scenario_id must not be emitted"
+    # scenario_id: langfuse fields only (drops samantha.scenario_id)
+    assert "samantha.scenario_id" not in attrs, "samantha.scenario_id must not be emitted"
     assert "samantha.session_id" not in attrs, "session_id not set — must not be emitted"
     assert attrs["langfuse.trace.name"] == "SC-001"
     assert attrs["langfuse.trace.metadata.scenario_id"] == "SC-001"
     # scenario_category: langfuse fields only
     assert "samantha.scenario_category" not in attrs, (
-        "GH-183: samantha.scenario_category must not be emitted"
+        "samantha.scenario_category must not be emitted"
     )
     assert tuple(attrs["langfuse.trace.tags"]) == ("query",)
     assert attrs["langfuse.trace.metadata.scenario_category"] == "query"
     # run_id wins for langfuse.release
     assert attrs["langfuse.release"] == "run-abc"
     # sweep_run_id: langfuse.trace.metadata only
-    assert "samantha.sweep_run_id" not in attrs, "GH-183: samantha.sweep_run_id must not be emitted"
+    assert "samantha.sweep_run_id" not in attrs, "samantha.sweep_run_id must not be emitted"
     assert attrs["langfuse.trace.metadata.sweep_run_id"] == "sweep-xyz"
     # environment: langfuse fields only
-    assert "samantha.environment" not in attrs, "GH-183: samantha.environment must not be emitted"
+    assert "samantha.environment" not in attrs, "samantha.environment must not be emitted"
     assert attrs["langfuse.environment"] == "replay"
     assert attrs["langfuse.trace.metadata.environment"] == "replay"
     # priority — engine-internal, kept
@@ -130,9 +130,9 @@ def test_stamp_trace_attributes_full_union_scenario_id_path() -> None:
 
 
 def test_stamp_trace_attributes_full_union_session_id_path() -> None:
-    """Session-id path: all fields except scenario_id — exact key set per GH-183.
+    """Session-id path: all fields except scenario_id — exact key set.
 
-    GH-183 Slice 4: session_id and scenario_id are mutually exclusive — only
+    session_id and scenario_id are mutually exclusive — only
     session_id is set here (the prod / replay dispatch path).
     """
     from samantha_server.observability.otel import stamp_trace_attributes
@@ -172,7 +172,7 @@ def test_stamp_trace_attributes_full_union_session_id_path() -> None:
     assert attrs["samantha.applied_rule_id"] == "ACC-001"
     assert attrs["samantha.receipt_id"] == "REC-001"
 
-    # GH-183: dropped samantha.* keys absent
+    # Dropped samantha.* keys absent
     assert "samantha.routing_path" not in attrs
     assert "samantha.next_state" not in attrs
     assert "samantha.outcome" not in attrs
@@ -212,9 +212,9 @@ def test_stamp_trace_attributes_scenario_id_populates_langfuse_name() -> None:
     """When scenario_id is set, it populates langfuse.trace.name and
     langfuse.trace.metadata.scenario_id.
 
-    GH-183 Slice 4: session_id and scenario_id are mutually exclusive.
+    session_id and scenario_id are mutually exclusive.
     This test verifies the scenario_id path in isolation.
-    samantha.scenario_id is dropped per GH-183; canonical surface is
+    samantha.scenario_id is dropped; canonical surface is
     langfuse.trace.metadata.scenario_id.
     """
     from samantha_server.observability.otel import stamp_trace_attributes
@@ -229,7 +229,7 @@ def test_stamp_trace_attributes_scenario_id_populates_langfuse_name() -> None:
 
     attrs = dict(exporter.get_finished_spans()[0].attributes or {})
     # scenario_id wins for langfuse.trace.name and langfuse.trace.metadata.scenario_id
-    assert "samantha.scenario_id" not in attrs, "GH-183: samantha.scenario_id must be absent"
+    assert "samantha.scenario_id" not in attrs, "samantha.scenario_id must be absent"
     assert "samantha.session_id" not in attrs, "session_id not set — must be absent"
     assert attrs["langfuse.trace.name"] == "SC-WINNER"
     assert attrs["langfuse.trace.metadata.scenario_id"] == "SC-WINNER"
@@ -276,7 +276,7 @@ def test_stamp_trace_attributes_run_id_wins_over_sweep_run_id_for_release() -> N
 
     attrs = dict(exporter.get_finished_spans()[0].attributes or {})
     assert attrs["langfuse.release"] == "run-winner"
-    # GH-183: samantha.sweep_run_id dropped; canonical surface is metadata.*
+    # samantha.sweep_run_id dropped; canonical surface is metadata.*
     assert "samantha.sweep_run_id" not in attrs
     assert attrs["langfuse.trace.metadata.sweep_run_id"] == "sweep-loser"
 
@@ -391,7 +391,7 @@ def test_stamp_trace_attributes_fail_soft_on_sweep_pattern(
 
 
 # ---------------------------------------------------------------------------
-# GH-367: TraceContext.order_id + samantha.order_id span attribute
+# TraceContext.order_id + samantha.order_id span attribute
 # ---------------------------------------------------------------------------
 
 

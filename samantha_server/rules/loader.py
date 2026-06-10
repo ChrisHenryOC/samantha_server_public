@@ -432,7 +432,7 @@ class RuleIndex:
         self.rules_by_applies_at = by_applies_at
         # PR205 review #3: retain the duplicate-detection set as a frozenset so
         # __contains__ is O(1). all_rules linear scan grows with the corpus and
-        # is called per non-error step by the GH-194 hallucination gate (~2000+
+        # is called per non-error step by the hallucination gate (~2000+
         # calls per replay run today).
         self._rule_id_set = frozenset(seen_ids)
 

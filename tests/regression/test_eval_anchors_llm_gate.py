@@ -1,4 +1,4 @@
-"""Behavioral tests for the LLM-path regression gate (GH-90).
+"""Behavioral tests for the LLM-path regression gate.
 
 Drives `_evaluate_anchors` directly with synthetic `AccuracyReport` instances
 so every branch (deferred soft-fail, floor-met enforcement, breach, sample/p99
@@ -87,7 +87,7 @@ def test_p99_latency_us_llm_threshold_matches_production_anchor() -> None:
     green.
 
     Mirrors the floor-parity test (`test_p99_llm_sample_floor_matches_cli_anchor`)
-    one finding above. PR #276 review #1 — three reviewers independently
+    one finding above. review #1 — three reviewers independently
     flagged the absence of this parity test as a silent-failure risk.
     """
     from samantha_server.scenarios.replay import _LLM_LATENCY_ANCHOR_US

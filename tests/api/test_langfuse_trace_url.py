@@ -1,4 +1,4 @@
-"""Tests for the trace_url field in POST /events response (GH-124 Step 9).
+"""Tests for the trace_url field in POST /events response.
 
 When LANGFUSE_ENABLED=false (test/CI default) the response carries
 ``trace_url: null``. When enabled, it carries
@@ -34,7 +34,7 @@ def _real_tracer_provider() -> Iterator[None]:
     Without this, ``trace.get_tracer("samantha_server")`` returns the no-op
     tracer and ``span.get_span_context().trace_id`` is 0 — the previous
     `trace_url` test asserted hex-only on the resulting ``"0" * 32``,
-    which passed vacuously (PR #145 review M7 / workflow M1). We use
+    which passed vacuously (review M7 / workflow M1). We use
     ``configure_otel`` so the same code path that production uses also
     wires the test exporter (and respects the reuse-existing-provider
     semantics if a session-level provider is already installed).

@@ -1,4 +1,4 @@
-"""Tests for GET /receipts/{id} and GET /receipts pagination endpoints (GH-120).
+"""Tests for GET /receipts/{id} and GET /receipts pagination endpoints.
 
 Phase 3 Step 5.5.
 
@@ -476,7 +476,7 @@ def test_list_receipts_receipt_id_desc_tiebreak(
 ) -> None:
     """GET /receipts uses receipt_id DESC as tie-break when signed_at_utc is equal.
 
-    Regression for GH-120 review finding #5: the secondary sort is now
+    Regression for review finding #5: the secondary sort is now
     pinned by a test. When two receipts share the same signed_at_utc, the
     lex-larger receipt_id must appear first in the response.
     """

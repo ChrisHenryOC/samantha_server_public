@@ -1,4 +1,4 @@
-"""GH-324 Phase B, Step 5 — tests for the replay-via-events-endpoint rewrite.
+"""Phase B, Step 5 — tests for the replay-via-events-endpoint rewrite.
 
 These tests verify the transport rewrite where every replay step is submitted
 through POST /events → priority queue → _consume → dispatch_event, rather than
@@ -526,7 +526,7 @@ def test_replay_deterministic_subset_parity_via_endpoint() -> None:
     through POST /events → queue → _consume → dispatch_event (the real production path).
 
     Full parity is required: the endpoint path must match the corpus expectations for
-    every deterministic scenario, with no carve-outs. (GH-324 surfaced one apparent
+    every deterministic scenario, with no carve-outs. (surfaced one apparent
     divergence — SC-115's off-vocab anatomic_site="tibia" — which turned out to be a
     production bug: preflight was shadowing ACC-011. Fixed by omitting anatomic_site
     from preflight's CANONICALIZED_ORDER_FIELDS, so ACC-011 routes it to
@@ -598,7 +598,7 @@ def test_replay_deterministic_subset_parity_via_endpoint() -> None:
 def test_replay_endpoint_branch_forwards_prompt_timestamp_string(
     tmp_path: pathlib.Path,
 ) -> None:
-    """GH-324 Phase B: replay endpoint branch includes prompt_timestamp in POST body.
+    """Replay endpoint branch includes prompt_timestamp in POST body.
 
     When a scenario has a non-None prompt_timestamp, the endpoint branch must
     include "prompt_timestamp" in the POST /events body so that EventRequest
@@ -679,7 +679,7 @@ def test_replay_endpoint_branch_forwards_prompt_timestamp_string(
 def test_replay_endpoint_branch_forwards_null_prompt_timestamp(
     tmp_path: pathlib.Path,
 ) -> None:
-    """GH-324 Phase B: replay endpoint branch includes prompt_timestamp=null in POST body.
+    """Replay endpoint branch includes prompt_timestamp=null in POST body.
 
     When a scenario has prompt_timestamp=None, the endpoint branch must still
     include "prompt_timestamp": null in the POST body (key present, value null).
@@ -756,7 +756,7 @@ def test_replay_endpoint_branch_forwards_null_prompt_timestamp(
 
 
 # ---------------------------------------------------------------------------
-# Slice 7: receipt-read path delivers non-empty primitive_traces (GH-324 review)
+# Slice 7: receipt-read path delivers non-empty primitive_traces
 # ---------------------------------------------------------------------------
 
 
@@ -810,7 +810,7 @@ def test_receipt_read_path_delivers_non_empty_primitive_traces(
             captured_receipt_id.append(data["receipt_id"])
 
             # Fetch the payload_json via the public method on the writer protocol.
-            # This is the same call the replay loop must use after the GH-324 fix.
+            # This is the same call the replay loop must use after the fix.
             payload_json = harness.state.receipt_writer.fetch_payload_json(data["receipt_id"])
             assert payload_json is not None, (
                 "ReceiptWriter.fetch_payload_json must return the persisted payload "

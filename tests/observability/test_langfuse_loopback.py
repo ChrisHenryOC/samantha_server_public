@@ -1,4 +1,4 @@
-"""Loopback smoke test for the Langfuse health endpoint (GH-124 Step 9).
+"""Loopback smoke test for the Langfuse health endpoint.
 
 Defends the dual-stack landmine where ``localhost`` resolves to ``::1``
 while the docker-compose binds IPv4-only. The OTel exporter and the

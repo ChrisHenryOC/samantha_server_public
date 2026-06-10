@@ -363,7 +363,7 @@ def test_audit_module_re_exports_verify_signature() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-88 Slice 12: fetch_by_outcome
+# fetch_by_outcome
 # ---------------------------------------------------------------------------
 
 
@@ -627,7 +627,7 @@ def test_fetch_by_outcome_refusaltrace_round_trip(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-367: fetch_by_order_id
+# fetch_by_order_id
 # ---------------------------------------------------------------------------
 
 

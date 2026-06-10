@@ -1,6 +1,6 @@
 """Tests for graceful shutdown — lifespan drain trigger.
 
-PR #131 C3 fix-review: an explicit ``signal.signal(SIGTERM, ...)``
+ C3 fix-review: an explicit ``signal.signal(SIGTERM,...)``
 handler is overwritten by Uvicorn at startup, so the drain flag never
 flipped in production. The fix moves the flag into the lifespan's
 ``finally`` clause — which Uvicorn invokes on its own SIGTERM handling.
@@ -30,7 +30,7 @@ def test_is_draining_can_be_set_true() -> None:
 def test_lifespan_finally_sets_is_draining_true() -> None:
     """Lifespan shutdown flips is_draining=True before aclose runs.
 
-    PR #131 C3 regression: the previous SIGTERM-handler approach never
+     C3 regression: the previous SIGTERM-handler approach never
     fired under Uvicorn (Uvicorn replaced the handler). Wiring drain to
     lifespan-finally ensures the flag flips on every controlled shutdown
     regardless of how it was triggered.

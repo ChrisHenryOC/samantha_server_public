@@ -22,7 +22,7 @@ def _write_scenario(tmp_path: Path, category: str, scenario: dict) -> Path:  # t
 def _make_mock_llm_client() -> MagicMock:
     """Return a mock LLMClient with canned responses for both complete() and complete_json().
 
-    GH-324 Step 5: the endpoint path uses the real LLM handlers which call
+    The endpoint path uses the real LLM handlers which call
     complete() or complete_json(). Both methods must return a real LLMResponse
     with a string text field to avoid TypeError in _strip_markdown_fences.
     Returns '{}' so handlers produce a refusal/empty result rather than crashing.
@@ -50,7 +50,7 @@ def _make_fake_dispatch_result(
 ) -> object:
     """Return a (decision, ctx, receipt) tuple suitable for mocking dispatch_event.
 
-    GH-324 Step 5: EngineDecision must be a real Pydantic model (not MagicMock)
+    EngineDecision must be a real Pydantic model (not MagicMock)
     so it can round-trip through the endpoint's model_dump(mode="json") /
     model_validate serialization. EventDispatchContext and SignedReceipt remain
     MagicMock since only their .routing_path and .receipt_id attributes are used.
@@ -96,7 +96,7 @@ async def _fake_dispatch_with_receipt(
     """Like _make_fake_dispatch_result but calls emit_receipt so the in-memory
     store has the receipt persisted.
 
-    GH-334: the fallback WARNING branch in replay.py was removed; any
+    The fallback WARNING branch in replay.py was removed; any
     dispatch_event stub that skips emit_receipt now raises. Use this helper
     in _selective_fake functions that intercept LLM-path steps.
     """
@@ -340,7 +340,7 @@ def test_replay_progress_emits_per_scenario_line(
     # the test does not pin a specific corpus prefix or status vocabulary. The
     # production line is `f"[{i}/{total}] {scenario_id} {status} ({elapsed:.1f}s)"`;
     # any prefix (LR-, QR-, SC-, SP-, …) and any future ScenarioVerdict.status
-    # literal (e.g. anything GH-194 may add) is accepted.
+    # literal (e.g. anything may add) is accepted.
     pat = re.compile(
         r"^\[(?P<i>\d+)/(?P<n>\d+)\] (?P<sid>\S+) (?P<status>\w+) "
         r"\((?P<elapsed>\d+\.\d+)s\)$"
@@ -461,13 +461,13 @@ def test_replay_advance_sample_prep(tmp_path: Path) -> None:
 
 
 def test_replay_threads_unemitted_vocab_flag_forward_without_crash(tmp_path: Path) -> None:
-    """GH-169 / PR #176 M1: the corpus-replay flag-threading path must accept
+    """The corpus-replay flag-threading path must accept
     a vocabulary-valid flag in `expected_flags` even when no engine rule emits
     it. The harness sets `flags = frozenset(step.expected_flags)` after each
     step (`_replay_scenario_async`); the next step's `SpecimenContext`
     construction must succeed.
 
-    Before GH-169 widened `VALID_FLAGS`, SC-092 step 2 errored at Pydantic
+    Before widened `VALID_FLAGS`, SC-092 step 2 errored at Pydantic
     validation when step 1's expected `FIXATION_WARNING` reached the
     `SpecimenContext` constructor. This test pins that the threading path
     no longer crashes for any flag now in the vocabulary.
@@ -609,7 +609,7 @@ def test_replay_included_vs_overall_accuracy(tmp_path: Path) -> None:
     from samantha_server.scenarios.replay import replay
 
     # One in-bucket scenario (passes), one out-of-bucket scenario (irrelevant to included).
-    # GH-90: hallucination is now in-bucket; use llm_review which remains out-of-bucket.
+    # Hallucination is now in-bucket; use llm_review which remains out-of-bucket.
     _write_scenario(tmp_path, "rule_coverage", _all_pass_scenario())
     oob = {
         "scenario_id": "SC-RP07",
@@ -771,7 +771,7 @@ def _bad_data_scenario(scenario_id: str, category: str) -> dict:  # type: ignore
     """A scenario with malformed event_data shaped to break Order construction.
 
     Originally relied on a missing required field (specimen_type) to trip
-    the Pydantic validator. After GH-105 relaxed those fields to str | None
+    the Pydantic validator. After relaxed those fields to str | None
     and switched _build_order to .get() accessors, the harness no longer
     raises on missing keys — the bad-shape lever moved to ordered_tests:
     a non-iterable value here makes _build_order's tuple(ordered_tests_raw)
@@ -837,7 +837,7 @@ def test_deterministic_exception_recorded_when_reraise_disabled(
     keeps the sweep going instead of halting on the first bad scenario.
 
     This is what makes the parity smoke surface every gap in one pass — a
-    single unmodelled flag (e.g. SC-092's FIXATION_WARNING / GH-169) must
+    single unmodelled flag (e.g. SC-092's FIXATION_WARNING /) must
     not collapse the diff to one finding.
     """
     from samantha_server.scenarios.replay import replay
@@ -880,13 +880,13 @@ def test_deterministic_exception_recorded_when_reraise_disabled(
 
     report = replay(tmp_path, re_raise_on_deterministic_error=False)
 
-    # PR #173 L1: assert both scenarios reached the report so a regression
+    # Assert both scenarios reached the report so a regression
     # that silently dropped one would be caught.
     assert len(report.scenario_verdicts) == 2
     by_id = {v.scenario_id: v for v in report.scenario_verdicts}
     err_step = by_id["SC-ERR03"].step_verdicts[0]
     assert err_step.status == "error"
-    # PR #173 H1: the error happened before routing was determined
+    # The error happened before routing was determined
     # (`_build_order` raises before either dispatch path commits), so the
     # composer's _step_routing_counts must bin this into errored_pre_routing.
     assert err_step.routing_path is None
@@ -905,7 +905,7 @@ def test_exception_in_out_of_bucket_category_records_error_and_prints_traceback(
     S1: categories not in _DETERMINISTIC_CATEGORIES (which controls exception re-raise)
     should not crash the harness but should log the traceback so silent failures are visible.
     Note: hallucination is now in _INCLUDED_CATEGORIES (for accuracy counting) but still
-    not in _DETERMINISTIC_CATEGORIES, so errors still log-and-continue per GH-90 design.
+    not in _DETERMINISTIC_CATEGORIES, so errors still log-and-continue.
 
     The bad-data scenario raises TypeError in _build_order before dispatch_event
     is reached, so _llm_client_override is required (to build deps) but the mock
@@ -927,7 +927,7 @@ def test_exception_in_out_of_bucket_category_records_error_and_prints_traceback(
 
 
 # ---------------------------------------------------------------------------
-# Slice 1 — StepVerdict.latency_us (GH-19)
+# Slice 1 — StepVerdict.latency_us
 # ---------------------------------------------------------------------------
 
 
@@ -971,7 +971,7 @@ def test_step_verdict_latency_us_is_none_for_error_steps(tmp_path: Path) -> None
 
 
 # ---------------------------------------------------------------------------
-# Slice 2 (GH-90) — bucket broadening: _INCLUDED_CATEGORIES
+# Slice 2 — bucket broadening: _INCLUDED_CATEGORIES
 # ---------------------------------------------------------------------------
 
 
@@ -1019,7 +1019,7 @@ def _hallucination_pass_scenario() -> dict:  # type: ignore[type-arg]
 
 
 def _unknown_input_order_received_scenario() -> dict:  # type: ignore[type-arg]
-    """GH-171 / PR #179 review M3: an unknown_input-category scenario whose
+    """An unknown_input-category scenario whose
     corpus expectation is deterministic (ACC-004 fires; LLM never called).
     Mirrors SC-100's shape: an FNA specimen that's incompatible with the
     histology workflow.
@@ -1060,7 +1060,7 @@ def _unknown_input_order_received_scenario() -> dict:  # type: ignore[type-arg]
 
 
 def test_unknown_input_order_received_routes_to_deterministic_engine(tmp_path: Path) -> None:
-    """PR #179 review M3: the `unknown_input + order_received` shape (SC-100/SC-103)
+    """The `unknown_input + order_received` shape (SC-100/SC-103)
     must route through `evaluate()` despite the category being in
     `_LLM_PATH_CATEGORIES`. Mirrors `test_hallucination_order_received_*`
     but with the `unknown_input` deps-built path."""
@@ -1084,7 +1084,7 @@ def test_unknown_input_order_received_routes_to_deterministic_engine(tmp_path: P
 def test_routing_path_mismatch_fires_when_corpus_annotates_llm_but_engine_runs_deterministic(
     tmp_path: Path,
 ) -> None:
-    """PR #179 review M2: when the corpus annotates `routing_path: "llm"` for a
+    """When the corpus annotates `routing_path: "llm"` for a
     step but the harness's per-step predicate routes through `evaluate()`, the
     verdict must be `mismatch_routing_path`. This catches the latent class of
     divergences that motivated M1 (predicate omitting `PreflightMissing`) — any
@@ -1140,7 +1140,7 @@ def test_routing_path_mismatch_fires_when_corpus_annotates_llm_but_engine_runs_d
 
 
 def test_routing_path_unannotated_fixture_does_not_mismatch(tmp_path: Path) -> None:
-    """PR #179 review M2: a fixture without `routing_path` in expected_output
+    """A fixture without `routing_path` in expected_output
     (older corpora) must not trigger mismatch_routing_path — the comparator
     treats `expected_routing_path is None` as 'don't compare'."""
     from samantha_server.scenarios.replay import replay
@@ -1182,12 +1182,12 @@ def test_routing_path_unannotated_fixture_does_not_mismatch(tmp_path: Path) -> N
 
 
 def _hallucination_order_received_scenario() -> dict:  # type: ignore[type-arg]
-    """GH-171: a hallucination-category scenario whose corpus expectation is
+    """A hallucination-category scenario whose corpus expectation is
     deterministic (ACC-008 fires; LLM is never called). Mirrors SC-106's shape:
     extra clinical context the rules ignore, but `event_type='order_received'`
     that the deterministic engine handles directly.
 
-    The current harness (pre-GH-171 fix) force-routes every step in an
+    The current harness (legacy fix) force-routes every step in an
     LLM-path-category scenario through `dispatch_event`, which raises
     `NotImplementedError` for `order_received`. That mis-attributes a
     deterministically-handlable scenario as an LLM-path error.
@@ -1228,7 +1228,7 @@ def _hallucination_order_received_scenario() -> dict:  # type: ignore[type-arg]
 
 
 def _llm_review_handoff_scenario() -> dict:  # type: ignore[type-arg]
-    """GH-171: a 2-step scenario that exercises the legitimate LLM-review
+    """A 2-step scenario that exercises the legitimate LLM-review
     handoff path. Step 1 fires ACC-010 (unrecognized specimen type) →
     `PENDING_LLM_REVIEW`. Step 2's input current_state is
     `PENDING_LLM_REVIEW`; the new routing predicate must route step 2
@@ -1289,7 +1289,7 @@ def _llm_review_handoff_scenario() -> dict:  # type: ignore[type-arg]
 
 
 def test_step_after_pending_llm_review_routes_through_dispatch(tmp_path: Path) -> None:
-    """GH-171: when a deterministic rule lands the order in
+    """When a deterministic rule lands the order in
     `PENDING_LLM_REVIEW`, the next step must route through `dispatch_event()`
     so `handle_pending_llm_review` runs. The new routing predicate must NOT
     suppress this — it's the legitimate LLM-handoff path the predicate is
@@ -1330,7 +1330,7 @@ def test_step_after_pending_llm_review_routes_through_dispatch(tmp_path: Path) -
         f"Step 2 should route through dispatch_event when current_state is "
         f"PENDING_LLM_REVIEW; got {step2.routing_path}"
     )
-    # PR #179 review L5: pin status separately so a garbled mock-dispatch
+    # Pin status separately so a garbled mock-dispatch
     # return that produced a state mismatch wouldn't slip past the
     # routing-path-only assertion.
     assert step2.status == "pass", (
@@ -1341,7 +1341,7 @@ def test_step_after_pending_llm_review_routes_through_dispatch(tmp_path: Path) -
 
 
 def test_routing_predicate_both_clauses_true_routes_through_dispatch(tmp_path: Path) -> None:
-    """PR #179 L3: the routing predicate uses logical OR. A step where both
+    """The routing predicate uses logical OR. A step where both
     clauses are simultaneously true (current_state == PENDING_LLM_REVIEW
     AND event_type == clinical_query) must route through dispatch_event.
     Pins the OR semantics so a future refactor swapping `or` for `xor`
@@ -1412,7 +1412,7 @@ def test_routing_predicate_both_clauses_true_routes_through_dispatch(tmp_path: P
 
 
 def test_routing_predicate_state_oscillation_routes_correctly(tmp_path: Path) -> None:
-    """PR #179 L4: a 3-step scenario where the state oscillates
+    """A 3-step scenario where the state oscillates
     PENDING_LLM_REVIEW → resolved → back to PENDING_LLM_REVIEW. The mutable
     `current_state` loop variable must produce LLM routing on both
     PENDING_LLM_REVIEW steps and deterministic routing on the resolved
@@ -1512,7 +1512,7 @@ def test_routing_predicate_state_oscillation_routes_correctly(tmp_path: Path) ->
 
 
 def test_hallucination_order_received_routes_to_deterministic_engine(tmp_path: Path) -> None:
-    """GH-171 / Option A: the harness must route order_received events to
+    """/ Option A: the harness must route order_received events to
     `evaluate()` regardless of scenario category. Force-routing through
     `dispatch_event` for every step in an LLM-path category mis-attributes
     deterministically-handlable corpus fixtures (SC-106..SC-113, SC-100,
@@ -1572,7 +1572,7 @@ def test_hallucination_scenario_counted_in_included_total(tmp_path: Path) -> Non
     Uses clinical_query event_type so dispatch_event is exercised via mock.
     _llm_client_override is required to avoid loading MLX in CI.
 
-    PR #179 review M4: explicitly assert dispatch_event was invoked for the
+     review M4: explicitly assert dispatch_event was invoked for the
     hallucination step's clinical_query event. The earlier shape only
     checked included_pass==2, which would still pass if the new routing
     predicate accidentally fell back to evaluate() for clinical_query and
@@ -1604,20 +1604,20 @@ def test_hallucination_scenario_counted_in_included_total(tmp_path: Path) -> Non
     # Both scenarios should be in included_total now.
     assert report.included_total == 2, f"Expected 2, got {report.included_total}"
     assert report.included_pass == 2
-    # PR #179 M4: dispatch_event must have fired exactly once — for the
+    # dispatch_event must have fired exactly once — for the
     # hallucination scenario's clinical_query step. The rule_coverage scenario
     # is order_received and should NOT have routed through dispatch.
     assert captured_routing == ["llm"], (
         f"dispatch_event must fire exactly once (for clinical_query); got {captured_routing}"
     )
-    # PR #179 L6: pin routing_path on the hallucination step so a future
+    # Pin routing_path on the hallucination step so a future
     # predicate inversion can't slip through with an evaluated-and-passed shape.
     hallucination_verdict = next(v for v in report.scenario_verdicts if v.scenario_id == "SC-RP10")
     assert hallucination_verdict.step_verdicts[0].routing_path == "llm"
 
 
 # ---------------------------------------------------------------------------
-# Slice 3 (GH-90) — p99_latency_us_llm computation
+# Slice 3 — p99_latency_us_llm computation
 # ---------------------------------------------------------------------------
 
 
@@ -1706,7 +1706,7 @@ def test_p99_latency_us_llm_does_not_include_deterministic_latencies(tmp_path: P
 
 
 # ---------------------------------------------------------------------------
-# GH-90 — replay() determinism (L-05): two consecutive calls produce identical
+# — replay determinism (L-05): two consecutive calls produce identical
 # AccuracyReport values, including the new p99_latency_us_llm and the per-bucket
 # step counts.
 # ---------------------------------------------------------------------------
@@ -1775,14 +1775,14 @@ def test_step_verdict_latency_us_present_for_dispatch_empty_steps(tmp_path: Path
 
 
 # ---------------------------------------------------------------------------
-# GH-228 — LLM client must be built for isolated `llm_review`-only corpora
+# — LLM client must be built for isolated `llm_review`-only corpora
 # ---------------------------------------------------------------------------
 
 
 def _llm_review_only_scenario() -> dict:  # type: ignore[type-arg]
     """Mirror of `_llm_review_handoff_scenario` but with category=llm_review.
 
-    GH-228: when the corpus contains only llm_review scenarios, the LLM
+    When the corpus contains only llm_review scenarios, the LLM
     client must still be constructed so step 2 (which lands in
     PENDING_LLM_REVIEW after ACC-010) routes through `dispatch_event()`.
     """
@@ -1833,7 +1833,7 @@ def _llm_review_only_scenario() -> dict:  # type: ignore[type-arg]
 
 
 def test_replay_initializes_llm_client_for_llm_review_only_corpus(tmp_path: Path) -> None:
-    """GH-228: an llm_review-only corpus must build LLM deps so step 2
+    """An llm_review-only corpus must build LLM deps so step 2
     routes through `dispatch_event()`. Before the fix, has_llm_path was
     False (llm_review missing from the client-init set), deps stayed
     None, and step 2 silently fell through to evaluate() — leaving the
@@ -1870,7 +1870,7 @@ def test_replay_initializes_llm_client_for_llm_review_only_corpus(tmp_path: Path
 
 
 def test_replay_mixed_llm_review_and_query_corpus_dispatches_both(tmp_path: Path) -> None:
-    """GH-228 follow-up: a corpus containing BOTH an `llm_review` scenario
+    """A corpus containing BOTH an `llm_review` scenario
     (routes via PENDING_LLM_REVIEW gate) and a `query` scenario (routes via
     clinical_query event gate) must build deps once and dispatch both LLM
     steps. Pins that the `any(...)` short-circuit in the new
@@ -1935,7 +1935,7 @@ def test_replay_mixed_llm_review_and_query_corpus_dispatches_both(tmp_path: Path
 
 
 def test_llm_client_categories_covers_all_llm_routed_fixture_categories() -> None:
-    """GH-228 parity: every fixture category with a `routing_path: llm` step
+    """Every fixture category with a `routing_path: llm` step
     must be in `_LLM_CLIENT_CATEGORIES`. Catches future categories that
     route through the LLM without being declared (silent no-op risk).
 
@@ -1971,12 +1971,12 @@ def test_llm_client_categories_covers_all_llm_routed_fixture_categories() -> Non
     assert not missing, (
         f"Categories with routing_path=llm fixtures but missing from "
         f"_LLM_CLIENT_CATEGORIES: {sorted(missing)}. Isolated --include-category "
-        f"sweeps of these would silently skip LLM-client init (GH-228)."
+        f"sweeps of these would silently skip LLM-client init."
     )
 
 
 # ---------------------------------------------------------------------------
-# GH-231: gate-correctness gaps — winner-first applied_rules ordering
+# Gate-correctness gaps — winner-first applied_rules ordering
 # ---------------------------------------------------------------------------
 
 
@@ -1992,7 +1992,7 @@ def _wrong_winner_multi_rule_scenario() -> dict:  # type: ignore[type-arg]
     return {
         "scenario_id": "SC-GH231-01",
         "category": "multi_rule",
-        "description": "GH-231 F-13: wrong winner at position 0 — must be mismatch_rules",
+        "description": "F-13: wrong winner at position 0 — must be mismatch_rules",
         "events": [
             {
                 "step": 1,
@@ -2022,11 +2022,11 @@ def _wrong_winner_multi_rule_scenario() -> dict:  # type: ignore[type-arg]
 
 
 def test_step_verdict_flags_wrong_winner_at_position_0(tmp_path: Path) -> None:
-    """GH-231 F-13: a fixture with the HOLD rule at position 0 and the REJECT winner
+    """A fixture with the HOLD rule at position 0 and the REJECT winner
     at position 1 must produce mismatch_rules.
 
-    Before GH-231 the gate used set-equality, which silently accepted any ordering.
-    After GH-231 position 0 is compared exactly (winner check) so this must fail.
+    Before the gate used set-equality, which silently accepted any ordering.
+    After position 0 is compared exactly (winner check) so this must fail.
     """
     from samantha_server.scenarios.replay import replay
 

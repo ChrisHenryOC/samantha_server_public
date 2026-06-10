@@ -25,7 +25,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SPECS_DIR = _REPO_ROOT / "samantha_server" / "rules" / "specs"
 _INVENTORY_CSV = _REPO_ROOT / "docs" / "rule-breakdown" / "inventory.csv"
 
-_EXPECTED_CORPUS_SIZE = 44  # GH-234: +2 for ACC-011, ACC-012
+_EXPECTED_CORPUS_SIZE = 44 # +2 for ACC-011, ACC-012
 
 
 def _expected_rule_ids() -> set[str]:

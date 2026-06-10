@@ -137,7 +137,7 @@ def test_cli_prints_skipped_line_when_skiplist_non_empty(tmp_path: Path) -> None
 
 
 def test_cli_stamp_prompt_flag_accepted(tmp_path: Path) -> None:
-    """GH-196 Slice 3: --stamp-prompt is accepted and does not cause an error.
+    """--stamp-prompt is accepted and does not cause an error.
 
     Uses a deterministic-only corpus so no LLM is loaded. The flag
     sets SAMANTHA_STAMP_PROMPT=1 in the subprocess environment; the

@@ -1,4 +1,4 @@
-"""Two-card side-by-side quantization comparison chart (Chart 3, GH-308).
+"""Two-card side-by-side quantization comparison chart (Chart 3).
 
 Renders a Q4 vs Q8 quantization comparison for Qwen3.5-35B-A3B using
 real baseline data from results/baselines/.
@@ -259,7 +259,7 @@ def render_cards(left: CardSide, right: CardSide, output_path: Path) -> None:
 
 def render_quantization_card(output_path: Path) -> None:
     """Production renderer — constructs the two sides from the baseline files
-    cited in GH-308 and calls render_cards."""
+    cited in and calls render_cards."""
     left = CardSide(
         label="Q4 (4-BIT)",
         stable_passed=137,

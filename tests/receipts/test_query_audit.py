@@ -335,7 +335,7 @@ def test_fetch_by_query_text_hash_skips_receipts_with_empty_traces(
 
 
 # ---------------------------------------------------------------------------
-# GH-227 S5: QueryTrace.user_role — construction and serialization
+# QueryTrace.user_role — construction and serialization
 # ---------------------------------------------------------------------------
 
 
@@ -357,7 +357,7 @@ def test_query_trace_accepts_each_valid_user_role() -> None:
 
 
 def test_query_trace_user_role_defaults_to_none() -> None:
-    """QueryTrace.user_role defaults to None (backward compat with pre-GH-227 receipts)."""
+    """QueryTrace.user_role defaults to None (backward compat with legacy receipts)."""
     from samantha_server.engine.decision import QueryTrace
 
     trace = QueryTrace(

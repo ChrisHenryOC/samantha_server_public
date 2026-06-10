@@ -1,4 +1,4 @@
-"""Tests for AppState.receipt_audit_conn field (GH-120 Slice 4)."""
+"""Tests for AppState.receipt_audit_conn field."""
 
 from __future__ import annotations
 

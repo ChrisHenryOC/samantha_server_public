@@ -42,11 +42,11 @@ _logger = logging.getLogger(__name__)
 # hashed or stripped. "age" appears here because HIPAA Safe Harbor only
 # flags age > 89; the G18 guard enforces that boundary in phi_safe().
 #
-# GH-367: "order_id" is now in this set (pass-through, not hashed). Rationale:
+# "order_id" is now in this set (pass-through, not hashed). Rationale:
 # order_id is a synthetic LIS identifier — it is NOT a HIPAA Safe Harbor element
 # (not patient name, SSN, DOB, geographic subdivision, etc.). The model runs
 # locally on oMLX inside the trust boundary (same topology that permits
-# gen_ai.prompt stamping per GH-363). The raw order_id is already inside the
+# gen_ai.prompt stamping). The raw order_id is already inside the
 # receipt integrity envelope via event_input_hash, so hashing provides no
 # additional security benefit within this deployment. The carve-out applies only
 # to order_id; patient_name and patient_sex remain STRIPPED (see
@@ -67,7 +67,7 @@ _ORDER_PASS_THROUGH: Final[frozenset[str]] = frozenset(
 
 # Order fields that are hashed (raw value never serialised; HMAC-SHA256
 # digest carries forward for audit-trail correlation).
-# GH-367: now empty by design — order_id was the only member and is now
+# Now empty by design — order_id was the only member and is now
 # pass-through (see _ORDER_PASS_THROUGH rationale above).
 _HASHED_PHI_FIELDS: Final[frozenset[str]] = frozenset()
 
@@ -79,11 +79,11 @@ _STRIPPED_PHI_FIELDS: Final[frozenset[str]] = frozenset({"patient_name", "patien
 class SafeOrder(BaseModel, frozen=True):
     """Order with PHI fields hashed/stripped; pass-through fields preserved verbatim.
 
-    GH-367: order_id is now a pass-through field (synthetic LIS id, not Safe Harbor,
+    order_id is now a pass-through field (synthetic LIS id, not Safe Harbor,
     local oMLX inside trust boundary). See _ORDER_PASS_THROUGH rationale.
     """
 
-    order_id: str  # GH-367: pass-through (was order_id_hash pre-GH-367)
+    order_id: str # pass-through (was order_id_hash pre-)
     specimen_type: str | None
     anatomic_site: str | None
     fixative: str | None

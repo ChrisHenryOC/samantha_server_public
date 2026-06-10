@@ -9,11 +9,11 @@ Coverage:
 - qsize() reflects current queue depth.
 - put() raises asyncio.QueueFull when maxsize is reached.
 - Cancelled events produce no QueueItem from get() (receipt path never reached).
-- Double-cancel returns False; _id_map does not leak (PR #132 C1 regression).
-- All-tombstones get() blocks waiting for next put (PR #132 C2 contract).
-- QueueItem.__lt__ sorts by (priority, enqueue_seq) only (PR #132 H1 regression).
-- BACKGROUND priority sorts after ROUTINE (PR #132 L8 coverage).
-- event_id reuse after cancel delivers new put live (PR #132 L6 regression).
+- Double-cancel returns False; _id_map does not leak.
+- All-tombstones get() blocks waiting for next put.
+- QueueItem.__lt__ sorts by (priority, enqueue_seq) only.
+- BACKGROUND priority sorts after ROUTINE.
+- event_id reuse after cancel delivers new put live.
 """
 
 from __future__ import annotations
@@ -284,14 +284,14 @@ def test_qsize_excludes_cancelled_items() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PR #132 C1 regression: double-cancel + _id_map leak
+# Double-cancel + _id_map leak
 # ---------------------------------------------------------------------------
 
 
 def test_double_cancel_returns_false_and_does_not_decrement() -> None:
     """Cancelling the same id twice does not double-decrement _live_count.
 
-    PR #132 C1 regression: previously the second cancel found a stale
+     C1 regression: previously the second cancel found a stale
     _id_map entry (because get's tombstone drain only removed the id from
     _cancelled, not _id_map), so double-cancel re-added to _cancelled and
     decremented _live_count again — qsize() went negative.
@@ -319,7 +319,7 @@ def test_double_cancel_returns_false_and_does_not_decrement() -> None:
 def test_id_map_does_not_leak_after_tombstone_drain() -> None:
     """After get() drains a tombstone, the _id_map entry is also removed.
 
-    PR #132 C1: previously _id_map kept the stale entry, allowing
+     C1: previously _id_map kept the stale entry, allowing
     double-cancel to corrupt _live_count.
     """
     from samantha_server.queue.priority import EventPriority, PriorityEventQueue
@@ -343,14 +343,14 @@ def test_id_map_does_not_leak_after_tombstone_drain() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PR #132 L6 regression: event_id reuse after cancel
+# event_id reuse after cancel
 # ---------------------------------------------------------------------------
 
 
 def test_event_id_reuse_after_cancel_delivers_new_put_live() -> None:
     """After cancelling id X, a new put with id X is delivered live, not tombstoned.
 
-    PR #132 L6: put() must clear any stale tombstone from a prior cancelled
+     L6: put must clear any stale tombstone from a prior cancelled
     put with the same id; otherwise get() skips the new event.
     """
     from samantha_server.queue.priority import EventPriority, PriorityEventQueue
@@ -371,14 +371,14 @@ def test_event_id_reuse_after_cancel_delivers_new_put_live() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PR #132 C2 contract: all-tombstones get() blocks waiting for next put
+# All-tombstones get() blocks waiting for next put
 # ---------------------------------------------------------------------------
 
 
 def test_all_tombstones_get_blocks_until_next_put() -> None:
     """When every queued item is cancelled, get() blocks (does not raise).
 
-    PR #132 C2: this is the documented event-driven contract — a consumer
+     C2: this is the documented event-driven contract — a consumer
     with nothing live to process sleeps until new work arrives. The test
     locks in the contract: a 50 ms wait_for times out (i.e., get blocks);
     a subsequent put unblocks the await.
@@ -407,14 +407,14 @@ def test_all_tombstones_get_blocks_until_next_put() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PR #132 H1 regression: QueueItem.__lt__ orders by (priority, enqueue_seq) only
+# QueueItem.__lt__ orders by (priority, enqueue_seq) only
 # ---------------------------------------------------------------------------
 
 
 def test_queueitem_lt_orders_by_priority_and_seq_only() -> None:
     """QueueItem.__lt__ ignores compare=False fields.
 
-    PR #132 H1 regression: a drive-by edit removing compare=False from
+     H1 regression: a drive-by edit removing compare=False from
     enqueue_monotonic_ns / item / event_id / otel_context would silently
     break FIFO ordering and STAT-preempts-ROUTINE. This test makes the
     invariant explicit at the dataclass boundary, independent of queue
@@ -444,7 +444,7 @@ def test_queueitem_lt_orders_by_priority_and_seq_only() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PR #132 L8: BACKGROUND priority coverage
+# BACKGROUND priority coverage
 # ---------------------------------------------------------------------------
 
 

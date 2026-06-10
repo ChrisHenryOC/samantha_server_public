@@ -1,6 +1,6 @@
-"""GH-181 Slice 2 Part A: in-process replay() smoke tests for the corpus.
+"""In-process replay() smoke tests for the corpus.
 
-Replaces the subprocess shim tests (GH-184 Slice 4) that shelled out to the
+Replaces the subprocess shim tests that shelled out to the
 CLI with direct in-process replay() calls against the canonical CLI surface.
 The in-process path exercises the same routing/preflight/receipt-emission as
 the CLI but avoids the subprocess overhead and makes assertion access easier.
@@ -36,7 +36,7 @@ def test_query_corpus_via_replay_cli() -> None:
     included_accuracy >= 0.995. A failure means at least one query fixture's
     expected order_ids were not in the model's response.
 
-    GH-195: the engine content gate (#194) produces the non-zero verdict
+    The engine content gate (#194) produces the non-zero verdict
     on content-mismatch; strict=True is no longer needed and is deprecated.
     """
     report: AccuracyReport = replay(_CORPUS_DIR, include_categories={"query"})
@@ -61,7 +61,7 @@ def test_llm_review_corpus_via_replay_cli() -> None:
     all scenarios pass. llm_review is out-of-bucket for included_accuracy,
     so we assert directly on scenario_verdicts status.
 
-    GH-335: the --strict / assertion_failure path is removed. Disposition
+    The --strict / assertion_failure path is removed. Disposition
     correctness for llm_review is now surfaced via scenario status (the
     engine content gate).
     """

@@ -1,4 +1,4 @@
-"""GH-227 S7: Scenario.user_role field and fixture loader validation.
+"""Scenario.user_role field and fixture loader validation.
 
 Mirrors tests/scenarios/test_prompt_timestamp.py for the user_role field.
 """

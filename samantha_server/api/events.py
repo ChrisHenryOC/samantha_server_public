@@ -84,7 +84,7 @@ def register_events_routes(app: FastAPI) -> None:
     replaces the existing registration for the same exception type). Callers
     that need a custom 422 handler must register it *after* this call.
 
-    GH-119 Step 5: RBAC exception handlers must be registered before calling
+    RBAC exception handlers must be registered before calling
     this function (via register_rbac_exception_handlers) for 401/403 responses
     to be rendered correctly.
     """
@@ -144,10 +144,10 @@ class EventRequest(BaseModel):
     # re-parses the concatenated input.
     session_id: Annotated[str, pydantic.Field(min_length=1, pattern=r"^[^|]+$")]
     priority: Annotated[EventPriority, pydantic.BeforeValidator(_parse_event_priority)]
-    # GH-227: user role of the requesting user. Not PHI; Pydantic validates
+    # User role of the requesting user. Not PHI; Pydantic validates
     # against the Literal type and returns 422 on invalid values.
     user_role: UserRole | None = None
-    # GH-324 Phase B: replay callers send this field (string or null) to
+    # Replay callers send this field (string or null) to
     # override the now() default. Production callers omit the field entirely,
     # so model_fields_set distinguishes "not provided" from "provided as null".
     prompt_timestamp: str | None = None
@@ -189,11 +189,11 @@ class _QueuePayload:
     ctx_dict: Mapping[str, Any]
     session_id: str
     priority: EventPriority
-    # GH-233: ISO-8601 "now" anchor captured at request entry. The consumer
+    # ISO-8601 "now" anchor captured at request entry. The consumer
     # forwards this into dispatch_event so clinical_query prompts emit a
     # <prompt_timestamp> block on the live path (mirrors the replay harness).
     prompt_timestamp: str | None = None
-    # GH-227: user role of the requesting user. Not PHI; passed through
+    # User role of the requesting user. Not PHI; passed through
     # verbatim from EventRequest.user_role. None when not supplied.
     user_role: UserRole | None = None
 
@@ -255,7 +255,7 @@ async def post_events(
     504 if the consumer does not resolve the dispatch future within
         EVENT_DISPATCH_TIMEOUT_SEC seconds.
 
-    Step 8 (GH-123): wraps the dispatch in a ``samantha_server.event``
+    Step 8: Wraps the dispatch in a ``samantha_server.event``
     parent span. The span context is snapshotted onto the queue item
     so the consumer task (running in a different asyncio task) attaches
     it before invoking the LLM handlers — without that, gen_ai child
@@ -281,7 +281,7 @@ async def post_events(
 
     with tracer.start_as_current_span(PARENT_SPAN_NAME) as span:
         # Pre-dispatch: stamp engine-internal samantha.* keys and environment.
-        # GH-183: canonical dashboard surface is langfuse.trace.metadata.*
+        # Canonical dashboard surface is langfuse.trace.metadata.*
         # via stamp_trace_attributes(TraceContext(environment=ENVIRONMENT_PRODUCTION)).
         stamp_trace_attributes(
             span,
@@ -302,7 +302,7 @@ async def post_events(
             loop.create_future()
         )
 
-        # GH-233 / GH-324 Phase B: capture a temporal anchor for clinical_query prompts.
+        # Capture a temporal anchor for clinical_query prompts.
         # Production callers omit the field (not in model_fields_set) → stamp now().
         # Replay callers always include the key: a string is forwarded verbatim;
         # null (None) suppresses the anchor so build_query_prompt emits no block.
@@ -378,7 +378,7 @@ async def post_events(
             ),
         )
 
-        # Step 9 (GH-124): trace_url is null when LANGFUSE_ENABLED=false
+        # Step 9: trace_url is null when LANGFUSE_ENABLED=false
         # (the test / CI default). Otherwise, build the Langfuse
         # trace-deeplink. Clients should not depend on this field for
         # correctness — the receipt is the contract; the trace is
@@ -396,7 +396,7 @@ async def post_events(
                 # its allowed set as a frozenset) are converted to JSON-native
                 # types before JSONResponse runs json.dumps. The LLM path returns
                 # primitive_traces={}, so this only bites once a real rule fires
-                # through the endpoint (GH-324).
+                # through the endpoint.
                 #
                 # exclude decision_traces + primitive_traces: these carry verbatim
                 # clinical strings (PrimitiveTrace.actual = event field values,

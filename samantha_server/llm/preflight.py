@@ -42,7 +42,7 @@ REQUIRED_ORDER_FIELDS: frozenset[str] = frozenset()
 # If either were included here, preflight would short-circuit its rule (once
 # the router-shim is the production gate), replacing the documented
 # PENDING_LLM_REVIEW outcome with `outcome="needs_clarification"`. Leaving both
-# to the rule corpus keeps it the authoritative router for those fields (GH-324:
+# to the rule corpus keeps it the authoritative router for those fields (
 # SC-115 / LR-006 both expect ACC-011, not preflight clarification, for an
 # off-vocab anatomic_site). 'ordered_tests' is tuple-typed and excluded by
 # construction (preflight uses isinstance(raw, str)).

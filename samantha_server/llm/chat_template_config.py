@@ -7,7 +7,7 @@ unless the chat template is invoked with `enable_thinking=False`.
 Without that kwarg, schema-constrained outputs from those models
 will bleed reasoning content into the response — producing parse
 failures that have nothing to do with the underlying disposition
-gap we're testing for (GH-271 background).
+gap we're testing for.
 
 The map is keyed on a model-family substring so the same entry
 matches the full HF path, a bare quantized name, and the family stem

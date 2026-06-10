@@ -1,4 +1,4 @@
-"""Unit tests for the GH-275 memory-preflight script's pure helpers.
+"""Unit tests for the memory-preflight script's pure helpers.
 
 The script itself requires a live oMLX server and is not reproducible in
 CI; the pure classification function IS testable without external state
@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import pytest
 
-# Threshold contract per GH-275 issue body:
+# Threshold contract body:
 # - Pass: available > 12 GB (safe — clean headroom for KV cache + OS)
 # - Warn: 8 <= available <= 12 GB (tight — proceed but mark candidate `tight`)
 # - Fail: available < 8 GB (sweep likely to OOM under sustained load)
 
 
 def test_classify_pressure_pass_when_well_above_threshold() -> None:
-    """GH-275: available > 12 GB returns 'pass' (safe to queue sweep)."""
+    """Available > 12 GB returns 'pass' (safe to queue sweep)."""
     from scripts.qwen3_next_80b_memory_preflight import _classify_memory_pressure
 
     assert _classify_memory_pressure(available_gb=20.0) == "pass"
@@ -26,7 +26,7 @@ def test_classify_pressure_pass_when_well_above_threshold() -> None:
 
 
 def test_classify_pressure_warn_when_in_tight_band() -> None:
-    """GH-275: 8 <= available <= 12 GB returns 'warn' (tight, proceed with caution)."""
+    """8 <= available <= 12 GB returns 'warn' (tight, proceed with caution)."""
     from scripts.qwen3_next_80b_memory_preflight import _classify_memory_pressure
 
     assert _classify_memory_pressure(available_gb=12.0) == "warn"
@@ -35,7 +35,7 @@ def test_classify_pressure_warn_when_in_tight_band() -> None:
 
 
 def test_classify_pressure_fail_when_below_threshold() -> None:
-    """GH-275: available < 8 GB returns 'fail' (don't queue sweep — OOM risk)."""
+    """Available < 8 GB returns 'fail' (don't queue sweep — OOM risk)."""
     from scripts.qwen3_next_80b_memory_preflight import _classify_memory_pressure
 
     assert _classify_memory_pressure(available_gb=7.99) == "fail"
@@ -79,7 +79,7 @@ def test_classify_pressure_returns_only_documented_verdicts(verdict: str) -> Non
 
 
 def test_classify_pressure_negative_input_returns_fail() -> None:
-    """PR #280 review #4: negative `available_gb` falls into the fail band.
+    """Negative `available_gb` falls into the fail band.
 
     Defensive: a hypothetical psutil-measurement glitch returning a
     negative value would correctly trigger the strictest verdict. Pin
@@ -94,9 +94,9 @@ def test_classify_pressure_negative_input_returns_fail() -> None:
 def test_system_memory_available_gb_converts_bytes_to_gb(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """PR #280 review #4: pin the bytes→GB conversion in `_system_memory_available_gb`.
+    """Pin the bytes→GB conversion in `_system_memory_available_gb`.
 
-    GH-275 was filed because the prior script confused units (ru_maxrss
+     was filed because the prior script confused units (ru_maxrss
     on Darwin is bytes, on Linux is kilobytes). The replacement now
     uses psutil which is unambiguous — but explicitly pin the unit
     conversion so a future maintainer rewriting the helper can't

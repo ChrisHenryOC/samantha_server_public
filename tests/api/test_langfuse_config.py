@@ -1,4 +1,4 @@
-"""Tests for the LANGFUSE_* config variables (GH-124 Step 9)."""
+"""Tests for the LANGFUSE_* config variables."""
 
 from __future__ import annotations
 

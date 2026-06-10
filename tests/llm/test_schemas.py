@@ -1,9 +1,9 @@
-"""Tests for samantha_server.llm.schemas (GH-192 Slice 2).
+"""Tests for samantha_server.llm.schemas.
 
 Tests:
 - QueryResponseV1: valid payload parses.
 - QueryResponseV1: extra field rejected.
-- QueryResponseV1: reasoning over 800 chars rejected (raised from 500 in GH-247);
+- QueryResponseV1: reasoning over 800 chars rejected (raised from 500);
   caveats over 200 chars rejected.
 - QueryResponseV1: answer_type outside literal set rejected.
 - QUERY_RESPONSE_V1_JSON_SCHEMA has "additionalProperties": False and "required" at root.
@@ -61,7 +61,7 @@ def test_query_response_v1_extra_field_rejected() -> None:
 
 
 def test_query_response_v1_reasoning_800_chars_accepted() -> None:
-    """GH-247: reasoning field of exactly 800 chars is valid (QR-020 fix).
+    """Reasoning field of exactly 800 chars is valid (QR-020 fix).
 
     QR-020 (5-item prioritized_list) emitted a 526-char reasoning that
     overflowed the prior 500-char cap. The cap is raised to 800 to
@@ -75,7 +75,7 @@ def test_query_response_v1_reasoning_800_chars_accepted() -> None:
 
 
 def test_query_response_v1_reasoning_over_800_chars_rejected() -> None:
-    """GH-247: reasoning field over 800 chars raises ValidationError."""
+    """Reasoning field over 800 chars raises ValidationError."""
     from pydantic import ValidationError
 
     from samantha_server.llm.schemas import QueryResponseV1
@@ -260,12 +260,12 @@ def test_order_id_exactly_64_chars_accepted() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-220 Slice 1: order_status answer_type
+# order_status answer_type
 # ---------------------------------------------------------------------------
 
 
 def test_query_response_v1_accepts_order_status_answer_type() -> None:
-    """GH-220 Slice 1: order_status is a valid answer_type.
+    """order_status is a valid answer_type.
 
     order_ids contains the subject order (the one being asked about);
     reasoning carries the substantive answer.
@@ -287,7 +287,7 @@ def test_answer_type_literal_synced_with_answer_types_tuple() -> None:
     QueryTrace.parsed_answer_type Literal must all contain the same set of values.
 
     Uses typing.get_args to extract values from both Literal annotations and asserts
-    they equal set(ANSWER_TYPES). Guards against silent drift when GH-222 widens the set.
+    they equal set(ANSWER_TYPES). Guards against silent drift when widens the set.
     """
     import typing
 
@@ -326,7 +326,7 @@ def test_answer_type_literal_synced_with_answer_types_tuple() -> None:
 
 
 def test_query_response_v1_order_status_in_json_schema() -> None:
-    """GH-220 Slice 1: QUERY_RESPONSE_V1_JSON_SCHEMA reflects the order_status literal."""
+    """QUERY_RESPONSE_V1_JSON_SCHEMA reflects the order_status literal."""
     from samantha_server.llm.schemas import QUERY_RESPONSE_V1_JSON_SCHEMA
 
     # The schema's answer_type property must enumerate order_status.
@@ -344,7 +344,7 @@ def test_query_response_v1_order_status_in_json_schema() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-222 Slice 1: prioritized_list answer_type
+# prioritized_list answer_type
 # ---------------------------------------------------------------------------
 
 
@@ -369,7 +369,7 @@ def test_query_response_v1_prioritized_list_in_json_schema() -> None:
 
 
 def test_query_response_v1_accepts_prioritized_list_answer_type() -> None:
-    """GH-222 Slice 1: prioritized_list is a valid answer_type.
+    """prioritized_list is a valid answer_type.
 
     order_ids carries the ranked sequence (position-sensitive); first item is
     highest priority. The schema must accept this value without ValidationError.
@@ -387,12 +387,12 @@ def test_query_response_v1_accepts_prioritized_list_answer_type() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-254: reasoning declared before order_ids in JSON schema properties
+# Reasoning declared before order_ids in JSON schema properties
 # ---------------------------------------------------------------------------
 
 
 def test_query_response_v1_properties_order_reasoning_before_order_ids() -> None:
-    """GH-254: QUERY_RESPONSE_V1_JSON_SCHEMA properties must list reasoning before order_ids.
+    """QUERY_RESPONSE_V1_JSON_SCHEMA properties must list reasoning before order_ids.
 
     JSON-mode token emission is left-to-right: the model commits to each field
     value as it writes the JSON object. When order_ids appeared before reasoning,
@@ -408,14 +408,14 @@ def test_query_response_v1_properties_order_reasoning_before_order_ids() -> None
 
 
 def test_query_response_v1_required_remains_alphabetical_distinct_from_properties() -> None:
-    """GH-254 guardrail: `required` is alphabetical, `properties` is declaration-ordered.
+    """`required` is alphabetical, `properties` is declaration-ordered.
 
     `_make_strict_schema` sets `required = sorted(properties.keys())`. After the
-    GH-254 reorder, `properties` keys follow field declaration order (reasoning
+     reorder, `properties` keys follow field declaration order (reasoning
     before order_ids), so `required` and `properties` deliberately disagree.
     If a future change "reconciles" them by making `required` mirror `properties`
     order, oMLX backends that key off `required[]` for emission order could
-    silently re-introduce the GH-254 regression. Pin both invariants here.
+    silently re-introduce the regression. Pin both invariants here.
     """
     from samantha_server.llm.schemas import QUERY_RESPONSE_V1_JSON_SCHEMA
 

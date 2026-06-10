@@ -1,4 +1,4 @@
-"""Chart 13 (GH-311): receipt-coverage hero Big Number."""
+"""Chart 13: receipt-coverage hero Big Number."""
 
 from __future__ import annotations
 

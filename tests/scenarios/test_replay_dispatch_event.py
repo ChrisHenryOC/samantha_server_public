@@ -1,4 +1,4 @@
-"""Tests for GH-121: replay harness routes LLM-path scenarios through dispatch_event().
+"""Tests for replay harness routes LLM-path scenarios through dispatch_event.
 
 Slices covered:
   - Slice 1: _replay_scenario_async is async; replay() interface unchanged.
@@ -6,7 +6,7 @@ Slices covered:
   - Slice 3: LLM-path scenarios call dispatch_event; deterministic scenarios do not.
   - Slice 4: _llm_client_override kwarg lets tests inject a stub.
   - Slice 5: main() hard-fails when llm_latency_step_count >= 50 AND p99 >= 35s
-    (GH-273 raised anchor from 25 s for the Qwen3-Next-80B-A3B baseline).
+    (raised anchor from 25 s for the Qwen3-Next-80B-A3B baseline).
   - Slice 6: Routing-path assertions via EventDispatchContext.
 """
 
@@ -101,7 +101,7 @@ def _deterministic_scenario() -> dict:  # type: ignore[type-arg]
 def _make_mock_llm_client() -> MagicMock:
     """Return a mock LLMClient with canned responses for both complete() and complete_json().
 
-    GH-324 Step 5: the endpoint path uses the real handle_clinical_query which calls
+    The endpoint path uses the real handle_clinical_query which calls
     complete_json(). The response.text must be a real string, not a MagicMock, to avoid
     TypeError in _strip_markdown_fences. Return an empty JSON object '{}' so the handler
     gracefully produces a refusal/empty result rather than crashing.
@@ -164,7 +164,7 @@ def test_dispatch_event_called_for_query_category(tmp_path: Path) -> None:
 
     mock_llm = _make_mock_llm_client()
 
-    # GH-324 Step 5: replay now routes through POST /events → _consume → dispatch_event.
+    # Replay now routes through POST /events → _consume → dispatch_event.
     # The old dispatch_event proxy in replay.py is no longer called directly for LLM steps.
     # Verify the behavioral contract at the report level: the scenario was processed.
     report = replay(tmp_path, _llm_client_override=mock_llm)
@@ -210,12 +210,12 @@ def test_dispatch_event_called_for_hallucination_category(tmp_path: Path) -> Non
 def test_deterministic_category_step_has_routing_path_deterministic(tmp_path: Path) -> None:
     """Deterministic category 'rule_coverage' step must report routing_path='deterministic'.
 
-    GH-324 Phase B: the endpoint harness routes ALL steps through POST /events
+    The endpoint harness routes ALL steps through POST /events
     (dispatch_event is called for every step). Deterministic vs LLM-path
     distinction is encoded in StepVerdict.routing_path, not in whether
     dispatch_event is called.
 
-    GH-334: tests the correct invariant — routing_path label — rather than
+    Tests the correct invariant — routing_path label — rather than
     the stale "dispatch_event not called" proxy assertion.
     """
     from samantha_server.scenarios.replay import replay
@@ -242,7 +242,7 @@ def test_mixed_corpus_routes_correctly(tmp_path: Path) -> None:
 
     mock_llm = _make_mock_llm_client()
 
-    # GH-324 Step 5: replay routes through POST /events for all steps.
+    # Replay routes through POST /events for all steps.
     report = replay(tmp_path, _llm_client_override=mock_llm)
 
     # Both scenarios should appear in the report
@@ -268,7 +268,7 @@ def test_replay_receipts_use_in_memory_store(tmp_path: Path) -> None:
     """Receipts written during LLM-path replay go to in-memory SQLite, not
     the developer's receipts.db.
 
-    GH-333/GH-334 strengthened (PR #333 review #3): verifies BOTH that no
+    / strengthened (review #3): verifies BOTH that no
     receipts.db file appears on disk AND that at least one receipt was actually
     written to the in-memory store during the LLM-path run. The first check
     alone is satisfied by any implementation that skips receipts entirely;
@@ -318,7 +318,7 @@ def test_llm_step_latency_us_sourced_from_dispatch_event(tmp_path: Path) -> None
     _write_scenario(tmp_path, "query", _llm_path_scenario("SC-QR04", "query"))
     mock_llm = _make_mock_llm_client()
 
-    # GH-324 Step 5: latency now flows via POST /events → decision.latency_us in the response.
+    # Latency now flows via POST /events → decision.latency_us in the response.
     # We can't inject a specific latency value without patching routing.dispatch_event,
     # but we CAN verify the field is non-None (i.e., it was populated from the decision).
     report = replay(tmp_path, _llm_client_override=mock_llm)
@@ -335,7 +335,7 @@ def test_llm_step_latency_us_sourced_from_dispatch_event(tmp_path: Path) -> None
 
 # ---------------------------------------------------------------------------
 # Slice 5: main() CLI hard-fails when p99 >= anchor and step_count >= 50
-# (anchor was 25 s pre-GH-273; now 35 s for the Qwen3-Next-80B-A3B baseline)
+# (anchor was 25 s legacy; now 35 s for the Qwen3-Next-80B-A3B baseline)
 # ---------------------------------------------------------------------------
 
 
@@ -354,7 +354,7 @@ def test_main_hard_fails_when_llm_p99_over_budget_and_floor_met(
 
     # Synthetic report: floor met, p99 just over anchor.
     # Use the production constant directly so a future bump auto-tracks
-    # (PR #276 review #4 — silent-failure + workflow-logic).
+    # (review #4 — silent-failure + workflow-logic).
     bad_report = AccuracyReport(
         included_accuracy=1.0,
         overall_accuracy=1.0,
@@ -398,7 +398,7 @@ def test_main_passes_when_llm_p99_under_budget_and_floor_met(
         overall_pass=10,
         scenario_verdicts=(),
         p99_latency_us=500,
-        p99_latency_us_llm=1_000_000,  # 1s, well under 35s (GH-273 anchor)
+        p99_latency_us_llm=1_000_000, # 1s, well under 35s
         deterministic_latency_step_count=100,
         llm_latency_step_count=_LLM_ANCHOR_MIN_STEP_COUNT,  # at floor
     )
@@ -417,7 +417,7 @@ def test_main_defers_llm_gate_below_floor(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """main() exits 0 (gate not active) when llm_latency_step_count below floor,
-    even if p99 > anchor (35 s post-GH-273)."""
+    even if p99 > anchor (35 s post-)."""
     from samantha_server.scenarios import replay as replay_module
     from samantha_server.scenarios.replay import AccuracyReport, main
 
@@ -451,7 +451,7 @@ def test_main_routes_through_langfuse_when_enabled(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture,  # type: ignore[type-arg]
 ) -> None:
-    """GH-338: when LANGFUSE_ENABLED=true and both keys are set,
+    """When LANGFUSE_ENABLED=true and both keys are set,
     main() calls replay_with_langfuse_export(...) instead of replay(...).
 
     Stubs the export helper so the test doesn't need a running Langfuse
@@ -552,7 +552,7 @@ def test_main_routes_through_langfuse_when_enabled(
 def test_dispatch_event_receives_queue_wait_us_zero(tmp_path: Path) -> None:
     """Replay submits steps through the endpoint with ROUTINE priority (no manual queue-wait hack).
 
-    GH-324 Step 5: replay now uses POST /events → _consume → dispatch_event. The consumer
+    Replay now uses POST /events → _consume → dispatch_event. The consumer
     measures actual queue_wait_us from the time the event entered the queue. We verify the
     harness completes successfully (no error from the endpoint path).
     """
@@ -569,7 +569,7 @@ def test_dispatch_event_receives_queue_wait_us_zero(tmp_path: Path) -> None:
 def test_dispatch_event_receives_routine_priority(tmp_path: Path) -> None:
     """Replay submits steps with priority='ROUTINE' in the POST /events body.
 
-    GH-324 Step 5: replay encodes priority='ROUTINE' in the HTTP body; the consumer
+    Replay encodes priority='ROUTINE' in the HTTP body; the consumer
     converts it to EventPriority.ROUTINE before calling dispatch_event. We verify the
     harness completes successfully.
     """
@@ -592,9 +592,9 @@ def test_replay_no_override_calls_build_llm_client_for_llm_path_scenario(
 ) -> None:
     """When no _llm_client_override is provided and LLM-path scenarios exist,
     replay() must call _build_llm_client() to construct a real LLM client.
-    This is the production-CLI path (GH-121 Critical #1).
+    This is the production-CLI path.
 
-    GH-334: removed the dead replay.dispatch_event proxy patch. The endpoint
+    Removed the dead replay.dispatch_event proxy patch. The endpoint
     harness now routes through the real routing.dispatch_event; fake_build_llm_client
     returns a stub so the real path completes without a live model.
     """
@@ -645,7 +645,7 @@ def test_replay_no_override_propagates_misconfigured_error(tmp_path: Path) -> No
 def test_receipt_writer_closed_after_replay(tmp_path: Path) -> None:
     """After replay() returns, the harness's ReceiptWriter must be closed.
 
-    GH-324 Step 5: _ReplayHarness.__aexit__ calls state.aclose() which closes
+    _ReplayHarness.__aexit__ calls state.aclose() which closes
     the ReceiptWriter. We verify by patching ReceiptWriter.close to detect the call.
     """
     from samantha_server.api.receipt_writer import ReceiptWriter
@@ -679,7 +679,7 @@ def test_dispatch_event_failure_records_step_as_error(tmp_path: Path) -> None:
     the step is recorded with status='error', and the harness continues to the
     next scenario (not crashing the loop).
 
-    GH-324 Step 5: the endpoint path propagates dispatch_event failures as 500
+    The endpoint path propagates dispatch_event failures as 500
     responses. The harness detects non-200 and raises RuntimeError, which the
     except-block converts to status='error'.
     """
@@ -730,7 +730,7 @@ def test_dispatch_event_failure_records_step_as_error(tmp_path: Path) -> None:
 def test_llm_step_verdict_has_routing_path_llm(tmp_path: Path) -> None:
     """StepVerdict.routing_path must be 'llm' for steps routed through dispatch_event.
 
-    GH-334: converted from dead replay.dispatch_event proxy patch to the real
+    Converted from dead replay.dispatch_event proxy patch to the real
     endpoint path. routing_path is determined by the harness predicate
     (event_type == 'clinical_query' → 'llm') before the POST /events call,
     so the real production consumer path is exercised here.
@@ -769,7 +769,7 @@ def test_deterministic_step_verdict_has_routing_path_deterministic(tmp_path: Pat
 def test_error_step_has_routing_path_none(tmp_path: Path) -> None:
     """Steps that error before routing_path is assigned get routing_path=None.
 
-    GH-324 Step 5: on the endpoint path routing_path is set before POST /events,
+    On the endpoint path routing_path is set before POST /events,
     so errors inside dispatch_event no longer produce routing_path=None. An error
     before the routing_path assignment (e.g., inside SpecimenContext construction)
     still produces routing_path=None. We simulate by patching SpecimenContext to raise.
@@ -802,7 +802,7 @@ def test_llm_latency_bucket_uses_routing_path_not_category(tmp_path: Path) -> No
     A scenario in _LLM_PATH_CATEGORIES that errors during dispatch gets
     latency_us=None and must NOT contribute to the LLM latency bucket.
 
-    GH-324 Step 5: on the endpoint path, routing_path='llm' is set before
+    On the endpoint path, routing_path='llm' is set before
     the POST call. When dispatch_event raises inside the consumer, the step
     gets routing_path='llm' but latency_us=None (error before a decision was
     produced). The latency gate in _collect_latencies skips latency_us=None.

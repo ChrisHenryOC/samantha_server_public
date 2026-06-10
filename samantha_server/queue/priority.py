@@ -84,7 +84,7 @@ class QueueItem:
     event_id:
         Optional unique id allowing pre-dequeue cancellation. Stored on the
         item itself so get() can identify the id without a linear map scan
-        (PR #132 C1/L1 fix).
+        (C1/L1 fix).
     otel_context:
         OTel context snapshot captured at put(). Step 8 restores this across
         the queue boundary (contextvars don't propagate across task switches).
@@ -106,7 +106,7 @@ class PriorityEventQueue:
     Back-pressure is immediate: put() raises asyncio.QueueFull when full
     (Step 3 converts this to a 503 response).
 
-    All-tombstones behavior (PR #132 C2): if every queued item has been
+    All-tombstones behavior: if every queued item has been
     cancelled, get() drains the tombstones and then **blocks waiting for
     the next put()**. This is the intentional event-driven contract — a
     consumer with nothing live to do sleeps until new work arrives. The
@@ -127,7 +127,7 @@ class PriorityEventQueue:
         # The canonical mapping is the single source of truth: a dequeued
         # item is "live" iff `_id_map[event_id] is queue_item`. Cancellation
         # removes the mapping; id reuse (after cancel or after dequeue)
-        # rebinds it. PR #132 C1 + L6 + M4 fold into this design.
+        # rebinds it. C1 + L6 + M4 fold into this design.
         self._id_map: dict[str, QueueItem] = {}
         # Live (non-cancelled, non-stale) item count for qsize().
         self._live_count: int = 0
@@ -179,7 +179,7 @@ class PriorityEventQueue:
             otel_context=otel_context,
         )
 
-        # PR #132 M1: put_nowait is atomic — no TOCTOU window between
+        # put_nowait is atomic — no TOCTOU window between
         # full() check and put. Raises asyncio.QueueFull at the boundary.
         # _live_count and _id_map mutations follow the successful put.
         self._queue.put_nowait(queue_item)
@@ -220,7 +220,7 @@ class PriorityEventQueue:
             # Stale: cancelled (id removed from map) or replaced by a
             # later put with the same id. Drain silently; do NOT decrement
             # _live_count — cancel() already did when the mapping was
-            # removed. PR #132 C1 regression test pins this contract.
+            # removed.
 
     def cancel(self, event_id: str) -> bool:
         """Cancel a queued event by id before it dequeues.
@@ -246,7 +246,7 @@ class PriorityEventQueue:
             False if the event_id is unknown, already dequeued, or
             already cancelled. Removing the canonical mapping in this
             method (rather than waiting for get() to drain) is what makes
-            double-cancel return False (PR #132 C1).
+            double-cancel return False.
         """
         if event_id not in self._id_map:
             return False

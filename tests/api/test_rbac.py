@@ -1,4 +1,4 @@
-"""Tests for RBAC token sign/verify and require_capability dependency (GH-119).
+"""Tests for RBAC token sign/verify and require_capability dependency.
 
 Covers:
 - _sign_token / _verify_token round-trip
@@ -356,7 +356,7 @@ _CAPABILITY_STRINGS = [
 
 
 # ---------------------------------------------------------------------------
-# Non-Bearer Authorization scheme coverage (GH-119 fix #9)
+# Non-Bearer Authorization scheme coverage
 # ---------------------------------------------------------------------------
 
 
@@ -452,12 +452,12 @@ def test_401_body_does_not_echo_token() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slice 5.1 — issue_token() unit tests (GH-119 fix #5)
+# Slice 5.1 — issue_token() unit tests
 # ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
-# TTL exact-boundary semantics (GH-119 fix #16)
+# TTL exact-boundary semantics
 # ---------------------------------------------------------------------------
 
 
@@ -465,7 +465,7 @@ def test_rbac_valid_at_exact_expires_at() -> None:
     """require_capability returns 200 when expires_at == now (strict < semantics).
 
     The check is `expires_at < int(time.time())` so a token at exactly now is valid.
-    GH-119 fix #16.
+
     """
     from samantha_server.api.rbac import _sign_token
 
@@ -488,7 +488,7 @@ def test_rbac_valid_at_exact_expires_at() -> None:
 def test_rbac_expired_one_second_after_expires_at() -> None:
     """require_capability returns 401 when now > expires_at by 1 second.
 
-    GH-119 fix #16.
+
     """
     from samantha_server.api.rbac import _sign_token
 

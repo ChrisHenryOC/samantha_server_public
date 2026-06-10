@@ -1,4 +1,4 @@
-"""Multi-model sweep harness for the replay corpus (GH-141).
+"""Multi-model sweep harness for the replay corpus.
 
 Exposes a ``model_under_test`` pytest fixture parametrized over a list
 of model names. The same scenario corpus runs once per model so a
@@ -107,7 +107,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help=(
             "Comma-separated list of LLM model names to sweep "
-            "(GH-141). Overrides MODELS_TO_TEST env var; falls back "
+            ". Overrides MODELS_TO_TEST env var; falls back "
             "to config.LLM_MODEL_NAME. An explicit empty value "
             "(--models=) means 'use default' and bypasses env."
         ),

@@ -1,4 +1,4 @@
-"""Chart 1 (GH-307): accuracy_ranking renders a horizontal ranking bar chart."""
+"""Chart 1: accuracy_ranking renders a horizontal ranking bar chart."""
 
 from __future__ import annotations
 

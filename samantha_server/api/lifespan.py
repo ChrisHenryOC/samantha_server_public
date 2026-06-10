@@ -57,7 +57,7 @@ async def _cancel_and_await_task(
     """Cancel a single asyncio.Task and await it, logging appropriately.
 
     If the task already exited with an exception before shutdown, logs the
-    exception at ERROR level (PR #132 L7). If the task is still running,
+    exception at ERROR level. If the task is still running,
     cancels it and awaits it; non-CancelledError exceptions from the drain
     are logged at WARNING level and suppressed.
 
@@ -150,7 +150,7 @@ class AppState:
 
         Cancels and awaits consumer_task, then closes the SQLite write
         connection owned by receipt_writer. The receipt-writer close runs
-        unconditionally (PR #132 M3): a non-CancelledError raised by the
+        unconditionally: a non-CancelledError raised by the
         consumer (Step 4 dispatch_event panic) is logged but does not
         abort the close path. SQLite leaks are worse than a noisy log.
 
@@ -195,7 +195,7 @@ class AppState:
         # Wrap each close in contextlib.suppress(Exception) so that a failure
         # in receipt_writer.close() never prevents receipt_audit_conn.close()
         # from running. SQLite connection leaks are worse than a noisy log
-        # (PR #132 M3 principle; extended here to the audit connection).
+        #.
         import contextlib
 
         with contextlib.suppress(Exception):
@@ -203,7 +203,7 @@ class AppState:
         with contextlib.suppress(Exception):
             self.receipt_audit_conn.close()
 
-        # Step 8 (GH-123): flush in-flight spans on shutdown. Provider
+        # Step 8: Flush in-flight spans on shutdown. Provider
         # shutdown is intentionally skipped — the global TracerProvider
         # may be shared (test isolation; OTel's set_tracer_provider is
         # one-shot per process), and a Python exit handler reclaims the
@@ -250,19 +250,19 @@ def build_app_state(
     # Lazy import to avoid triggering config sentinel at collection time.
     import samantha_server.config as cfg
 
-    # Step 9 (GH-124): seed OTEL_EXPORTER_OTLP_HEADERS *before* configure_otel
+    # Step 9: Seed OTEL_EXPORTER_OTLP_HEADERS *before* configure_otel
     # constructs the OTLP exporter. The exporter reads the env var at
     # construction time, so the ordering is load-bearing.
     _seed_langfuse_otlp_headers()
 
     # G2: hard-fail if operator accidentally sets WEB_CONCURRENCY > 1.
-    # No escape hatch ships in v0; GH-111 is the only legitimate override.
+    # No escape hatch ships in v0; multi-worker support is the only legitimate override.
     if cfg.WEB_CONCURRENCY > 1:
         raise MisconfiguredEnvironmentError(
             f"WEB_CONCURRENCY={cfg.WEB_CONCURRENCY} is not supported in v0. "
             "samantha_server v0 must run as a single Uvicorn worker "
             "(--workers 1 / WEB_CONCURRENCY=1) for session-state correctness. "
-            "See GH-111 for the multi-worker migration plan."
+            "See the multi-worker migration plan."
         )
 
     # Load engine indexes.
@@ -301,7 +301,7 @@ def build_app_state(
         langfuse_probe = make_langfuse_stub_probe(ttl_sec=float(cfg.READYZ_LANGFUSE_PROBE_TTL_SEC))
 
     # Compute commit SHA once at startup; /version reads from AppState
-    # rather than forking a subprocess per request (PR #131 M3).
+    # rather than forking a subprocess per request.
     from samantha_server.api.health import get_commit_sha
 
     # Build the priority event queue (Step 2). consumer_task is left None
@@ -358,7 +358,7 @@ def _load_scenario_index() -> ScenarioIndex:
     """Load and index scenarios from the configured scenarios directory.
 
     Path comes from the ``SCENARIOS_DIR`` env var (read here rather than
-    via ``config.py`` to keep the orchestrator boot path lazy; PR #131 M2
+    via ``config.py`` to keep the orchestrator boot path lazy; M2
     notes path-traversal validation as a follow-up). Defaults to the
     in-repo ``samantha_server/scenarios/`` package directory, which
     carries no built-in corpus.
@@ -370,7 +370,7 @@ def _load_scenario_index() -> ScenarioIndex:
     Any other failure (malformed files, schema-version mismatch, future
     ``ScenarioCorpusError`` variants) propagates and crashes the lifespan,
     per the plan's "build_app_state raises loudly on misconfig" invariant
-    (PR #131 M1 fix-review).
+.
     """
     import os
 
@@ -380,7 +380,7 @@ def _load_scenario_index() -> ScenarioIndex:
     default_dir = Path(__file__).resolve().parents[2] / "scenarios"
     scenarios_dir = Path(os.environ.get("SCENARIOS_DIR", str(default_dir)))
 
-    # PR #131 M2: minimal path-traversal denylist. The bare-env-var read
+    # Minimal path-traversal denylist. The bare-env-var read
     # bypasses config.py validators; a hostile or accidental
     # ``SCENARIOS_DIR=/etc`` would otherwise walk a system directory.
     # This isn't a full allowlist (POC concession — the comprehensive
@@ -400,7 +400,7 @@ def _load_scenario_index() -> ScenarioIndex:
 
     # Empty-directory case: no files to load. Test explicitly rather than
     # catching a non-empty-malformed_files ScenarioCorpusError, which
-    # silently absorbed schema-version errors (PR #131 M1).
+    # silently absorbed schema-version errors.
     if not any(scenarios_dir.iterdir()):
         return {}
 
@@ -421,7 +421,7 @@ def _load_skill_index() -> SkillIndex:
 def _build_llm_client() -> LLMClient:
     """Build the LLM client from config.
 
-    PHI invariant (GH-212, 2026-05-11): the literal clinical-query text
+    PHI invariant: the literal clinical-query text
     travels in the LLM prompt unredacted under the local-LLM +
     self-hosted-Langfuse topology. Every provider listed below MUST be
     loopback-constrained (in-process MLX or a localhost-only server such
@@ -463,7 +463,7 @@ def _seed_langfuse_otlp_headers() -> None:
     set non-Authorization headers (e.g., a tracing tag), we preserve
     them and only inject / replace the ``Authorization`` entry. The
     previous overwrite-everything form would silently clobber
-    operator-set headers (PR #145 review L14).
+    operator-set headers.
     """
     import samantha_server.config as cfg
 

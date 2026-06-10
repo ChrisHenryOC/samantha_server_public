@@ -1,6 +1,6 @@
 """Architectural guard: replay() must route every step through the endpoint harness.
 
-GH-338 Slice D: Asserts that the endpoint harness (POST /events → queue →
+ Slice D: Asserts that the endpoint harness (POST /events → queue →
 _consume → dispatch_event) is the sole dispatch branch in replay(). Specifically:
 
 1. ``samantha_server.api.routing.dispatch_event`` must never be called directly
@@ -119,25 +119,25 @@ def test_replay_routes_all_steps_through_endpoint_harness(tmp_path: Path) -> Non
     # Legacy direct-dispatch used `tracer=` kwarg. Assert it never appears.
     for call in direct_calls:
         assert "tracer" not in call["kwargs_keys"], (
-            "GH-338 regression: dispatch_event was called with tracer= kwarg, "
+            "Regression: dispatch_event was called with tracer= kwarg, "
             "indicating the legacy direct-dispatch path is still active. "
             "All dispatch must flow through _ReplayHarness POST /events."
         )
 
 
 def test_replay_direct_dispatch_module_attr_not_present(tmp_path: Path) -> None:
-    """GH-338: the legacy module-level dispatch_event proxy must not exist.
+    """The legacy module-level dispatch_event proxy must not exist.
 
     The old replay.py exposed a lazy ``dispatch_event`` name at module scope so
     tests could monkeypatch ``samantha_server.scenarios.replay.dispatch_event``.
-    That proxy is gone in GH-338; patching that name is now a test bug, not a
+    That proxy is gone now; patching that name is now a test bug, not a
     valid seam. This test pins the absence so a future refactor can't accidentally
     re-introduce it.
     """
     import samantha_server.scenarios.replay as replay_mod
 
     assert not hasattr(replay_mod, "dispatch_event"), (
-        "GH-338: samantha_server.scenarios.replay must not expose a dispatch_event "
+        "samantha_server.scenarios.replay must not expose a dispatch_event "
         "module attribute. The legacy proxy was removed; all dispatch flows through "
         "_ReplayHarness POST /events. Remove the re-introduction."
     )

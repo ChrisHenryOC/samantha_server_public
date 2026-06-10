@@ -1,4 +1,4 @@
-"""S1 GH-227: Tests for samantha_server.models.roles."""
+"""S1 Tests for samantha_server.models.roles."""
 
 from __future__ import annotations
 

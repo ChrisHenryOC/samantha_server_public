@@ -65,7 +65,7 @@ class TestUndispatchedRuleError:
     ) -> None:
         """evaluate() with a mismatched session_id raises UndispatchedRuleError.
 
-        Regression guard for GH-119 fix #3: evaluate() must pass the
+        Regression guard for fix #3: evaluate must pass the
         *caller's* session_id to verify_dispatch, not dispatch.session_id.
         When dispatch was minted for session "A" but the caller presents
         session "B", verify_dispatch returns False and evaluate() must raise.
@@ -357,7 +357,7 @@ class TestRuleIdFilter:
 
         decision = evaluate(dispatch, ctx, rule_id_filter="ACC-001")
         assert decision.dispatched_rule_ids == full_ids
-        # L-02 from PR #96 review: filter implies a single rule iterated;
+        # L-02 review: filter implies a single rule iterated;
         # other matches are not seen, so also_matched must be empty.
         assert decision.also_matched == ()
 
@@ -381,7 +381,7 @@ class TestRuleIdFilter:
         param = sig.parameters["rule_id_filter"]
         assert param.kind == inspect.Parameter.KEYWORD_ONLY
 
-    # M-03 from PR #96 review: first-match branch with rule_id_filter.
+    # M-03 review: first-match branch with rule_id_filter.
     # The previous tests all exercised ACCESSIONING (all_match); the
     # first-match branch (used by SAMPLE_PREP_PROCESSING and other
     # downstream states) needs its own filter coverage.
@@ -403,7 +403,7 @@ class TestRuleIdFilter:
         assert decision.applied_rule_id == "SP-001"
         assert decision.dispatched_rule_ids == full_ids
 
-    # M-04 from PR #96 review: filter resolves to a rule that IS in
+    # M-04 review: filter resolves to a rule that IS in
     # dispatch but whose predicate evaluates false on this ctx. The
     # path differs from "rule_id absent from dispatch" — that one is
     # filtered out before iteration; this one is iterated but doesn't
@@ -585,7 +585,7 @@ class TestCanonicalizationTraceEmission:
 
 
 # ---------------------------------------------------------------------------
-# GH-367: order_id populated on all deterministic decision paths
+# order_id populated on all deterministic decision paths
 # ---------------------------------------------------------------------------
 
 

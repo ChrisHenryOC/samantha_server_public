@@ -47,9 +47,9 @@ class CounterRegistry:
         drift_loop_errors              — uncaught exceptions in the drift-loop iteration (Step 12)
         queue_overflow_rejections      — priority-queue overflow rejections (Step 2)
         receipt_signing_failures       — receipt signing/write failures (Step 1)
-        user_role_coercion_failures    — invalid user_role values dropped at extraction (GH-227)
+        user_role_coercion_failures — invalid user_role values dropped at extraction
         dispatch_unknown_event_type    — dispatch_empty decisions where event_type is not in the
-                                         known event_type set (GH-326)
+                                         known event_type set
 
     snapshot() returns all counter values plus timing metadata for external
     rate computation. Exposed via /readyz when any counter is non-zero.

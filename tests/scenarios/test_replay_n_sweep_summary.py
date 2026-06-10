@@ -1,4 +1,4 @@
-"""Tests for _print_n_sweep_summary (GH-262 Slice 3).
+"""Tests for _print_n_sweep_summary.
 
 Verifies the N-sweep summary output format: header, stable accuracy,
 raw accuracy, and per-fixture flaky/fail lines.

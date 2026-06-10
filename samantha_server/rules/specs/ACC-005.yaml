@@ -19,7 +19,7 @@ when:
     # Boundary with the missing-data path: null fixative is "missing info"
     # not "wrong fixative". Without this guard, Not(Equals(None, "formalin"))
     # would evaluate True and ACC-005 would false-fire on incomplete orders.
-    # GH-105 follow-up; same shape as the ACC-006 / ACC-009 boundary.
+    # follow-up; same shape as the ACC-006 / ACC-009 boundary.
     - not:
         is_null:
           field: fixative

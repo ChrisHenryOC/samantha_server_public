@@ -1,11 +1,11 @@
-"""GH-156: parity_report composer.
+"""parity_report composer.
 
 Walks one or more `AccuracyReport` instances (multi-model sweep) and
 emits the published-shape JSON + markdown rollup that the parity CLI
 ships against the upstream POC's `results/model_selection_phase1/
 summary.json`.
 
-Per the discovery memo (PR #167):
+Per the discovery memo:
 - Latency mean/p50/p95: derived from `step_verdicts[*].latency_us`.
 - Per-category accuracy split: group by `ScenarioVerdict.category`.
 - Rule/flag accuracy: per-step rule-match / flag-set match rate.
@@ -163,7 +163,7 @@ def test_rule_accuracy_step_level() -> None:
     )
     metrics = compose_parity_metrics("test-model", _report(verdicts))
     assert metrics.rule_accuracy == pytest.approx(50.0)
-    # PR #174 L3: pin wrong_rules independently so the test doesn't quietly
+    # Pin wrong_rules independently so the test doesn't quietly
     # flip if a future change adds SP-001 to the same equivalence class as
     # ACC-008.
     assert metrics.failure_counts["wrong_rules"] == 1
@@ -236,7 +236,7 @@ def test_latency_mean_p50_p95_in_milliseconds() -> None:
 def test_failure_counts_mapping_per_memo() -> None:
     """StepVerdict.status maps to samantha's FailureType per the memo's table.
 
-    `dispatch_empty` → `empty_response` (PR #167 review M1 fix). Hallucination
+    `dispatch_empty` → `empty_response`. Hallucination
     buckets read zero with a "not separately tracked" note.
     """
     from samantha_server.eval.parity_report import compose_parity_metrics
@@ -333,7 +333,7 @@ def test_compose_parity_metrics_empty_verdicts() -> None:
     assert metrics.failure_counts["wrong_state"] == 0
     assert metrics.failure_counts["empty_response"] == 0
     assert metrics.failure_counts["hallucinated_state"] == 0
-    # GH-172 + PR #173 H1: routing counts pre-seed all five keys so a 0
+    # + H1: routing counts pre-seed all five keys so a 0
     # LLM call count is comparable across runs.
     assert metrics.model_calls == 0
     assert metrics.step_routing_counts == {
@@ -485,7 +485,7 @@ def test_render_markdown_escapes_model_id_pipe(tmp_path: Path) -> None:
     # The pipe / backtick must be escaped so the row still has 8 columns.
     data_rows = [line for line in body.splitlines() if line.startswith("| weird")]
     assert len(data_rows) == 1
-    # 9 columns (8 metric columns + the GH-172 LLM-calls column) means 10
+    # 9 columns (8 metric columns + the LLM-calls column) means 10
     # unescaped pipes; an unescaped `|` in model_id would push to 11.
     raw_pipes = data_rows[0].replace("\\|", "")
     assert raw_pipes.count("|") == 10
@@ -521,7 +521,7 @@ def test_write_parity_report_multi_model_sweep(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-172: model_calls + step_routing_counts surfacing
+# model_calls + step_routing_counts surfacing
 # ---------------------------------------------------------------------------
 
 
@@ -565,7 +565,7 @@ def test_model_calls_counts_only_llm_routed_steps() -> None:
 def test_step_routing_counts_attributes_pre_routing_errors() -> None:
     """A step that errored before routing was determined (routing_path=None)
     lands in `errored_pre_routing` so a 0 in `model_calls` can be
-    cross-checked. This is the GH-171 dispatch-refusal shape."""
+    cross-checked. This is the dispatch-refusal shape."""
     from samantha_server.eval.parity_report import compose_parity_metrics
 
     verdicts = (
@@ -584,7 +584,7 @@ def test_step_routing_counts_attributes_pre_routing_errors() -> None:
     )
     metrics = compose_parity_metrics("Qwen2.5-Coder", _report(verdicts))
     assert metrics.model_calls == 0
-    # PR #173 M5: full-dict equality so a regression that bumped any
+    # Full-dict equality so a regression that bumped any
     # other key on the routing_path=None path would be caught.
     assert metrics.step_routing_counts == {
         "deterministic": 0,
@@ -596,11 +596,11 @@ def test_step_routing_counts_attributes_pre_routing_errors() -> None:
 
 
 def test_step_routing_counts_attributes_post_routing_errors() -> None:
-    """PR #173 H1: a step that errored *after* routing was decided lands in
+    """A step that errored *after* routing was decided lands in
     `errored_deterministic` or `errored_llm`, NOT `errored_pre_routing`. This
-    is the GH-156 `re_raise_on_deterministic_error=False` shape — a real
+    is the `re_raise_on_deterministic_error=False` shape — a real
     deterministic engine gap (e.g. SC-092's FIXATION_WARNING) must not
-    trigger the GH-172 "model never called" banner."""
+    trigger the "model never called" banner."""
     from samantha_server.eval.parity_report import compose_parity_metrics
 
     verdicts = (
@@ -662,7 +662,7 @@ def test_render_markdown_warns_on_silent_model(tmp_path: Path) -> None:
     write_parity_report(reports, tmp_path, run_id="parity-silent")
 
     body = (tmp_path / "parity-silent.md").read_text()
-    # PR #173 L3: structural check on the banner so a prose reword doesn't
+    # Structural check on the banner so a prose reword doesn't
     # break the test. The banner is a Markdown block-quote starting with
     # `> **Note:**`.
     assert any(line.startswith("> **Note:**") for line in body.splitlines()), body
@@ -696,7 +696,7 @@ def test_render_markdown_no_banner_when_model_was_called(tmp_path: Path) -> None
 
 
 def test_render_markdown_no_banner_on_deterministic_only_run(tmp_path: Path) -> None:
-    """PR #173 M3: deterministic-only runs (e.g. accumulated_state subset)
+    """Deterministic-only runs (e.g. accumulated_state subset)
     have `model_calls == 0` AND `errored_pre_routing == 0`. No banner — the
     "LLM calls: 0" column is honest and expected, not a warning sign."""
     from samantha_server.eval.parity_report import write_parity_report
@@ -726,7 +726,7 @@ def test_render_markdown_no_banner_on_deterministic_only_run(tmp_path: Path) -> 
 
 
 def test_render_markdown_warns_on_empty_corpus(tmp_path: Path) -> None:
-    """PR #173 M2: a composer call with zero verdicts (empty corpus or
+    """A composer call with zero verdicts (empty corpus or
     fully-filtered include_scenario_ids on a non-CLI caller) emits a
     distinct banner so the empty-input shape is impossible to misread as a
     real comparison.
@@ -744,7 +744,7 @@ def test_render_markdown_warns_on_empty_corpus(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-170: rule equivalence-class matching (composer-only)
+# Rule equivalence-class matching (composer-only)
 # ---------------------------------------------------------------------------
 
 
@@ -820,13 +820,13 @@ def test_compose_parity_metrics_equivalence_promotes_accuracy() -> None:
     assert metrics.accuracy == pytest.approx(100.0)
     assert metrics.accuracy_by_category["rule_coverage"] == pytest.approx(100.0)
     assert metrics.failure_counts["wrong_rules"] == 0
-    # PR #174 M7: pin rule_accuracy so a regression that promoted at the
+    # Pin rule_accuracy so a regression that promoted at the
     # scenario layer but missed _step_rule_match's numerator wouldn't slip.
     assert metrics.rule_accuracy == pytest.approx(100.0)
 
 
 def test_render_markdown_per_model_banner_is_per_model(tmp_path: Path) -> None:
-    """PR #173 L4: the banner is per-model, not per-report. An asymmetric
+    """The banner is per-model, not per-report. An asymmetric
     multi-model sweep (one silent, one healthy) shows the banner for the
     silent model only, not as a global header."""
     from samantha_server.eval.parity_report import write_parity_report
@@ -861,12 +861,12 @@ def test_render_markdown_per_model_banner_is_per_model(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# PR #174 review fixes — equivalence-class hardening
+# review fixes — equivalence-class hardening
 # ---------------------------------------------------------------------------
 
 
 def test_scenario_parity_passed_rejects_empty_step_verdicts() -> None:
-    """PR #174 H1: a scenario with no step_verdicts is NOT a parity pass.
+    """A scenario with no step_verdicts is NOT a parity pass.
     Vacuous truth in the for-loop would silently inflate accuracy for any
     malformed scenario the loader produced with an empty steps list."""
     from samantha_server.eval.parity_report import (
@@ -883,7 +883,7 @@ def test_scenario_parity_passed_rejects_empty_step_verdicts() -> None:
 
 
 def test_rule_equivalence_classes_symmetry_invariant() -> None:
-    """PR #174 M2: every member of an equivalence class must map to the
+    """Every member of an equivalence class must map to the
     same frozenset value. The `_RULE_EQUIVALENCE_CLASSES` dict is built
     from `_RULE_EQUIVALENCE_CLASS_LIST` so this is true by construction —
     pin it so a future hand-written entry can't violate it."""
@@ -905,7 +905,7 @@ def test_rule_equivalence_classes_symmetry_invariant() -> None:
 
 
 def test_rule_accuracy_counts_mismatch_state_step_with_equivalent_rules() -> None:
-    """PR #174 M3 (orthogonality pin): a step that mismatches state but
+    """ M3 (orthogonality pin): a step that mismatches state but
     has equivalence-class-matching rules still contributes a rule-match
     point to `rule_accuracy`. The `rule_accuracy` metric measures rule
     attribution independently of state correctness — a samantha-POC
@@ -941,7 +941,7 @@ def test_rule_accuracy_counts_mismatch_state_step_with_equivalent_rules() -> Non
 
 
 def test_canonicalize_multi_rule_partial_equivalence() -> None:
-    """PR #174 M4: a step where one rule is in the equivalence map and
+    """A step where one rule is in the equivalence map and
     another is not — the canonicalization must map each rule
     independently. Expected ("SP-001","ACC-008") vs predicted
     ("SP-007","ACC-008") canonicalize equal."""
@@ -977,7 +977,7 @@ def test_canonicalize_multi_rule_partial_equivalence() -> None:
 
 
 def test_scenario_reliability_unchanged_by_equivalence_rescue() -> None:
-    """PR #174 M5: a scenario rescued from mismatch_rules to a parity pass
+    """A scenario rescued from mismatch_rules to a parity pass
     still counts toward reliability. `_scenario_reliability` examines step
     statuses directly (looking for `error`), so rescue is a no-op for
     reliability — a future refactor that routes rescued steps through
@@ -1004,7 +1004,7 @@ def test_scenario_reliability_unchanged_by_equivalence_rescue() -> None:
 
 
 def test_accuracy_by_category_two_categories_with_rescue_and_real_failure() -> None:
-    """PR #174 M6: a two-category corpus with one rescued scenario and one
+    """A two-category corpus with one rescued scenario and one
     genuine mismatch_state pins the per-category split under
     `_scenario_parity_passed`."""
     from samantha_server.eval.parity_report import compose_parity_metrics
@@ -1047,7 +1047,7 @@ def test_accuracy_by_category_two_categories_with_rescue_and_real_failure() -> N
 
 
 def test_canonicalize_empty_tuple() -> None:
-    """PR #174 L1: pin `_canonicalize_rule_set(())` returns an empty
+    """Pin `_canonicalize_rule_set(())` returns an empty
     frozenset. The current code reaches this case only via
     `_EXCLUDED_FROM_MATCH_RATE` (which excludes `dispatch_empty`), but
     the helper's contract on empty input should be observable so a
@@ -1058,7 +1058,7 @@ def test_canonicalize_empty_tuple() -> None:
 
 
 def test_step_is_parity_equivalent_mismatch_rules_returns_false_on_identical_literals() -> None:
-    """PR #174 L2: pin the identical-literals early-out. The engine should
+    """Pin the identical-literals early-out. The engine should
     not produce mismatch_rules with identical sets, but if it ever did, the
     composer must NOT rescue the step (preserves wrong_rules accounting on
     pathological engine output)."""

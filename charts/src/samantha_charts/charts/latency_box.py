@@ -1,4 +1,4 @@
-"""Chart 5: per-model LLM-call latency box plot (GH-309, CONVEX Slide 25/26).
+"""Chart 5: per-model LLM-call latency box plot (CONVEX Slide 25/26).
 
 Renders one vertical boxplot per model showing median, quartiles, and whiskers
 for query + llm_review fixture latencies. Incumbent model (Qwen3-Next-80B) is

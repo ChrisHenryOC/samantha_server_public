@@ -127,12 +127,12 @@ def _open_audit_conn(path: Path) -> sqlite3.Connection:
 
 
 # ---------------------------------------------------------------------------
-# GH-367: idempotent ALTER TABLE migration helper
+# Idempotent ALTER TABLE migration helper
 # ---------------------------------------------------------------------------
 
 
 def _migrate_add_order_id_column(conn: sqlite3.Connection) -> None:
-    """Idempotently add the GH-367 order_id column to a pre-existing receipts table.
+    """Idempotently add the order_id column to a pre-existing receipts table.
 
     Must run BEFORE the schema's ``CREATE INDEX idx_receipts_order_id``, which
     references the column. Two OperationalError cases are expected and swallowed:
@@ -165,13 +165,13 @@ def init_schema(conn: sqlite3.Connection) -> None:
     (replay harness, parity CLI). Avoids reaching into ``_SCHEMA_SQL``
     and duplicating the foreign-keys / executescript / commit idiom.
 
-    GH-367: applies an idempotent ALTER TABLE migration for pre-existing
+    Applies an idempotent ALTER TABLE migration for pre-existing
     databases that lack the order_id column. Fresh databases already have
     the column from schema.sql; the OperationalError for duplicate column
     name is swallowed.
     """
     conn.execute("PRAGMA foreign_keys=ON")
-    # GH-367: migrate pre-existing DBs; must precede executescript so
+    # Migrate pre-existing DBs; must precede executescript so
     # schema.sql's idx_receipts_order_id can reference the column.
     _migrate_add_order_id_column(conn)
     conn.executescript(_SCHEMA_SQL)
@@ -212,7 +212,7 @@ def init_store(path: Path) -> None:
         try:
             # G4: SQLite WAL — append-only, crash-safe; readers never block writers
             conn.execute("PRAGMA journal_mode=WAL")
-            # GH-367: migrate pre-existing DBs; must precede executescript so
+            # Migrate pre-existing DBs; must precede executescript so
             # schema.sql's idx_receipts_order_id can reference the column.
             _migrate_add_order_id_column(conn)
             # Apply schema (idempotent)
@@ -281,7 +281,7 @@ def insert(conn: sqlite3.Connection, receipt: SignedReceipt) -> None:
 # ---------------------------------------------------------------------------
 # Read helper — used by the replay harness to recover the full EngineDecision
 # (including decision_traces / primitive_traces) from the persisted receipt,
-# bypassing the PHI-stripped /events HTTP response (GH-333).
+# bypassing the PHI-stripped /events HTTP response.
 # ---------------------------------------------------------------------------
 
 

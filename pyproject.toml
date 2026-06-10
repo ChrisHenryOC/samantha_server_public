@@ -9,7 +9,7 @@ dependencies = [
     # G20 canonical-JSON stability: model_dump_json() output is load-bearing
     # for receipt signing. Each Pydantic minor upgrade must be audited for
     # serialization-order changes before bumping the lock file.
-    # GH-208: replay_to_langfuse writes directly to opentelemetry.trace._TRACER_PROVIDER
+    # replay_to_langfuse writes directly to opentelemetry.trace._TRACER_PROVIDER
     # to bypass the one-shot set_tracer_provider() lock. That attribute is a
     # private name in opentelemetry-api — a major bump that renames or removes
     # it must re-verify the save/restore mechanism in
@@ -25,7 +25,7 @@ dependencies = [
     # samantha_server.scenarios.replay ...` reads `.env` from the project root
     # without an explicit `set -a; source .env; set +a` step. Pinned directly
     # (the former transitive source, pydantic-settings via mcp, was dropped in
-    # GH-356) so the direct use is honest.
+    # so the direct use is honest.
     "python-dotenv>=1.0",
     "pyyaml>=6.0",
     "uvicorn[standard]>=0.46.0",
@@ -42,8 +42,8 @@ dev = [
     # tests/scripts/. Kept out of [project] dependencies because no
     # production runtime consumes psutil — only dev / test / operator
     # paths do. dev-group placement means CI test runs install it
-    # while `uv sync --no-dev` production installs do not. GH-275 / PR
-    # #280 review.
+    # while `uv sync --no-dev` production installs do not.
+    # 
     "psutil>=5.9",
     "types-psutil>=5.9",
     "types-pyyaml>=6.0",
@@ -56,7 +56,7 @@ local-llm = ["mlx-lm>=0.20"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Coverage runs in CI via a dedicated step (`pytest --cov=samantha_server --cov-report=term-missing`);
-# not in `addopts` so local pytest iteration and GH-8 micro-benchmarks are not
+# not in `addopts` so local pytest iteration and micro-benchmarks are not
 # burdened with sys.settrace overhead. The [tool.coverage.report].fail_under = 100
 # gate remains authoritative whenever coverage is collected.
 #
@@ -88,7 +88,7 @@ markers = [
     # The "local_omlx" marker is for tests that require a running oMLX server
     # on loopback. Run with: pytest -m local_omlx (requires oMLX running locally).
     "local_omlx: live oMLX server tests — excluded by default and in CI",
-    # The "langfuse" marker (GH-124 Step 9) is for the loopback smoke test
+    # The "langfuse" marker is for the loopback smoke test
     # that confirms LANGFUSE_BASE_URL resolves and connects to a running
     # Langfuse instance. Defends the dual-stack landmine where ``localhost``
     # resolves to ``::1`` while docker-compose binds IPv4-only. Excluded

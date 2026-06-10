@@ -1,4 +1,4 @@
-"""Chart 7: model-selection radar (Option B: 3 axes) (GH-309, CONVEX Slide 24b).
+"""Chart 7: model-selection radar (Option B: 3 axes) (CONVEX Slide 24b).
 
 Renders a 3-axis polar/radar chart comparing 4 candidate models on:
   - Accuracy: overall stable accuracy % (higher is better)

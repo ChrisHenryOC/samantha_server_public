@@ -3,7 +3,7 @@
 create_app() builds the production FastAPI instance with:
 - Lifespan-managed engine initialization (loads indexes, opens SQLite).
   The lifespan's ``finally`` clause sets ``is_draining=True`` before
-  releasing resources — this is the production drain trigger. (PR #131
+  releasing resources — this is the production drain trigger. (
   C3 fix-review: a separate SIGTERM signal handler doesn't survive
   Uvicorn's own handler installation; lifespan-finally is the path
   Uvicorn always invokes on graceful shutdown.)
@@ -11,9 +11,9 @@ create_app() builds the production FastAPI instance with:
 - JSON-formatted access logger (PHI-safe: drops query strings + bodies).
 - Uncaught exception handler (500 with error=internal + request_id, no traceback).
 - /healthz, /readyz, /version diagnostic endpoints.
-- Swagger UI, ReDoc, **and** /openapi.json all disabled (PR #131 H5
+- Swagger UI, ReDoc, **and** /openapi.json all disabled (H5
   fix-review applied the plan's spike-fallback floor: openapi_url=None
-  until Step 5 / GH-119 ships the health:read RBAC gate). A lab dev who
+  until Step 5 ships the health:read RBAC gate). A lab dev who
   wants the schema can run create_app().openapi() against a checkout.
 """
 
@@ -88,7 +88,7 @@ async def _consume(state: AppState) -> None:
         # ``otel_context.attach`` returns a token that ``detach``
         # consumes; without the detach the context leaks into the next
         # loop iteration and unrelated events become children of a
-        # stale span (Step 8 / GH-123).
+        # stale span (Step 8).
         otel_token: contextvars.Token[Context] | None = None
         try:
             queue_item = await state.queue.get()
@@ -100,7 +100,7 @@ async def _consume(state: AppState) -> None:
             if queue_item.otel_context is not None:
                 otel_token = otel_context.attach(queue_item.otel_context)
 
-            # GH-227: inject user_role from the payload into event_data so
+            # Inject user_role from the payload into event_data so
             # handle_clinical_query can extract it. Copy-on-write: do not
             # mutate the immutable Mapping from the queue item. Hard key
             # access (no .get fallbacks) — ctx_dict is always a
@@ -224,7 +224,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     Decision (G1): build_app_state() is synchronous. The async wrapper is
     required by FastAPI; the body is sequential for fail-loud discipline.
 
-    Drain trigger (PR #131 C3): on shutdown (Uvicorn's SIGTERM handling
+    Drain trigger: on shutdown (Uvicorn's SIGTERM handling
     invokes lifespan.shutdown), the ``finally`` clause flips
     ``is_draining=True`` *before* releasing resources, so any in-flight
     or last-arriving /readyz call sees 503 immediately.
@@ -483,14 +483,14 @@ def create_app() -> FastAPI:
         version=version,
         docs_url=None,
         redoc_url=None,
-        # PR #131 H5 fix-review: openapi_url=None is the plan's
-        # spike-fallback floor. Step 5 / GH-119 will set this back to
+        # openapi_url=None is the plan's
+        # spike-fallback floor. Step 5 will set this back to
         # "/openapi.json" once the health:read RBAC gate exists.
         openapi_url=None,
     )
     app.debug = False
 
-    # Middleware ordering (PR #131 H1 fix-review; extended by Step 4 GH-118).
+    # Middleware ordering.
     # Starlette's add_middleware is LIFO: the *last* call becomes the
     # *outermost* wrapper. Outside-in order desired:
     #   RequestIDMiddleware → _BodyCapMiddleware → _AccessLogger → app
@@ -515,7 +515,7 @@ def create_app() -> FastAPI:
         )
 
     # Register RBAC exception handlers (must be before events + health routes).
-    # GH-119 Step 5: 401/403 from require_capability() are rendered via these
+    # 401/403 from require_capability() are rendered via these
     # handlers to produce the exact {"error": "unauthorized"} / {"error": "forbidden"}
     # bodies — not FastAPI's default {"detail": ...} wrapper.
     from samantha_server.api.rbac import register_rbac_exception_handlers
@@ -530,7 +530,7 @@ def create_app() -> FastAPI:
 
     register_events_routes(app)
 
-    # Register receipt read endpoints (Step 5.5 / GH-120).
+    # Register receipt read endpoints (Step 5.5).
     from samantha_server.api.receipts import register_receipts_routes
 
     register_receipts_routes(app)

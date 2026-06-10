@@ -1,4 +1,4 @@
-"""Drift-alarm webhook monitor (GH-127 Step 12).
+"""Drift-alarm webhook monitor.
 
 A small periodic task computes ``llm_call_rate`` over a rolling window
 from an in-memory rolling buffer owned by the orchestrator — *not*

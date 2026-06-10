@@ -1,4 +1,4 @@
-"""Chart 10: daily routing-path 100% stacked bar (GH-310).
+"""Chart 10: daily routing-path 100% stacked bar.
 
 Renders a 100% normalized stacked bar chart showing the day-over-day mix of
 deterministic vs LLM routing. The production target is <=5% LLM; a reference

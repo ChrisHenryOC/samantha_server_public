@@ -1,4 +1,4 @@
-"""Chart 8: per-category stable accuracy heatmap (GH-307).
+"""Chart 8: per-category stable accuracy heatmap.
 
 Heatmap with rows = scenario categories, columns = models, cells = stable
 accuracy % for that (category, model) pair. Highlights where models differ

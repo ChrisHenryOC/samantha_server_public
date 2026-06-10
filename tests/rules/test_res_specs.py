@@ -403,7 +403,7 @@ class TestRes005Evaluate:
         """Mirrors IHC § P: an empty event_data carries no `outcome` key,
         so the order stalls at REPORT_GENERATION with applied_rules=[].
         Pinning this documents the current behavior; whether to add a
-        catch-all is a kernel-layer decision tracked in GH-15."""
+        catch-all is a kernel-layer decision tracked in the open kernel issue."""
         rule = next(s for s in res_specs if s.rule_id == "RES-005")
         ctx = _make_ctx(
             current_state="REPORT_GENERATION",
@@ -424,7 +424,7 @@ def test_res_rules_set_no_flags(res_specs: list[RuleSpec], rule_id: str) -> None
     cleanup on missing-info-received is the kernel's responsibility (the
     action handler decides whether to clear MISSING_INFO_PROCEED based on
     the runtime branch — see decision-gate.md § "Action handler boundary"
-    and GH-15).  Pinning empty set/clear here documents the intent so a
+    and). Pinning empty set/clear here documents the intent so a
     future authoring mistake fails loudly."""
     spec = next(s for s in res_specs if s.rule_id == rule_id)
     assert spec.action.set_flags == ()

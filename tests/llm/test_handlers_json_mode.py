@@ -1,4 +1,4 @@
-"""Tests for handle_clinical_query JSON branch (GH-192 Slice 8).
+"""Tests for handle_clinical_query JSON branch.
 
 Tests:
 - JSON mode + valid JSON → trace has parsed_* populated, parse_failure=None.
@@ -516,7 +516,7 @@ def test_free_text_mode_calls_complete_not_complete_json(monkeypatch: pytest.Mon
 
 
 # ---------------------------------------------------------------------------
-# GH-212: query text in prompt (Slices 1–4)
+# Query text in prompt (Slices 1–4)
 # ---------------------------------------------------------------------------
 
 
@@ -698,15 +698,15 @@ def test_non_string_query_logs_warning(
 
 
 # ---------------------------------------------------------------------------
-# GH-225 Slice A: <similar_scenarios> block removed from clinical_query prompts
+# <similar_scenarios> block removed from clinical_query prompts
 # ---------------------------------------------------------------------------
 
 
 def test_build_query_messages_no_similar_scenarios_block() -> None:
-    """GH-225 Slice A: _build_query_messages must NOT emit <similar_scenarios> block.
+    """_build_query_messages must NOT emit <similar_scenarios> block.
 
     The <similar_scenarios> block always rendered '(none available)' in
-    production (index empty + GH-213 guard returns ()). It is now structurally
+    production (index empty + guard returns ). It is now structurally
     absent from the clinical_query prompt.
     """
     from samantha_server.llm.handlers import _build_query_messages
@@ -718,17 +718,17 @@ def test_build_query_messages_no_similar_scenarios_block() -> None:
     )
     user_content = messages[1]["content"]
     assert "<similar_scenarios>" not in user_content, (
-        "<similar_scenarios> block must not appear in clinical_query prompts (GH-225 Slice A)"
+        "<similar_scenarios> block must not appear in clinical_query prompts"
     )
 
 
 # ---------------------------------------------------------------------------
-# GH-225 Slice B: <safe_context> block removed from clinical_query prompts
+# <safe_context> block removed from clinical_query prompts
 # ---------------------------------------------------------------------------
 
 
 def test_build_query_messages_no_safe_context_block() -> None:
-    """GH-225 Slice B: _build_query_messages must NOT emit <safe_context> block.
+    """_build_query_messages must NOT emit <safe_context> block.
 
     For query events ctx.order is a harness artifact; audit role is served by
     receipts + Langfuse span metadata. The block is structurally absent from
@@ -743,7 +743,7 @@ def test_build_query_messages_no_safe_context_block() -> None:
     )
     user_content = messages[1]["content"]
     assert "<safe_context>" not in user_content, (
-        "<safe_context> block must not appear in clinical_query prompts (GH-225 Slice B)"
+        "<safe_context> block must not appear in clinical_query prompts"
     )
 
 

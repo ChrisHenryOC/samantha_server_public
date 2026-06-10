@@ -1,4 +1,4 @@
-"""Regression test for sweep_span_context attribute set after GH-182 migration.
+"""Regression test for sweep_span_context attribute set after migration.
 
 Slice 4: pin the exact attribute set emitted by sweep_span_context after
 migration from stamp_sweep_span_attributes to stamp_trace_attributes(TraceContext(...)).
@@ -47,7 +47,7 @@ def test_sweep_span_context_emits_same_attribute_set_as_legacy_stamper() -> None
     assert len(spans) == 1
     attrs = dict(spans[0].attributes or {})
 
-    # GH-183: canonical dashboard surface = langfuse.trace.metadata.*
+    # Canonical dashboard surface = langfuse.trace.metadata.*
     # samantha.scenario_id, samantha.scenario_category, samantha.sweep_run_id
     # are dropped (they have langfuse.trace.metadata.* duplicates).
     expected_keys = {
@@ -64,11 +64,11 @@ def test_sweep_span_context_emits_same_attribute_set_as_legacy_stamper() -> None
     )
 
     # Dropped samantha.* keys must be absent
-    assert "samantha.scenario_id" not in attrs, "GH-183: samantha.scenario_id must be absent"
+    assert "samantha.scenario_id" not in attrs, "samantha.scenario_id must be absent"
     assert "samantha.scenario_category" not in attrs, (
-        "GH-183: samantha.scenario_category must be absent"
+        "samantha.scenario_category must be absent"
     )
-    assert "samantha.sweep_run_id" not in attrs, "GH-183: samantha.sweep_run_id must be absent"
+    assert "samantha.sweep_run_id" not in attrs, "samantha.sweep_run_id must be absent"
 
     # Canonical surface assertions
     assert attrs["langfuse.trace.name"] == "SC-100"

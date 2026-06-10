@@ -1,6 +1,6 @@
 ---
 name: clarify-issue
-description: Use this skill when the user wants to work through open questions / clarifications on a GitHub issue before implementation — phrases like "walk me through GH-105", "let's clarify issue 109", "help me think through the open questions on this issue", or pointing at multiple issues that need refinement (e.g., "GH-105, 109, 110, 111"). The skill drives one question at a time via `AskUserQuestion`, presents a recommendation per question, and posts the resolutions back to the issue as a comment. Do NOT use this skill for issues the user is ready to implement — that's `/issue`.
+description: Use this skill when the user wants to work through open questions / clarifications on a GitHub issue before implementation — phrases like "walk me through ", "let's clarify issue 109", "help me think through the open questions on this issue", or pointing at multiple issues that need refinement (e.g., ", 109, 110, 111"). The skill drives one question at a time via `AskUserQuestion`, presents a recommendation per question, and posts the resolutions back to the issue as a comment. Do NOT use this skill for issues the user is ready to implement — that's `/issue`.
 version: 0.1.0
 ---
 
@@ -23,7 +23,7 @@ If the user is ready to **implement**, route to `/issue` instead. If they want a
 - **If the call fails** (404, auth, network, rate limit, non-zero exit): surface the stderr to the user verbatim and stop — do not proceed with an empty issue body. Ask via `AskUserQuestion` (`Retry` / `Switch issue` / `Abort`) before doing anything else.
 - **If the issue is closed:** ask via `AskUserQuestion` (`Continue anyway` / `Abort`). Sometimes follow-ups on a closed issue are still worth resolving, but the closed state warrants explicit confirmation.
 
-If the user named several issues (e.g. "GH-105, 109, 110, 111"), confirm which one to start with via `AskUserQuestion`. Do **not** silently batch them — finish one issue end-to-end before opening the next.
+If the user named several issues (e.g. ", 109, 110, 111"), confirm which one to start with via `AskUserQuestion`. Do **not** silently batch them — finish one issue end-to-end before opening the next.
 
 ### 2. Enumerate the questions (parse, then infer)
 

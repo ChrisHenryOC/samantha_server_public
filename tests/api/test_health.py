@@ -28,7 +28,7 @@ def _make_health_read_token() -> str:
 def _make_test_app() -> FastAPI:
     """Build a test FastAPI app with health routes and a healthy AppState.
 
-    GH-119: registers RBAC exception handlers so /version 401/403 responses
+    Registers RBAC exception handlers so /version 401/403 responses
     render correctly. Tests for /version must supply a valid health:read
     Bearer token.
     """
@@ -52,7 +52,7 @@ def _make_test_app() -> FastAPI:
 def _version_get(app: FastAPI) -> Any:
     """GET /version with a valid health:read token, with RBAC key patched.
 
-    GH-119: /version now requires health:read. Use this helper instead of
+    /version now requires health:read. Use this helper instead of
     calling client.get("/version") directly to avoid 401 failures.
     """
     token = _make_health_read_token()
@@ -104,7 +104,7 @@ def test_readyz_returns_200_when_healthy(clean_env: pytest.MonkeyPatch) -> None:
 
 
 def test_readyz_head_returns_200(clean_env: pytest.MonkeyPatch) -> None:
-    """PR #131 test-cov L-01: HEAD /readyz coverage symmetric to /healthz."""
+    """HEAD /readyz coverage symmetric to /healthz."""
     client = TestClient(_make_test_app())
     response = client.head("/readyz")
     assert response.status_code == 200
@@ -133,7 +133,7 @@ def test_readyz_components_langfuse_shape(clean_env: pytest.MonkeyPatch) -> None
 
 
 def test_readyz_components_drift_webhook_shape(clean_env: pytest.MonkeyPatch) -> None:
-    """PR #131 test-cov L-02: drift_webhook component shape symmetric to langfuse."""
+    """drift_webhook component shape symmetric to langfuse."""
     client = TestClient(_make_test_app())
     drift = client.get("/readyz").json()["components"]["drift_webhook"]
     assert "configured" in drift
@@ -163,7 +163,7 @@ def test_readyz_503_when_draining(clean_env: pytest.MonkeyPatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# /readyz — two-tier readiness model (PR #131 H3)
+# /readyz — two-tier readiness model
 # ---------------------------------------------------------------------------
 
 
@@ -191,7 +191,7 @@ def test_readyz_503_when_rule_index_missing(clean_env: pytest.MonkeyPatch) -> No
 def test_readyz_components_langfuse_enabled_reflects_cfg(
     clean_env: pytest.MonkeyPatch,
 ) -> None:
-    """components.langfuse.enabled is read from cfg.LANGFUSE_ENABLED (PR #145 L15).
+    """components.langfuse.enabled is read from cfg.LANGFUSE_ENABLED.
 
     Previously this read live from os.environ, which let /readyz drift
     from the lifespan-bound probe selection. Standardised on cfg now.
@@ -229,7 +229,7 @@ def test_readyz_components_drift_webhook_configured_reflects_env(
 def test_readyz_invokes_cached_probe(clean_env: pytest.MonkeyPatch) -> None:
     """/readyz calls CachedProbe.current() so the TTL/single-flight cache populates.
 
-    PR #131 C2 regression: previously /readyz read ``_cached`` directly
+     C2 regression: previously /readyz read ``_cached`` directly
     and never invoked ``current()`` — the probe never ran. This test
     asserts ``current()`` is awaited at least once per /readyz call.
     """
@@ -252,7 +252,7 @@ def test_readyz_flood_invokes_probe_at_most_once_per_ttl(
 ) -> None:
     """100 sequential /readyz calls produce ≤ 1 outbound probe call.
 
-    PR #131 M9 + plan Step 1 done-when. The cache amortizes the
+     M9 + plan Step 1 done-when. The cache amortizes the
     underlying probe work across the TTL window.
     """
     from samantha_server.observability.cached_probe import CachedProbe
@@ -291,7 +291,7 @@ def test_version_body_has_commit(clean_env: pytest.MonkeyPatch) -> None:
 def test_version_returns_cached_commit_sha(clean_env: pytest.MonkeyPatch) -> None:
     """/version reads commit_sha from AppState — does not fork a subprocess.
 
-    PR #131 M3 regression: previously each /version call ran ``git
+     M3 regression: previously each /version call ran ``git
     rev-parse HEAD`` (10–50 ms fork). The SHA is now computed once in
     build_app_state and cached; this test asserts the value comes from
     state, not from a fresh subprocess.
@@ -316,7 +316,7 @@ def test_version_config_redacts_secret_values(clean_env: pytest.MonkeyPatch) -> 
 
 
 def test_version_config_redacts_path_values(clean_env: pytest.MonkeyPatch) -> None:
-    """RECEIPTS_DB_PATH and any *_PATH-named variable is redacted (PR #131 H2).
+    """RECEIPTS_DB_PATH and any *_PATH-named variable is redacted.
 
     Filesystem paths leak the OS username and directory layout — the
     plan's PHI-boundary discipline applies the same way.
@@ -328,7 +328,7 @@ def test_version_config_redacts_path_values(clean_env: pytest.MonkeyPatch) -> No
 def test_version_config_redacts_path_shaped_string_values(
     clean_env: pytest.MonkeyPatch,
 ) -> None:
-    """Variables whose VALUES contain a path separator are redacted (PR #131 L6).
+    """Variables whose VALUES contain a path separator are redacted.
 
     Catches LLM_MODEL_NAME defaulting to LLM_MODEL_PATH when the operator
     hasn't set MODEL_NAME explicitly and MODEL_PATH points at a local
@@ -348,7 +348,7 @@ def test_version_config_redacts_path_shaped_string_values(
 def test_version_config_does_not_redact_numeric_token_ttls(
     clean_env: pytest.MonkeyPatch,
 ) -> None:
-    """RBAC_TOKEN_TTL_SEC etc. should NOT be redacted just because of "TOKEN" (PR #131 L3).
+    """RBAC_TOKEN_TTL_SEC etc. should NOT be redacted just because of "TOKEN".
 
     Step 5 will introduce these vars; ensure the redaction policy doesn't
     incorrectly hide their integer values when they land. Today the
@@ -366,7 +366,7 @@ def test_get_commit_sha_falls_back_logs_unexpected(
 ) -> None:
     """Unexpected exceptions in get_commit_sha are logged, not silently absorbed.
 
-    PR #131 M5 regression: previously the bare `except Exception: pass`
+     M5 regression: previously the bare `except Exception: pass`
     masked any non-FileNotFoundError. Now the broad fallback logs.
     """
     from unittest.mock import patch
@@ -384,7 +384,7 @@ def test_get_commit_sha_falls_back_logs_unexpected(
 
 
 # ---------------------------------------------------------------------------
-# /readyz — Step 2: queue load-bearing check (GH-116)
+# /readyz — Step 2: queue load-bearing check
 # ---------------------------------------------------------------------------
 
 

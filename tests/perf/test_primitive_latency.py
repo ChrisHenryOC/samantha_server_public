@@ -1,4 +1,4 @@
-"""Primitive latency micro-benchmarks (GH-8, Step 4).
+"""Primitive latency micro-benchmarks (Step 4).
 
 Structural notes
 ----------------
@@ -244,7 +244,7 @@ def test_atomic_primitive_latency(
 
 
 # ---------------------------------------------------------------------------
-# Fail-closed benchmarks (TypeError → False paths from PR #26)
+# Fail-closed benchmarks (TypeError → False paths)
 # ---------------------------------------------------------------------------
 
 # Each tuple: (name, primitive_instance).

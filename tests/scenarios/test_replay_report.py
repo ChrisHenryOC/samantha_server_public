@@ -1,4 +1,4 @@
-"""GH-209: content_diagnostic field on StepVerdict and report formatter.
+"""content_diagnostic field on StepVerdict and report formatter.
 
 Tests are organized by slice:
   Slice 1: StepVerdict.content_diagnostic field — exists, defaults to None.
@@ -82,7 +82,7 @@ def _make_minimal_report(step_verdicts: tuple[StepVerdict, ...]) -> AccuracyRepo
 
 
 class TestStepVerdictContentDiagnosticField:
-    """GH-209 Slice 1: content_diagnostic field on StepVerdict."""
+    """content_diagnostic field on StepVerdict."""
 
     def test_field_exists_and_defaults_to_none(self) -> None:
         """StepVerdict must carry content_diagnostic; default is None."""
@@ -130,7 +130,7 @@ class TestStepVerdictContentDiagnosticField:
 
 
 class TestVerdictForStepContentDiagnostic:
-    """GH-209 Slice 2: content_diagnostic populated for per-step gate fires."""
+    """content_diagnostic populated for per-step gate fires."""
 
     @pytest.fixture()
     def rule_index(self) -> object:
@@ -408,7 +408,7 @@ class TestVerdictForStepContentDiagnostic:
 
 
 class TestQueryGateContentDiagnosticShapes:
-    """GH-209 Slice 3: diagnostic string shapes for query-gate statuses.
+    """Diagnostic string shapes for query-gate statuses.
 
     These tests verify the expected string formats without running the full
     async replay loop — they construct the diagnostic directly from the same
@@ -514,7 +514,7 @@ class TestQueryGateContentDiagnosticShapes:
 
 
 class TestQueryGateDiagnosticIntegration:
-    """GH-209 Slice 3 integration: content_diagnostic populated on query-gate verdicts."""
+    """content_diagnostic populated on query-gate verdicts."""
 
     def _make_query_trace(
         self,
@@ -665,7 +665,7 @@ class TestQueryGateDiagnosticIntegration:
 
 
 class TestPrintReportContentDiagnosticRendering:
-    """GH-209 Slice 4: formatter appends | content=... when content_diagnostic is set."""
+    """Formatter appends | content=... when content_diagnostic is set."""
 
     def _capture_report(self, step_verdicts: tuple[StepVerdict, ...]) -> tuple[str, str]:
         """Run _print_report_and_get_exit_code and return (stdout, stderr)."""
@@ -763,7 +763,7 @@ class TestPrintReportContentDiagnosticRendering:
         (e.g., in a future test fixture or a docstring that leaks).
 
         This pins the deliberate decision to keep raw LLM output off the CLI
-        report and direct operators to Langfuse for it (GH-196 / GH-208).
+        report and direct operators to Langfuse for it.
         """
         # Construct a deliberately misleading diagnostic — the formatter must
         # render it verbatim if set, but the production code paths that

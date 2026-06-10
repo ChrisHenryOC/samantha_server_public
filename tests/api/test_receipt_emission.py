@@ -147,7 +147,7 @@ def test_emit_receipt_increments_failure_counter_on_write_exception() -> None:
 def test_emit_receipt_increments_failure_counter_on_sign_exception() -> None:
     """receipt_signing_failures increments when sign_decision (sign) raises.
 
-    Regression for PR #131 C1: previously _sign_receipt ran outside the
+    Regression for C1: previously _sign_receipt ran outside the
     try/except, so signing-side failures bypassed the counter.
     """
 
@@ -222,7 +222,7 @@ def test_emit_receipt_reraises_exception() -> None:
 def test_emit_receipt_rejects_session_id_mismatch() -> None:
     """ValueError when session_id kwarg conflicts with decision.session_id; no counter increment.
 
-    Regression for PR #131 H4: previously the wrapper silently overwrote.
+    Regression for H4: previously the wrapper silently overwrote.
     """
 
     async def run() -> None:

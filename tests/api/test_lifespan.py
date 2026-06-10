@@ -52,7 +52,7 @@ def test_app_state_initial_draining_flag_is_false() -> None:
 def test_aclose_actually_closes_sqlite_connection() -> None:
     """aclose() releases the SQLite write connection.
 
-    PR #131 test-cov L-03 regression: previously the test only checked
+     test-cov L-03 regression: previously the test only checked
     aclose was a coroutine, not that it actually closed the connection.
     This test asserts a write attempt after aclose raises (or
     is_open() returns False).
@@ -233,7 +233,7 @@ def test_build_app_state_queue_maxsize_matches_config(
 ) -> None:
     """Queue maxsize matches cfg.QUEUE_BOUND, not a default-factory hardcode.
 
-    PR #132 M2 regression: AppState.queue previously had
+     M2 regression: AppState.queue previously had
     ``default_factory=lambda: PriorityEventQueue(maxsize=256)``, so any
     construction path that bypassed build_app_state silently used 256
     regardless of config. Removing the default_factory makes queue a
@@ -339,7 +339,7 @@ def test_consumer_task_cancelled_at_shutdown() -> None:
     asyncio.run(run_lifespan())
 
     assert len(task_ref) == 1
-    # PR #132 L9: assert the cause is cancellation, not normal completion.
+    # Assert the cause is cancellation, not normal completion.
     # `.done()` alone passes if the task simply returned (which a future
     # _consume bug could do).
     assert task_ref[0].done()
@@ -349,7 +349,7 @@ def test_consumer_task_cancelled_at_shutdown() -> None:
 def test_aclose_idempotent_on_already_cancelled_consumer() -> None:
     """aclose() does not raise when consumer_task was actually cancelled.
 
-    PR #132 L9: previously this test used a normally-completed `noop()`
+     L9: previously this test used a normally-completed `noop`
     coroutine — the test name said "already cancelled" but the fixture
     didn't exercise that scenario. Now we cancel the task explicitly
     before calling aclose so the path matches the name.
@@ -382,7 +382,7 @@ def test_aclose_idempotent_on_already_cancelled_consumer() -> None:
 def test_aclose_logs_dead_consumer_task_exception(
     caplog: pytest.LogCaptureFixture,  # type: ignore[name-defined]  # noqa: F821
 ) -> None:
-    """aclose() logs a dead-task exception (regression for PR #132 L7)."""
+    """aclose logs a dead-task exception (regression for L7)."""
     import logging
 
     from tests.api.helpers import make_minimal_app_state
@@ -411,7 +411,7 @@ def test_aclose_logs_dead_consumer_task_exception(
 def test_aclose_closes_audit_conn_even_when_writer_close_raises() -> None:
     """aclose() closes receipt_audit_conn even if receipt_writer.close() raises.
 
-    Regression for GH-120 review finding #4: the original aclose() had no
+    Regression for review finding #4: the original aclose had no
     guard between writer.close() and audit_conn.close(). If the writer raised,
     the audit_conn would leak. The fix wraps each close in suppress(Exception).
     """
@@ -441,7 +441,7 @@ def test_aclose_closes_audit_conn_even_when_writer_close_raises() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slice 6 (GH-139): _build_llm_client provider switch
+# Slice 6: _build_llm_client provider switch
 # ---------------------------------------------------------------------------
 
 

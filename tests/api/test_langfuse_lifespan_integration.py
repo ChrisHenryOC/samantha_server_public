@@ -1,4 +1,4 @@
-"""Lifespan-integration tests for the Langfuse wiring (GH-124).
+"""Lifespan-integration tests for the Langfuse wiring.
 
 Covers:
 

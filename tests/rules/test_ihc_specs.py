@@ -908,7 +908,7 @@ def test_ihc_scoring_rules_do_not_fire_when_scores_incomplete(
 #     An empty event_data carries no recognized keys, so every rule in the
 #     bucket evaluates False. Today the order stalls with applied_rules=[].
 #     Pinning this documents the current behavior and forces an explicit
-#     decision when GH-15 (kernel) lands a fallback.
+# decision when (kernel) lands a fallback.
 # ---------------------------------------------------------------------------
 
 
@@ -936,7 +936,7 @@ def test_fish_result_rules_fail_closed_on_unknown_status(
     """Unknown fish_result.status values match neither IHC-010 nor IHC-011 — the
     order stalls at FISH_SEND_OUT with applied_rules=[]. Pinning this documents
     the current behavior; whether to add a catch-all rule is a kernel-layer
-    decision tracked in GH-15."""
+    decision tracked in the open kernel issue."""
     rule = next(s for s in ihc_specs if s.rule_id == rule_id)
     ctx = _make_ctx(
         current_state="FISH_SEND_OUT",

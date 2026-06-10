@@ -16,14 +16,14 @@ A JSON trend file is written to results/regression/<timestamp>.json AFTER
 the gate decision is computed so `gate_passed` reflects all three anchors
 (not just the first two).
 
-GH-90: LLM-path anchor added; bucket broadened.
+LLM-path anchor added; bucket broadened.
 
 Population scope note:
 - AccuracyReport.p99_latency_us aggregates over deterministic-category,
   non-skiplisted steps. Keeping the deterministic gate clean preserves the
   engine-perf signal against I/O or LLM-call creep.
 - AccuracyReport.p99_latency_us_llm aggregates over LLM-path-category,
-  non-skiplisted steps. Not merged with the deterministic gate per GH-90
+  non-skiplisted steps. Not merged with the deterministic gate
   do-not-merge invariant.
 """
 
@@ -40,7 +40,7 @@ from samantha_server.scenarios.replay import AccuracyReport
 VENDORED_DIR = Path(__file__).parent.parent / "fixtures" / "scenarios"
 INCLUDED_ACCURACY_THRESHOLD = 0.995
 P99_LATENCY_US_THRESHOLD = 10_000
-P99_LATENCY_US_LLM_THRESHOLD = 35_000_000  # 35 seconds — Qwen3-Next-80B-A3B baseline (GH-273)
+P99_LATENCY_US_LLM_THRESHOLD = 35_000_000 # 35 seconds — Qwen3-Next-80B-A3B baseline
 
 # Floor below which the percentile degenerates from a real statistic to a
 # max-of-tail estimate. The full vendored corpus today is over a thousand
@@ -51,17 +51,17 @@ _P99_SAMPLE_FLOOR = 100
 # Smaller floor for the LLM-path bucket: LLM samples are slower/scarcer.
 # Today the LLM bucket carries the hallucination scenarios plus the six
 # unknown_input scenarios (SC-100..SC-105 — all six non-skiplisted after
-# GH-105), expanded to step granularity by multi-step fixtures, plus the
-# 27 query scenarios (PR #180 wireup). Theoretical ceiling is ~30
+#), expanded to step granularity by multi-step fixtures, plus the
+# 27 query scenarios. Theoretical ceiling is ~30
 # LLM-routed steps across the corpus.
 #
-# POC compromise: lowered 50 -> 30 in PR #180 to match the CLI floor at
+# POC compromise: lowered 50 -> 30 in to match the CLI floor at
 # ``samantha_server/scenarios/replay.py:_LLM_ANCHOR_MIN_STEP_COUNT``. The
 # two surfaces of the same logical anchor must agree, otherwise the
 # nightly CI regression gate stays deferred while the demo CLI enforces
 # (or vice versa). p99 at n=30 is statistically thin — closer to a
 # max-of-tail than a real percentile — and should be raised back to ~100
-# once the LLM corpus grows. Track via GH-181.
+# once the LLM corpus grows. Track.
 _P99_LLM_SAMPLE_FLOOR = 30
 
 
@@ -104,7 +104,7 @@ def _make_dispatch_via_evaluate_patch(rule_index: object) -> object:
     accuracy without loading MLX. Deterministic steps are delegated to the real
     routing.dispatch_event.
 
-    On the endpoint path (GH-324), routing.dispatch_event is the call site so
+    On the endpoint path, routing.dispatch_event is the call site so
     this must be patched there, not at samantha_server.scenarios.replay.dispatch_event.
     """
     import samantha_server.api.routing as _routing_mod
@@ -283,7 +283,7 @@ def test_eval_regression_anchors() -> None:
         print(f"[INFO] {info_notice}")
 
     # Compute gate_passed AFTER all three anchors are evaluated so the trend
-    # file reflects the LLM-path verdict (GH-90 review H-01).
+    # file reflects the LLM-path verdict.
     gate_passed = not failures
 
     timestamp = datetime.now(UTC).isoformat()

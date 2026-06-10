@@ -1,6 +1,6 @@
 """Tests for the Langfuse OTLP-auth-header injection in build_app_state.
 
-Per GH-124 § "Exporter authentication wiring": when LANGFUSE_ENABLED
+Per § "Exporter authentication wiring": when LANGFUSE_ENABLED
 is true, the lifespan computes a Basic-auth header from
 LANGFUSE_PUBLIC_KEY + LANGFUSE_SECRET_KEY and writes it to the
 ``OTEL_EXPORTER_OTLP_HEADERS`` env var **before** ``configure_otel``

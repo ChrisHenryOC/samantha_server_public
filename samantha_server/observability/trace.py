@@ -1,13 +1,13 @@
-"""Per-decision trace schema serializer (GH-125 Step 10).
+"""Per-decision trace schema serializer.
 
 ``to_trace_dict`` converts an ``EngineDecision`` plus its dispatch
 context and signed receipt into the documented Langfuse trace
 shape. The schema is the durable contract behind:
 
-- the dashboards (Step 11 / GH-126),
-- the drift alarm (Step 12 / GH-127),
-- the eval-harness replay tags (Step 13 / GH-128), and
-- the post-market-monitoring story (Step 14 / GH-129).
+- the dashboards (Step 11),
+- the drift alarm (Step 12),
+- the eval-harness replay tags (Step 13), and
+- the post-market-monitoring story (Step 14).
 
 Schema documentation: ``docs/observability/trace-schema.md``.
 
@@ -119,7 +119,7 @@ def _agreement_for(routing_path: Literal["deterministic", "llm"]) -> AgreementVa
 
     v0 emits only ``deterministic_only`` or ``llm_only``. ``both_agree``
     and ``both_disagree`` are reserved for a future dual-route flow
-    (GH-34's three-way disposition is a deterministic→LLM handoff, not
+    (its three-way disposition is a deterministic→LLM handoff, not
     concurrent dual-routing). The regression test asserts the
     serializer never emits the reserved values.
 

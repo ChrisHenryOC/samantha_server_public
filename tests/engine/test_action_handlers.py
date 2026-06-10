@@ -1,6 +1,6 @@
 """Tests for samantha_server.engine.action_handlers.
 
-GH-328 Slice 1: apply_runtime_flag_clearing promoted from scenarios/ to engine/.
+apply_runtime_flag_clearing promoted from scenarios/ to engine/.
 """
 
 from __future__ import annotations

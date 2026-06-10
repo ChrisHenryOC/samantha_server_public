@@ -12,7 +12,7 @@ when:
     field: event.outcome
     value: failure
 action:
-  # RETRY_SAMPLE_PREP is a symbolic transition. The kernel (GH-15) resolves
+  # RETRY_SAMPLE_PREP is a symbolic transition. The kernel resolves
   # the actual retry state from current_state at dispatch time (loops back
   # to the same SAMPLE_PREP_* sub-state).
   transition: RETRY_SAMPLE_PREP

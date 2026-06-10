@@ -135,7 +135,7 @@ def scan_fixtures(rule_spec: RuleSpec, fixtures_dir: Path) -> ScanResult:
     try:
         scenarios: list[Scenario] = load_scenarios(fixtures_dir)
     except ScenarioCorpusError as exc:
-        # PR #96 review M-05: log the underlying cause so a typo'd path
+        # Log the underlying cause so a typo'd path
         # or a corrupted corpus is operator-visible rather than silently
         # appearing as "scan ran, no matches." The empty ScanResult is
         # the right return shape for a developer diagnostic, but the

@@ -2,7 +2,7 @@
 
 M-16: apply receipts_test_isolation to scenario replay tests.
 
-GH-141: re-export the multi-model sweep harness so any test in this
+Re-export the multi-model sweep harness so any test in this
 package that injects ``model_under_test`` automatically parametrizes
 over the resolved list (CLI > env > config default).
 """
@@ -20,7 +20,7 @@ from typing import Any
 
 import pytest
 
-# GH-141: ``model_under_test`` and ``pytest_generate_tests`` are
+# ``model_under_test`` and ``pytest_generate_tests`` are
 # re-exported so pytest discovers them on this conftest. The
 # ``--models`` flag is registered via ``pytest_addoption`` in the
 # rootdir conftest (``tests/conftest.py``) — only the topmost conftest
@@ -49,7 +49,7 @@ def _scenarios_receipts_isolation(receipts_test_isolation: None) -> None:  # noq
     """
 
 
-# GH-153: session-stable sweep_run_id so every fixture parametrization in a
+# Session-stable sweep_run_id so every fixture parametrization in a
 # single ``pytest -m live_llm`` invocation shares one value — Langfuse can
 # group "show me one sweep run" by filtering on ``samantha.sweep_run_id``.
 _SWEEP_RUN_ID: str = f"sweep-{_uuid.uuid4().hex[:12]}"
@@ -57,7 +57,7 @@ _SWEEP_RUN_ID: str = f"sweep-{_uuid.uuid4().hex[:12]}"
 
 @pytest.fixture(scope="session")
 def sweep_run_id() -> str:
-    """GH-153: stable sweep_run_id across all live_llm tests in one session."""
+    """Stable sweep_run_id across all live_llm tests in one session."""
     return _SWEEP_RUN_ID
 
 
@@ -68,7 +68,7 @@ def sweep_span_context(
     scenario_category: str,
     sweep_run_id: str,
 ) -> Iterator[object]:
-    """GH-153 (PR #164 review M-1): shared outer-span helper for live_llm sweeps.
+    """Shared outer-span helper for live_llm sweeps.
 
     Both ``test_query_replay_with_live_llm`` and
     ``test_specimen_review_with_live_llm`` open an outer span tagged with

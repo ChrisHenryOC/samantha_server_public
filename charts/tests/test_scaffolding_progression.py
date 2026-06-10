@@ -1,4 +1,4 @@
-"""Tests for Chart N3: accuracy-evolution line chart (GH-307)."""
+"""Tests for Chart N3: accuracy-evolution line chart."""
 
 from __future__ import annotations
 

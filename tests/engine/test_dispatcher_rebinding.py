@@ -1,4 +1,4 @@
-"""Tests for dispatch-token rebinding (GH-119 feature b).
+"""Tests for dispatch-token rebinding (feature b).
 
 Covers:
 - Cross-session replay rejected (token from session A fails in session B).
@@ -187,7 +187,7 @@ def test_dispatch_token_valid_at_exact_expires_at() -> None:
 
     verify_dispatch uses `dispatch.expires_at < int(time.time())` — so a token
     where expires_at exactly equals now is NOT expired.  Pin this invariant.
-    GH-119 fix #16.
+
     """
     ctx = _make_ctx()
     idx = RuleIndex([])
@@ -207,7 +207,7 @@ def test_dispatch_token_valid_at_exact_expires_at() -> None:
 def test_dispatch_token_expired_one_second_after_expires_at() -> None:
     """Token with expires_at == now - 1 is expired (strict < semantics).
 
-    GH-119 fix #16.
+
     """
     ctx = _make_ctx()
     idx = RuleIndex([])
@@ -265,7 +265,7 @@ def test_tampered_expires_at_rejected() -> None:
 def test_tampered_rules_rejected() -> None:
     """Modifying rules without recomputing HMAC fails verification.
 
-    GH-119 fix #17: synthesize a DispatchResult with two known rules so the
+     fix #17: synthesize a DispatchResult with two known rules so the
     test never passes vacuously when the corpus returns only 1 rule.  We build
     a second dispatch from a different ctx and reuse its rule tuple — both
     rule tuples are valid RuleSpec objects; we just mix them to get >=2 entries.

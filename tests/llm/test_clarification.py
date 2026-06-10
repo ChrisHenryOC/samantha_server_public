@@ -389,12 +389,12 @@ def test_parse_malformed_text_returns_empty_dict(text: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-214: prompt must carry the canonical pick lists for each clarified field
+# Prompt must carry the canonical pick lists for each clarified field
 # ---------------------------------------------------------------------------
 
 
 def test_build_clarification_prompt_includes_canonical_values_block() -> None:
-    """GH-214: prompt must contain a `<canonical_values>` scaffolding block.
+    """Prompt must contain a `<canonical_values>` scaffolding block.
 
     Without the block, the model is asked to map raw values to canonical forms
     with no list of what counts as canonical — it has to guess, and the post-
@@ -431,7 +431,7 @@ def test_build_clarification_prompt_truncates_long_pick_lists() -> None:
     prompt = _h().build_clarification_prompt(safe_ctx, ("anatomic_site",), {"anatomic_site": big})
     # First 20 sorted values are rendered; remainder is summarized.
     assert "...+5 more" in prompt
-    # PR #268 review #2: pin the sorted-determinism contract — the first 20
+    # Pin the sorted-determinism contract — the first 20
     # values must appear and the last 5 must not. Without this, a regression
     # that drops the sorted() call still passes the `...+5 more` count check.
     cv_start = prompt.index("<canonical_values>")
@@ -448,7 +448,7 @@ def test_build_clarification_prompt_truncates_long_pick_lists() -> None:
 def test_build_clarification_prompt_instruction_references_pick_list() -> None:
     """Instruction prose must point the model at the `<canonical_values>` block.
 
-    The pre-GH-214 instruction said only 'provide the canonical form of the
+    The legacy instruction said only 'provide the canonical form of the
     value', which is under-specified once the block exists. Update it to tell
     the model to pick from the listed values and omit fields it cannot match.
     """
@@ -472,7 +472,7 @@ def test_build_clarification_prompt_skips_fields_without_pick_list() -> None:
 
     Renders the block only for fields that have a canonical list — for other
     fields, the model would still see them in `<fields_to_clarify>` but with
-    no constraint, which is the pre-GH-214 behavior (acceptable since those
+    no constraint, which is the legacy behavior (acceptable since those
     fields don't go through canonicalize()).
     """
     from samantha_server.llm.phi import phi_safe
@@ -490,7 +490,7 @@ def test_build_clarification_prompt_skips_fields_without_pick_list() -> None:
     assert not age_lines, (
         f"age has no pick_list entry but appears in canonical_values: {age_lines!r}"
     )
-    # PR #268 review #5: pin the combined contract — `age` must still appear
+    # Pin the combined contract — `age` must still appear
     # in <fields_to_clarify> so the model knows it needs clarification, even
     # though it has no canonical-form constraint.
     ftc_start = prompt.index("<fields_to_clarify>")
@@ -502,7 +502,7 @@ def test_build_clarification_prompt_skips_fields_without_pick_list() -> None:
 
 
 def test_build_clarification_prompt_omits_block_when_all_fields_free_text() -> None:
-    """PR #268 review #1: all-free-text fields → no `<canonical_values>` block at all.
+    """All-free-text fields → no `<canonical_values>` block at all.
 
     Previously the block was always emitted; when no field had a pick list
     the result was `<canonical_values>\\n\\n</canonical_values>` — an empty
@@ -524,7 +524,7 @@ def test_build_clarification_prompt_omits_block_when_all_fields_free_text() -> N
 
 
 def test_build_clarification_prompt_renders_empty_pick_list_explicitly() -> None:
-    """PR #268 review #4: a field present in pick_lists with an empty frozenset must render.
+    """A field present in pick_lists with an empty frozenset must render.
 
     Distinguishes 'field absent from pick_lists' (intentional — free-text)
     from 'field present with empty list' (data-file authoring error). The
@@ -552,7 +552,7 @@ def test_handle_clarification_prompt_carries_canonical_values_block() -> None:
     """End-to-end: `handle_clarification` plumbs `PICK_LISTS` into the prompt.
 
     Without this wiring the refactored signature would be useless — the prompt
-    sent to the LLM would still be the pre-GH-214 shape.
+    sent to the LLM would still be the legacy shape.
     """
     llm = _make_mock_llm("fixative=formalin")
     _h().handle_clarification(
@@ -569,12 +569,12 @@ def test_handle_clarification_prompt_carries_canonical_values_block() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-369 Slice 3: handle_clarification stamps ctx.order.order_id
+# handle_clarification stamps ctx.order.order_id
 # ---------------------------------------------------------------------------
 
 
 def test_handle_clarification_success_carries_order_id() -> None:
-    """GH-369: success path stamps ctx.order.order_id on the decision."""
+    """Success path stamps ctx.order.order_id on the decision."""
     ctx = _make_ctx(fixative="ethanol")
     decision = _h().handle_clarification(
         ctx,
@@ -585,7 +585,7 @@ def test_handle_clarification_success_carries_order_id() -> None:
 
 
 def test_handle_clarification_phi_boundary_refusal_carries_order_id() -> None:
-    """GH-369: PHIBoundaryError refusal stamps ctx.order.order_id on the decision."""
+    """PHIBoundaryError refusal stamps ctx.order.order_id on the decision."""
     ctx = _make_ctx(fixative="ethanol")
     with patch("samantha_server.llm.handlers.phi_safe", side_effect=PHIBoundaryError(age=92)):
         decision = _h().handle_clarification(

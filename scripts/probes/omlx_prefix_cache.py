@@ -1,4 +1,4 @@
-"""Probe oMLX for per-call prefix-cache telemetry (GH-294 enabler for GH-288).
+"""Probe oMLX for per-call prefix-cache telemetry.
 
 Reproduces the findings recorded in docs/llm/omlx-prefix-cache-telemetry.md.
 Run with the project's .env sourced so LLM_OMLX_BASE_URL, LLM_OMLX_AUTH_TOKEN,
@@ -15,7 +15,7 @@ parallel to scripts/probes/omlx_capabilities.py.
 What this probe answers (and what it does NOT):
 
   - DOES: enumerate which oMLX HTTP endpoints exist beyond /v1/* (so the
-    GH-288 audit knows whether per-call cache telemetry is reachable via
+     audit knows whether per-call cache telemetry is reachable via
     an admin/metrics API).
   - DOES: dump the full /v1/chat/completions usage block to show whether
     cached_tokens / model_load_duration / time_to_first_token / etc. are
@@ -148,7 +148,7 @@ def probe_endpoint_discovery(base_url: str, token: str) -> str | None:
     # Capture version + endpoint count from /openapi.json. Cache-field
     # support is version-dependent (per the findings doc: v0.3.8 added
     # populator on /v1/messages; v0.3.9.dev1 added populator on
-    # /v1/responses via PR #1008), so anchoring the rest of the probe
+    # /v1/responses), so anchoring the rest of the probe
     # output to the actual version is load-bearing for interpretation.
     # Use the _get helper so auth header is sent (consistent with the
     # discovery loop above).
@@ -231,7 +231,7 @@ def probe_cold_vs_warm_latency(base_url: str, token: str, model: str) -> None:
         print("If gap > 1s, latency is a viable per-call prefix-hit proxy:")
         print("  - High latency ≫ baseline  → likely prefill (cache miss).")
         print("  - Latency ≈ baseline       → likely cache hit (skipped prefill).")
-    print("\nThis is the signal GH-288 can use IF no server-side per-call surface exists.")
+    print("\nThis is the signal can use IF no server-side per-call surface exists.")
     print("Caveats: the gap also reflects model-load on the very first call (if the")
     print("model isn't already loaded in oMLX); subsequent cold-but-loaded calls are")
     print("the more representative baseline for cache miss vs hit.")
@@ -277,7 +277,7 @@ def probe_prefix_shared_vs_distinct(base_url: str, token: str, model: str) -> No
     print(f"  variant C: latency={elapsed_c:.3f}s  output={text_c!r}")
     print("\nInterpretation: B is faster than A and C means the prefix-cache is")
     print("working. A-repeat being similar to B confirms the cache persists across")
-    print("calls. Differences are the empirical lever GH-288 audit will exploit by")
+    print("calls. Differences are the empirical lever audit will exploit by")
     print("reordering prompts to maximize byte-identical leading prefixes.")
 
 
@@ -400,7 +400,7 @@ def probe_responses_endpoint(base_url: str, token: str, model: str) -> bool:
     print(f"  usage: {json.dumps(usage, indent=2)}")
     print("\nInterpretation: on oMLX v0.3.9.dev1+, usage should include an")
     print("`input_tokens_details` block with `cached_tokens`. If the block is absent")
-    print("entirely, the populator predates PR #1008 (i.e., < v0.3.9.dev1).")
+    print("entirely, the populator predates (i.e., < v0.3.9.dev1).")
     return True
 
 
@@ -473,7 +473,7 @@ def probe_langfuse_surface_check(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="oMLX prefix-cache telemetry probes (GH-294).")
+    parser = argparse.ArgumentParser(description="oMLX prefix-cache telemetry probes.")
     parser.add_argument("--base-url", default=os.environ.get("LLM_OMLX_BASE_URL"))
     parser.add_argument("--token", default=os.environ.get("LLM_OMLX_AUTH_TOKEN"))
     parser.add_argument("--model", default=os.environ.get("LLM_MODEL_NAME"))

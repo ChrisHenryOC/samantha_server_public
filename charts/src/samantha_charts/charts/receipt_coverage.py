@@ -1,4 +1,4 @@
-"""Chart 13: receipt-coverage hero Big Number (GH-311).
+"""Chart 13: receipt-coverage hero Big Number.
 
 Renders a hero card showing the total decision count and 100% receipt coverage.
 Every routing decision in the sweep has a corresponding signed receipt and a
@@ -94,17 +94,17 @@ def render_receipt_coverage(data: ReceiptCoverage, output_path: Path) -> None:
     ------
     ValueError
         If ``data.receipts != data.traces`` -- any coverage mismatch is a bug,
-        not something to render (GH-311 acceptance criterion).
+        not something to render.
     """
     if data.receipts != data.traces:
         raise ValueError(
             f"Coverage mismatch: receipts={data.receipts} != traces={data.traces}."
-            " Every receipt must have a matching trace (GH-311 acceptance criterion)."
+            " Every receipt must have a matching trace."
         )
     if data.receipts != data.decisions:
         raise ValueError(
             f"Coverage mismatch: receipts={data.receipts} != decisions={data.decisions}."
-            " Every decision must have a matching receipt (GH-311 acceptance criterion)."
+            " Every decision must have a matching receipt."
         )
 
     fig, ax = plt.subplots(figsize=(10, 6))

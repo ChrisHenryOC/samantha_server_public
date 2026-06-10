@@ -1,4 +1,4 @@
-"""Chart N2: benchmarks clustered bar chart (GH-309, CONVEX Slide 24b).
+"""Chart N2: benchmarks clustered bar chart (CONVEX Slide 24b).
 
 Renders a clustered bar chart grouped by benchmark category (x-axis), with one
 bar per model in each group. Three x-groups:

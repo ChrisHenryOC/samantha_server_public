@@ -48,7 +48,7 @@ _EXPECTED_DESCRIPTIONS = {
         "Answer free-text clinical queries; return structured JSON; "
         "cite scenario IDs in `reasoning`."
     ),
-    # GH-34 Slice 3 / GH-193 Slice 3: updated to JSON-output contract
+    # Slice 3 / Slice 3: updated to JSON-output contract
     "specimen-review": (
         "Pathologist-style disposition playbook for unrecognized specimen types; "
         "returns structured JSON."
@@ -338,19 +338,19 @@ def test_skill_result_is_dataclass() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-34 Slice 1: STATES_WITHOUT_SKILL covers new terminal/LLM-routing states
+# STATES_WITHOUT_SKILL covers new terminal/LLM-routing states
 # ---------------------------------------------------------------------------
 
 
 def test_pending_human_review_in_states_without_skill() -> None:
-    """GH-34 Slice 1: PENDING_HUMAN_REVIEW is terminal for v1; no skill."""
+    """PENDING_HUMAN_REVIEW is terminal for v1; no skill."""
     from samantha_server.skills.loader import STATES_WITHOUT_SKILL
 
     assert "PENDING_HUMAN_REVIEW" in STATES_WITHOUT_SKILL
 
 
 def test_discover_invariant_passes_after_new_states_added() -> None:
-    """GH-34 Slice 1/3: discover() must not raise after PENDING_LLM_REVIEW and
+    """Slice 1/3: discover() must not raise after PENDING_LLM_REVIEW and
     PENDING_HUMAN_REVIEW are added to VALID_STATES."""
     # Clears the cache so the invariant re-runs with the live VALID_STATES.
     discover.cache_clear()
@@ -362,26 +362,26 @@ def test_discover_invariant_passes_after_new_states_added() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-34 Slice 3: specimen-review skill
+# Specimen-review skill
 # ---------------------------------------------------------------------------
 
 
 def test_specimen_review_skill_loads() -> None:
-    """GH-34 Slice 3: specimen-review skill must be discoverable."""
+    """Specimen-review skill must be discoverable."""
     discover.cache_clear()
     index = discover()
     assert "specimen-review" in index
 
 
 def test_specimen_review_applies_to_pending_llm_review() -> None:
-    """GH-34 Slice 3: specimen-review skill must claim PENDING_LLM_REVIEW state."""
+    """Specimen-review skill must claim PENDING_LLM_REVIEW state."""
     discover.cache_clear()
     index = discover()
     assert "PENDING_LLM_REVIEW" in index["specimen-review"].applies_to_states
 
 
 def test_state_to_skill_maps_pending_llm_review_to_specimen_review() -> None:
-    """GH-34 Slice 3: STATE_TO_SKILL[PENDING_LLM_REVIEW] == 'specimen-review'."""
+    """STATE_TO_SKILL[PENDING_LLM_REVIEW] == 'specimen-review'."""
     from samantha_server.skills.loader import build_state_to_skill
 
     discover.cache_clear()
@@ -391,7 +391,7 @@ def test_state_to_skill_maps_pending_llm_review_to_specimen_review() -> None:
 
 
 def test_pending_llm_review_not_in_states_without_skill() -> None:
-    """GH-34 Slice 3: PENDING_LLM_REVIEW must NOT be in STATES_WITHOUT_SKILL
+    """PENDING_LLM_REVIEW must NOT be in STATES_WITHOUT_SKILL
     once the specimen-review skill covers it."""
     from samantha_server.skills.loader import STATES_WITHOUT_SKILL
 
@@ -399,7 +399,7 @@ def test_pending_llm_review_not_in_states_without_skill() -> None:
 
 
 def test_specimen_review_body_contains_disposition_criteria() -> None:
-    """GH-34 Slice 3: skill body must contain accept/reject/escalate guidance."""
+    """Skill body must contain accept/reject/escalate guidance."""
     discover.cache_clear()
     body = load("specimen-review")
     assert "accept" in body.lower()
@@ -414,10 +414,10 @@ def test_skill_result_is_frozen() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slice GH-88 Slice 2: backfilled applies_to_states on the 7 bundled skills
+# Slice Slice 2: backfilled applies_to_states on the 7 bundled skills
 # ---------------------------------------------------------------------------
 
-# Expected applies_to_states per the GH-88 STATE_TO_SKILL mapping spec.
+# Expected applies_to_states mapping spec.
 # query-routing intentionally has an empty list (clinical queries don't fire rules).
 _EXPECTED_APPLIES_TO_STATES: dict[str, tuple[str, ...]] = {
     "accessioning-routing": (
@@ -454,7 +454,7 @@ _EXPECTED_APPLIES_TO_STATES: dict[str, tuple[str, ...]] = {
 
 @pytest.mark.parametrize("skill_name", list(_EXPECTED_APPLIES_TO_STATES.keys()))
 def test_bundled_skill_applies_to_states_matches_spec(skill_name: str) -> None:
-    """Each bundled skill's applies_to_states must match the GH-88 spec mapping."""
+    """Each bundled skill's applies_to_states must match the spec mapping."""
     index = discover()
     spec = index[skill_name]
     expected = _EXPECTED_APPLIES_TO_STATES[skill_name]
@@ -465,7 +465,7 @@ def test_bundled_skill_applies_to_states_matches_spec(skill_name: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slice GH-88 Slice 1: applies_to_states field on SkillSpec
+# Slice Slice 1: applies_to_states field on SkillSpec
 # ---------------------------------------------------------------------------
 
 
@@ -576,33 +576,33 @@ def test_read_text_is_cached(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-234 S5: specimen-review skill anatomic site disposition section
+# Specimen-review skill anatomic site disposition section
 # ---------------------------------------------------------------------------
 
 
 def test_specimen_review_skill_contains_anatomic_site_disposition_section() -> None:
-    """GH-234 S5: skill body must contain the anatomic site disposition header."""
+    """Skill body must contain the anatomic site disposition header."""
     discover.cache_clear()
     body = load("specimen-review")
     assert "Anatomic site disposition" in body
 
 
 def test_specimen_review_skill_anatomic_site_disposition_contains_accepted_guidance() -> None:
-    """GH-234 S5: anatomic site disposition section must include accept guidance."""
+    """Anatomic site disposition section must include accept guidance."""
     discover.cache_clear()
     body = load("specimen-review")
     assert "breast-cancer-relevant tissue" in body
 
 
 def test_specimen_review_skill_anatomic_site_disposition_contains_rejected_guidance() -> None:
-    """GH-234 S5: anatomic site disposition section must include reject guidance."""
+    """Anatomic site disposition section must include reject guidance."""
     discover.cache_clear()
     body = load("specimen-review")
     assert "clearly outside breast workflow" in body
 
 
 def test_specimen_review_skill_anatomic_site_disposition_contains_escalated_guidance() -> None:
-    """GH-234 S5: anatomic site disposition section must include escalate guidance."""
+    """Anatomic site disposition section must include escalate guidance."""
     discover.cache_clear()
     body = load("specimen-review")
     assert "human pathologist judgment" in body

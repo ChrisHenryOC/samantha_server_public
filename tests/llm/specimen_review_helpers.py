@@ -1,4 +1,4 @@
-"""Shared test helpers for specimen-review JSON path (GH-193).
+"""Shared test helpers for specimen-review JSON path.
 
 Extracted from tests/llm/test_handlers.py and tests/receipts/test_architectural.py
 to remove duplication. PR204 review #7.
@@ -20,7 +20,7 @@ def make_mock_llm_review_client(
     model_id: str = "test-review-model",
     latency_us: int = 2000,
 ) -> MagicMock:
-    """LLMClient mock for handle_pending_llm_review (JSON path, GH-193 hard cutover).
+    """LLMClient mock for handle_pending_llm_review (JSON path, hard cutover).
 
     Accepts either a disposition keyword ("accepted", "rejected", "escalated") or
     a raw string. Disposition keywords are wrapped into valid

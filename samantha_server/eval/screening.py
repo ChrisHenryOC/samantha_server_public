@@ -1,4 +1,4 @@
-"""GH-156: pinned screening-subset scenario allow-list.
+"""Pinned screening-subset scenario allow-list.
 
 The 33-fixture screening subset is the literal union of `DISC_SCENARIOS`
 + `HALL_SCENARIOS` from the upstream POC's `scripts/run_phase1_screen.sh`

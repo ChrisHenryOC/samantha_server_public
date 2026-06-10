@@ -1,4 +1,4 @@
-"""Tests for LLMClient.complete_json Protocol method (GH-192 Slice 4).
+"""Tests for LLMClient.complete_json Protocol method.
 
 Tests:
 - A concrete class implementing complete_json satisfies the LLMClient protocol
@@ -84,12 +84,12 @@ def test_complete_json_protocol_returns_text_with_json() -> None:
 
 
 def test_llm_client_protocol_declares_complete_json() -> None:
-    """LLMClient Protocol must declare complete_json (GH-192)."""
+    """LLMClient Protocol must declare complete_json."""
     from samantha_server.llm.client import LLMClient
 
     # The Protocol declares the interface via its __protocol_attrs__
     # (Python 3.12+) or via inspection of the class body.
     # Both complete() and complete_json() must be declared.
     assert hasattr(LLMClient, "complete_json"), (
-        "LLMClient Protocol must declare complete_json for GH-192 JSON mode"
+        "LLMClient Protocol must declare complete_json for JSON mode"
     )

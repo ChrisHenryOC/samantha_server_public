@@ -1,4 +1,4 @@
-"""GH-156: SCREENING_SCENARIO_IDS pin + drift guard.
+"""SCREENING_SCENARIO_IDS pin + drift guard.
 
 The 33-fixture screening allow-list is the literal union of `DISC_SCENARIOS`
 + `HALL_SCENARIOS` in the upstream POC's `scripts/run_phase1_screen.sh`. The
@@ -34,7 +34,7 @@ def test_screening_scenario_ids_pinned_count_is_33() -> None:
     from samantha_server.eval.screening import SCREENING_SCENARIO_IDS
 
     assert len(SCREENING_SCENARIO_IDS) == 33, (
-        f"GH-156: pinned screening set must be 33 fixtures (25 discriminating "
+        f"Pinned screening set must be 33 fixtures (25 discriminating "
         f"+ 8 hallucination); got {len(SCREENING_SCENARIO_IDS)}"
     )
 
@@ -60,7 +60,7 @@ def test_screening_scenario_ids_match_upstream_script() -> None:
     from samantha_server.eval.screening import SCREENING_SCENARIO_IDS
 
     assert upstream == SCREENING_SCENARIO_IDS, (
-        f"GH-156: pinned screening set drifted from upstream "
+        f"Pinned screening set drifted from upstream "
         f"{_UPSTREAM_SCRIPT}.\n"
         f"  pinned − upstream = {sorted(SCREENING_SCENARIO_IDS - upstream)}\n"
         f"  upstream − pinned = {sorted(upstream - SCREENING_SCENARIO_IDS)}"

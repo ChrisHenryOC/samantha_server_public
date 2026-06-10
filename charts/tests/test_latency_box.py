@@ -1,4 +1,4 @@
-"""Chart 5 (GH-309): per-model LLM-call latency box plot."""
+"""Chart 5: per-model LLM-call latency box plot."""
 
 from __future__ import annotations
 

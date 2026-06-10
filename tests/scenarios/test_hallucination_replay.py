@@ -79,10 +79,10 @@ def test_hallucination_scenario_deterministic_steps(
     async def _dispatch_via_evaluate(ctx, *, session_id, **kwargs):  # type: ignore[no-untyped-def]
         """Proxy dispatch_event to evaluate() for deterministic scenarios.
 
-        GH-334: emit_receipt() must be called before returning so the harness's
+        emit_receipt() must be called before returning so the harness's
         fetch_payload_json() can reconstruct the EngineDecision from the
         in-memory receipt store. Without this, the fallback-free harness
-        (post GH-334 fallback removal) would raise on missing receipts.
+        (post fallback removal) would raise on missing receipts.
         """
         from samantha_server.api.event_context import EventDispatchContext
         from samantha_server.api.receipt_emission import emit_receipt

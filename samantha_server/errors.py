@@ -93,7 +93,7 @@ class LLMModelLoadError(LLMClientError):
     model_path: path to the model that could not be loaded.
     cause: human-readable description of the load failure.
 
-    **Privacy note (PR #97 review M-03).** The ``cause`` field is
+    **Privacy note.** The ``cause`` field is
     populated from the underlying exception's ``__str__`` and may
     include host filesystem paths from a wrapped FileNotFoundError /
     PermissionError. Acceptable for local developer-tool error
@@ -159,7 +159,7 @@ class PHIBoundaryError(SamanthaError):
     Safe Harbor 45 CFR 164.514(b)(2)(i)(C), "all ages over 89" are a PHI
     element. Forwarding ``str(exc)`` to log aggregators (Sentry,
     Datadog, audit-log capture) would leak the value. Mirrors the G18
-    no-leak invariant on env-error messages (PR #98 review H-01).
+    no-leak invariant on env-error messages.
     """
 
     def __init__(self, *, age: int) -> None:

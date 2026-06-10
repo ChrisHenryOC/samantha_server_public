@@ -235,7 +235,7 @@ def test_g18_required_hex_does_not_leak_raw_value(
         )
 
 
-# L-05 from PR #97 review: extend the G18 parametrize to _optional_hex.
+# L-05 review: extend the G18 parametrize to _optional_hex.
 @pytest.mark.parametrize(
     "var_name,raw_input",
     [
@@ -260,7 +260,7 @@ def test_g18_optional_hex_does_not_leak_raw_value(
         )
 
 
-# L-04 from PR #97 review: _optional_hex wrong-length test (separate from
+# L-04 review: _optional_hex wrong-length test (separate from
 # the G18 parametrize because we assert the typed error, not just G18 cleanliness).
 def test_optional_hex_wrong_length_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     """A valid-hex but wrong-length value through _optional_hex raises typed error."""
@@ -316,7 +316,7 @@ def test_config_import_fails_with_missing_phi_hash_salt() -> None:
 
 
 def test_config_import_fails_with_invalid_phi_hash_salt() -> None:
-    """Importing config with invalid PHI_HASH_SALT hex exits non-zero (PR #97 review H-03).
+    """Importing config with invalid PHI_HASH_SALT hex exits non-zero.
 
     Symmetric with the existing invalid-RECEIPT_SIGNING_KEY test; closes
     the asymmetry where only one of the two required secrets had its
@@ -511,7 +511,7 @@ def test_config_module_exposes_receipt_signing_key_previous() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-88 Slice 10: LLM_JUDGE_MODEL_PATH config var
+# LLM_JUDGE_MODEL_PATH config var
 # ---------------------------------------------------------------------------
 
 
@@ -596,7 +596,7 @@ def test_validate_model_path_error_does_not_leak_raw_value(tmp_path: pathlib.Pat
 
 
 # ---------------------------------------------------------------------------
-# Slice 1 (GH-139): _validate_loopback_url helper
+# Slice 1: _validate_loopback_url helper
 # ---------------------------------------------------------------------------
 
 
@@ -659,7 +659,7 @@ def test_validate_loopback_url_error_does_not_contain_raw_url() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slice 2 (GH-139): Config wiring — LLM_OMLX_BASE_URL, LLM_OMLX_AUTH_TOKEN,
+# Slice 2: Config wiring — LLM_OMLX_BASE_URL, LLM_OMLX_AUTH_TOKEN,
 #                   LLM_OMLX_TIMEOUT_S, LLM_PROVIDER default flip
 # ---------------------------------------------------------------------------
 
@@ -856,7 +856,7 @@ def test_llm_omlx_timeout_s_malformed_raises(monkeypatch: pytest.MonkeyPatch) ->
 
 
 # ---------------------------------------------------------------------------
-# GH-319: LLM_MAX_TOKENS empirical floor
+# LLM_MAX_TOKENS empirical floor
 # ---------------------------------------------------------------------------
 
 
@@ -865,7 +865,7 @@ def test_llm_max_tokens_default_meets_empirical_minimum_floor(
 ) -> None:
     """LLM_MAX_TOKENS default must be >= 2048.
 
-    Empirical floor established by GH-319: smoke testing showed that 5 of 5
+    Empirical floor from smoke testing: 5 of 5
     QR-021..025 json_decode failures on Qwen3.5-35B-A3B-8bit were recovered
     when LLM_MAX_TOKENS was raised from 1024 to 2048.  The 1024 default
     silently truncated model output before the closing brace of the JSON
@@ -879,11 +879,11 @@ def test_llm_max_tokens_default_meets_empirical_minimum_floor(
 
     This test is a regression guard, not a tautology.  A future contributor
     who lowers the value without re-validating the corpus will see a clear
-    CI failure here pointing to GH-319.
+    CI failure here points at the linked issue.
 
     Note: this guards the *default* value (env var unset).  It does not
     catch an operator setting ``LLM_MAX_TOKENS<2048`` via the environment;
-    eager runtime validation is intentionally deferred (see GH-319 review
+    eager runtime validation is intentionally deferred (see review
     comment for the conscious-decision rationale).
     """
     import importlib
@@ -894,7 +894,7 @@ def test_llm_max_tokens_default_meets_empirical_minimum_floor(
     importlib.reload(cfg)
     assert cfg.LLM_MAX_TOKENS >= 2048, (
         f"LLM_MAX_TOKENS default is {cfg.LLM_MAX_TOKENS}, which is below the "
-        f"empirical floor of 2048 established in GH-319.  Lowering this value "
+        f"empirical floor of 2048 (validated by smoke testing).  Lowering this value "
         f"risks json_decode failures on long-output models.  Re-validate the "
         f"full corpus before reducing it."
     )

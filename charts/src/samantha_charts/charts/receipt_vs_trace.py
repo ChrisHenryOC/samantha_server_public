@@ -1,4 +1,4 @@
-"""Chart 12: receipt vs Langfuse trace, same decision (GH-311).
+"""Chart 12: receipt vs Langfuse trace, same decision.
 
 Renders a dual-column card showing the same decision from two perspectives:
 the signed audit receipt and the Langfuse operator trace. The shared

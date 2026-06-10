@@ -1,4 +1,4 @@
-"""GH-227: User role literal type, valid-role set, and extraction helper.
+"""User role literal type, valid-role set, and extraction helper.
 
 user_role is NOT PHI — pass through verbatim, no HMAC hashing.
 """

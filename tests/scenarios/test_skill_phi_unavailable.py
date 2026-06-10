@@ -1,6 +1,6 @@
-"""GH-287: SKILL_UNAVAILABLE and PHI_BOUNDARY refusals silently pass query/llm_review scenarios.
+"""SKILL_UNAVAILABLE and PHI_BOUNDARY refusals silently pass query/llm_review scenarios.
 
-Twin of GH-285 (PR #286). Extends the operational-refusal-detection pattern to:
+Twin of. Extends the operational-refusal-detection pattern to:
   - STAGE_PRE_SKILL_UNAVAILABLE (SkillLoaderError path)
   - STAGE_PRE_PHI_BOUNDARY (PHIBoundaryError path)
 
@@ -24,7 +24,7 @@ from samantha_server.errors import PHIBoundaryError
 from samantha_server.skills.loader import SkillLoaderError
 
 # ---------------------------------------------------------------------------
-# Helpers (mirror test_gh285_llm_unavailable.py patterns)
+# Helpers (mirror test_llm_unavailable.py patterns)
 # ---------------------------------------------------------------------------
 
 
@@ -39,7 +39,7 @@ def _write_query_scenario(tmp_path: Path, scenario_id: str) -> None:
     fixture = {
         "scenario_id": scenario_id,
         "category": "query",
-        "description": f"GH-287 query fixture {scenario_id}",
+        "description": f"Query fixture {scenario_id}",
         "query": "What orders are pending?",
         "database_state": {"orders": []},
         "expected_output": {
@@ -79,7 +79,7 @@ def _write_llm_review_scenario(tmp_path: Path, scenario_id: str) -> None:
     fixture = {
         "scenario_id": scenario_id,
         "category": "llm_review",
-        "description": f"GH-287 llm_review fixture {scenario_id}",
+        "description": f"llm_review fixture {scenario_id}",
         "events": [
             {
                 "step": 1,
@@ -126,8 +126,8 @@ def _raises(exc: Exception) -> Callable[..., Any]:
 
     Used as a ``monkeypatch.setattr`` target so handlers see a deterministic
     failure injection at the boundary instead of an inline lambda + generator
-    trick per call site. Mirrors GH-285's ``_make_failing_llm_stub`` factory
-    pattern at the function-attribute level (vs the GH-285 mock-object level).
+    trick per call site. Mirrors its ``_make_failing_llm_stub`` factory
+    pattern at the function-attribute level (vs the mock-object level).
     """
 
     def _fn(*_args: Any, **_kwargs: Any) -> Any:
@@ -165,7 +165,7 @@ def _assert_post_loop_diagnostic(
 
 
 class TestSlice1StatusLiterals:
-    """GH-287 Slice 1: new StepStatusValue members for SKILL/PHI refusal classes."""
+    """New StepStatusValue members for SKILL/PHI refusal classes."""
 
     def test_skill_unavailable_in_step_verdict_status_literal(self) -> None:
         """skill_unavailable must appear in the StepVerdict.status Literal."""
@@ -198,7 +198,7 @@ class TestSlice1StatusLiterals:
 
 
 class TestSlice2QuerySkillUnavailable:
-    """GH-287 Slice 2: query scenario surfaces skill_unavailable when SkillLoaderError raised."""
+    """Query scenario surfaces skill_unavailable when SkillLoaderError raised."""
 
     def test_query_with_skill_loader_failure_does_not_pass(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -306,7 +306,7 @@ class TestSlice2QuerySkillUnavailable:
 
 
 class TestSlice3QueryPhiBoundary:
-    """GH-287 Slice 3: query path surfaces phi_boundary_violation on PHIBoundaryError."""
+    """Query path surfaces phi_boundary_violation on PHIBoundaryError."""
 
     def test_query_with_phi_boundary_failure_does_not_pass(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -367,7 +367,7 @@ class TestSlice3QueryPhiBoundary:
 
 
 class TestSlice4LlmReviewSkillPhi:
-    """GH-287 Slice 4: llm_review per-step gate surfaces correct statuses."""
+    """llm_review per-step gate surfaces correct statuses."""
 
     def test_llm_review_with_skill_loader_failure_does_not_pass(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

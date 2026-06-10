@@ -148,7 +148,7 @@ def test_counter_registry_process_start_unix_is_stable() -> None:
 
 
 def test_counter_registry_has_user_role_coercion_failures() -> None:
-    """S2 GH-227: CounterRegistry exposes user_role_coercion_failures."""
+    """S2 CounterRegistry exposes user_role_coercion_failures."""
     from samantha_server.observability.counters import CounterRegistry
 
     reg = CounterRegistry()
@@ -157,7 +157,7 @@ def test_counter_registry_has_user_role_coercion_failures() -> None:
 
 
 def test_counter_registry_snapshot_includes_user_role_coercion_failures() -> None:
-    """S2 GH-227: snapshot() includes user_role_coercion_failures key starting at 0."""
+    """S2 snapshot includes user_role_coercion_failures key starting at 0."""
     from samantha_server.observability.counters import CounterRegistry
 
     reg = CounterRegistry()
@@ -167,7 +167,7 @@ def test_counter_registry_snapshot_includes_user_role_coercion_failures() -> Non
 
 
 def test_counter_registry_has_dispatch_unknown_event_type() -> None:
-    """GH-326: CounterRegistry exposes dispatch_unknown_event_type as an AtomicCounter at 0."""
+    """CounterRegistry exposes dispatch_unknown_event_type as an AtomicCounter at 0."""
     from samantha_server.observability.counters import AtomicCounter, CounterRegistry
 
     reg = CounterRegistry()
@@ -177,7 +177,7 @@ def test_counter_registry_has_dispatch_unknown_event_type() -> None:
 
 
 def test_counter_registry_snapshot_includes_dispatch_unknown_event_type() -> None:
-    """GH-326: snapshot() includes dispatch_unknown_event_type key starting at 0."""
+    """snapshot() includes dispatch_unknown_event_type key starting at 0."""
     from samantha_server.observability.counters import CounterRegistry
 
     reg = CounterRegistry()

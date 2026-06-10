@@ -44,7 +44,7 @@ class QueryTrace(BaseModel, frozen=True):
     """Records metadata for an LLM query operation.
 
     database_state_hash: HMAC-SHA256 hex digest of the canonical JSON encoding
-    of any `orders` list injected into the prompt (GH-152). Empty when the
+    of any `orders` list injected into the prompt. Empty when the
     query carried no orders payload, so existing receipts replay unchanged.
 
     response_text_hash: sha256 hex of canonical JSON of the parsed model when
@@ -77,19 +77,19 @@ class QueryTrace(BaseModel, frozen=True):
     - free_text: hash of raw response text
     """
     database_state_hash: str = ""
-    # GH-233: HMAC-SHA256 hex digest of the ISO-8601 prompt_timestamp string
+    # HMAC-SHA256 hex digest of the ISO-8601 prompt_timestamp string
     # when a temporal anchor was injected into the prompt. Empty when no
     # prompt_timestamp was provided. Additive default preserves backward
-    # compat with pre-GH-233 receipts.
+    # compat with legacy receipts.
     prompt_timestamp_hash: str = ""
     # Additive optional fields — None defaults preserve backward compat
     # with pre-structured-output receipts.
     parsed_order_ids: tuple[str, ...] | None = None
     parsed_answer_type: AnswerType | None = None
     parse_failure: Literal["json_decode", "schema_violation"] | None = None
-    # GH-227: user role of the requesting user. Not PHI; passed through
+    # User role of the requesting user. Not PHI; passed through
     # verbatim. None when absent. Additive default preserves backward compat
-    # with pre-GH-227 receipts.
+    # with legacy receipts.
     user_role: UserRole | None = None
     # PR243 review S4: distinguishes "no role provided" from "role was
     # dropped during coercion" for post-hoc accuracy analysis.
@@ -151,12 +151,12 @@ class RefusalTrace(BaseModel, frozen=True):
     refusal_stage: Literal["A", "B", "PRE"]
     judge_verdict: Literal["grounded", "ungrounded", "uncertain"] | None
     alternatives: tuple[str, ...] = ()
-    # GH-285: type name of the underlying LLMClientError subclass, when the
+    # Type name of the underlying LLMClientError subclass, when the
     # refusal was triggered by an LLM failure. Type name only — never str(exc)
     # (exception messages can echo prompt content, violating the PHI boundary).
     # Constrained to the three known LLMClientError subclasses so a future
     # subclass that wasn't intended for the operator surface fails Pydantic
-    # validation loudly rather than leaking through (PR #286 finding #3).
+    # validation loudly rather than leaking through.
     underlying_error_type: (
         Literal["LLMTimeoutError", "LLMInferenceError", "LLMModelLoadError"] | None
     ) = None
@@ -211,7 +211,7 @@ class LLMReviewTrace(BaseModel, frozen=True):
     current handle_pending_llm_review handler, a JSON parse failure routes the
     decision to a RefusalTrace (STAGE_PRE_UNPARSEABLE), not an LLMReviewTrace —
     so an LLMReviewTrace with parse_failure set is not produced by the handler
-    today. The field is retained per the GH-193 spec for forward compatibility:
+    today. The field is retained for forward compatibility:
     a future revision that records the failure on LLMReviewTrace (e.g., to
     surface attempt metadata before retry) can populate it without a schema
     migration. The failure branch of the invariant therefore exists as an
@@ -289,7 +289,7 @@ class EngineDecision(BaseModel, frozen=True):
     latency_us: int  # perf_counter_ns delta, integer microseconds
     decision_traces: tuple[DecisionTrace, ...] = ()  # G11: decision-level metadata
     session_id: str | None = None  # links decisions in a multi-step chain (H-04)
-    # GH-367: populated on deterministic single-order paths (no_match, accessioning,
+    # Populated on deterministic single-order paths (no_match, accessioning,
     # first_match). None for multi-order query events (which keep parsed_order_ids)
     # and for LLM paths.
     order_id: str | None = None

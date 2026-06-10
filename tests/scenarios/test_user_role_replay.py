@@ -1,4 +1,4 @@
-"""GH-227 S8: Replay propagates Scenario.user_role into event_data.
+"""Replay propagates Scenario.user_role into event_data.
 
 Tests that when a scenario carries user_role, the ctx passed to
 dispatch_event has user_role injected in event.event_data.
@@ -82,7 +82,7 @@ def _make_fake_dispatch_result() -> tuple[MagicMock, MagicMock, MagicMock]:
 def test_replay_injects_user_role_into_event_data(tmp_path: Path, role: str) -> None:
     """L9: Replay passes Scenario.user_role into event.event_data for each valid role.
 
-    GH-324 Step 5: user_role injection now flows through the endpoint path.
+    user_role injection now flows through the endpoint path.
     The consumer (app.py _consume) injects user_role from the queue payload into
     ctx.event.event_data before calling dispatch_event. We intercept at the
     routing.dispatch_event level to capture the ctx with user_role already injected.
@@ -126,7 +126,7 @@ def test_replay_injects_user_role_into_event_data(tmp_path: Path, role: str) -> 
 def test_replay_absent_user_role_leaves_event_data_unchanged(tmp_path: Path) -> None:
     """When Scenario.user_role is None, event_data is not mutated.
 
-    GH-324 Step 5: user_role=None means no injection at the consumer level;
+    user_role=None means no injection at the consumer level;
     verified by capturing ctx at routing.dispatch_event.
     """
     from samantha_server.llm.client import LLMClient, LLMResponse

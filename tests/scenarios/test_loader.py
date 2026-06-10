@@ -338,7 +338,7 @@ def test_load_scenarios_query_shape_emits_debug_log(
 
 
 # ---------------------------------------------------------------------------
-# GH-222 PR224 Cluster A: Scenario.expected_query_sequence accessor unit tests
+# Scenario.expected_query_sequence accessor unit tests
 # ---------------------------------------------------------------------------
 
 
@@ -439,7 +439,7 @@ class TestScenarioExpectedQuerySequence:
 
 
 # ---------------------------------------------------------------------------
-# GH-222 PR224 Cluster C (#7): real-fixture integration test
+# PR224 Cluster C (#7): real-fixture integration test
 # ---------------------------------------------------------------------------
 
 
@@ -479,9 +479,9 @@ def test_qr020_loader_to_accessor_path() -> None:
 def test_empty_expected_output_preserved_as_empty_dict(tmp_path: Path) -> None:
     """A fixture with ``expected_output: {}`` loads as raw_expected_output == {}.
 
-    GH-184 fix-review M9: the loader must NOT coerce an empty dict to None — {}
+     fix-review M9: the loader must NOT coerce an empty dict to None — {}
     means "key present but no expectation defined yet", distinct from absent.
-    (Regression guard relocated here from the deleted test_assertions.py in GH-335.)
+    (Regression guard relocated here from the deleted test_assertions.py.)
     """
     from samantha_server.scenarios.loader import load_scenarios
 

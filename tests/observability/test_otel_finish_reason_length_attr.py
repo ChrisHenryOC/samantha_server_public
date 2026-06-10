@@ -1,4 +1,4 @@
-"""Tests for GH-321 S2.5: gen_ai.response.finish_reason_is_length boolean span attribute.
+"""Tests for S2.5: gen_ai.response.finish_reason_is_length boolean span attribute.
 
 When extract_finish_reasons(response) returns a list containing "length",
 both llm_complete_with_span and llm_complete_json_with_span must set
@@ -57,7 +57,7 @@ def _make_mock_llm(finish_reason: str | None) -> Any:
 
 
 def test_finish_reason_is_length_attr_is_on_allowlist() -> None:
-    """GH-321: gen_ai.response.finish_reason_is_length must be in _ALLOWED_ATTRIBUTES."""
+    """gen_ai.response.finish_reason_is_length must be in _ALLOWED_ATTRIBUTES."""
     from samantha_server.observability.otel import _ALLOWED_ATTRIBUTES
 
     assert "gen_ai.response.finish_reason_is_length" in _ALLOWED_ATTRIBUTES

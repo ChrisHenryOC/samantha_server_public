@@ -93,7 +93,7 @@ def test_build_query_prompt_stable_ordering() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-212 Slice 3: build_query_prompt emits <query> block (free_text path)
+# build_query_prompt emits <query> block (free_text path)
 # ---------------------------------------------------------------------------
 
 
@@ -133,7 +133,7 @@ def test_build_query_prompt_no_query_text_emits_sentinel() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-233 Slice 2: prompt_timestamp block in build_query_prompt +
+# prompt_timestamp block in build_query_prompt +
 #                 _build_query_messages
 # ---------------------------------------------------------------------------
 
@@ -188,7 +188,7 @@ def test_build_query_messages_omits_prompt_timestamp_when_none() -> None:
 def test_build_query_messages_three_block_ordering_with_orders() -> None:
     """JSON-mode user message places <prompt_timestamp> between <query> and <orders>.
 
-    PR #242 fix-review: positional invariant exists for build_query_prompt
+     fix-review: positional invariant exists for build_query_prompt
     (free-text) but was missing for the JSON-mode builder when orders are
     present. A swapped ``parts.append`` would not be caught otherwise.
     """
@@ -213,7 +213,7 @@ def test_build_query_messages_three_block_ordering_with_orders() -> None:
 
 
 def test_build_query_messages_xml_escapes_prompt_timestamp() -> None:
-    """PR #242 fix-review: prompt_timestamp is XML-escaped to defend against
+    """prompt_timestamp is XML-escaped to defend against
     fence breakout. saxutils encodes & → &amp;.
     """
     from samantha_server.llm.handlers import _build_query_messages
@@ -227,7 +227,7 @@ def test_build_query_messages_xml_escapes_prompt_timestamp() -> None:
 
 
 def test_build_query_prompt_xml_escapes_prompt_timestamp() -> None:
-    """PR #242 fix-review: free-text prompt also XML-escapes prompt_timestamp."""
+    """Free-text prompt also XML-escapes prompt_timestamp."""
     from samantha_server.llm.handlers import build_query_prompt
 
     prompt = build_query_prompt(
@@ -238,7 +238,7 @@ def test_build_query_prompt_xml_escapes_prompt_timestamp() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-227 S3: user_role block in build_query_prompt + _build_query_messages
+# user_role block in build_query_prompt + _build_query_messages
 # ---------------------------------------------------------------------------
 
 
@@ -374,7 +374,7 @@ def test_retrieve_similar_returns_at_most_k() -> None:
         for i in range(1, 6)
     }
     # WF-001 is excluded by the category filter, confirming the k-cap applies
-    # only to query-category scenarios. Under GH-213, "TEST-001" is not in the
+    # only to query-category scenarios. Under, "TEST-001" is not in the
     # index so the corpus guard is inert and retrieval reaches the k-cap path.
     index["WF-001"] = _make_workflow_scenario("WF-001", "ACCESSIONING")
     result = _retrieve_similar(ctx, index, k=3)
@@ -391,7 +391,7 @@ def test_retrieve_similar_filters_by_state() -> None:
         "QR-002": _make_query_scenario_with_state("QR-002", "ACCEPTED"),  # wrong state
         "QR-003": _make_query_scenario_with_state("QR-003", "ACCESSIONING"),
         # WF-001 is excluded by the category filter. "TEST-001" (the order_id
-        # from _make_ctx) is not in the index, so the GH-213 guard is inert.
+        # from _make_ctx) is not in the index, so the guard is inert.
         "WF-001": _make_workflow_scenario("WF-001", "ACCESSIONING"),
     }
     result = _retrieve_similar(ctx, index, k=10)
@@ -424,7 +424,7 @@ def test_retrieve_similar_returns_empty_when_no_matches() -> None:
     index = {
         "QR-001": _make_query_scenario_with_state("QR-001", "ACCEPTED"),
         # WF-001 is excluded by the category filter. "TEST-001" is not in the
-        # index, so the GH-213 guard is inert; the empty result comes from the
+        # index, so the guard is inert; the empty result comes from the
         # state-filter path (no scenario matches ACCESSIONING).
         "WF-001": _make_workflow_scenario("WF-001", "ACCEPTED"),
     }
@@ -440,7 +440,7 @@ def test_retrieve_similar_returns_fewer_than_k_when_insufficient() -> None:
     index = {
         "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
         # WF-001 is excluded by the category filter. "TEST-001" is not in the
-        # index, so the GH-213 guard is inert; retrieval returns the 1 match.
+        # index, so the guard is inert; retrieval returns the 1 match.
         "WF-001": _make_workflow_scenario("WF-001", "ACCESSIONING"),
     }
     result = _retrieve_similar(ctx, index, k=5)
@@ -448,12 +448,12 @@ def test_retrieve_similar_returns_fewer_than_k_when_insufficient() -> None:
 
 
 def test_retrieve_similar_returns_empty_when_index_is_all_query() -> None:
-    """GH-198 / GH-213: replay --include-category=query sweep — the current
+    """Replay --include-category=query sweep — the current
     scenario (QR-001) is in the index, so _retrieve_similar must return () to
     avoid feeding sibling fixtures into the prompt and biasing citations.
 
-    Under GH-213, the guard fires because ctx.order.order_id ("QR-001") is a
-    key in the index. The old GH-198 all-query short-circuit is replaced by
+    Under, the guard fires because ctx.order.order_id ("QR-001") is a
+    key in the index. The old all-query short-circuit is replaced by
     this structural "current scenario is in corpus" check.
     """
     from samantha_server.llm.handlers import _retrieve_similar
@@ -468,12 +468,12 @@ def test_retrieve_similar_returns_empty_when_index_is_all_query() -> None:
 
 
 def test_retrieve_similar_returns_empty_for_multi_category_sweep() -> None:
-    """GH-213: replay --include-category=query,llm_review sweep — index
+    """Replay --include-category=query,llm_review sweep — index
     contains both QR-* and LR-* scenarios. The current scenario (QR-001) is
     in the index, so _retrieve_similar must return () to avoid leaking test
     corpus siblings into the prompt.
 
-    The old GH-198 all-query short-circuit is False for a mixed index, so
+    The old all-query short-circuit is False for a mixed index, so
     retrieval falls through and returns QR-* siblings — this is the bug.
     """
     from samantha_server.llm.handlers import _retrieve_similar
@@ -491,12 +491,12 @@ def test_retrieve_similar_returns_empty_for_multi_category_sweep() -> None:
 
 
 def test_retrieve_similar_returns_results_for_production_order_id() -> None:
-    """GH-213: production-shape ctx — order_id is a real LIS ID not in the
-    index. The GH-213 guard is inert, and retrieval returns matching query
+    """Production-shape ctx — order_id is a real LIS ID not in the
+    index. The guard is inert, and retrieval returns matching query
     scenarios from the index.
 
-    Under the old GH-198 all-query short-circuit, an all-query index would
-    return () here too (false guard). Under GH-213, the guard only fires when
+    Under the old all-query short-circuit, an all-query index would
+    return here too (false guard). Under, the guard only fires when
     the order_id is in the index (replay-vs-corpus), so production retrieval
     works correctly.
     """
@@ -515,10 +515,10 @@ def test_retrieve_similar_returns_results_for_production_order_id() -> None:
 def test_retrieve_similar_logs_debug_when_corpus_guard_fires(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """GH-213 corpus guard must emit a DEBUG log so operators can distinguish
+    """Corpus guard must emit a DEBUG log so operators can distinguish
     'guard fired' from 'state-filter found nothing'.
 
-    GH-367: order_id is now a pass-through (synthetic LIS id, not PHI). The
+    order_id is now a pass-through (synthetic LIS id, not PHI). The
     log now emits the raw order_id directly instead of the HMAC hash.
     """
     import logging
@@ -535,8 +535,8 @@ def test_retrieve_similar_logs_debug_when_corpus_guard_fires(
 
     assert result == ()
     debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
-    assert any("GH-213" in m and "QR-001" in m for m in debug_messages), (
-        f"Expected DEBUG record containing 'GH-213' and order_id='QR-001'; got: {debug_messages}"
+    assert any("Corpus guard fired" in m and "QR-001" in m for m in debug_messages), (
+        f"Expected DEBUG record containing 'Corpus guard fired' and order_id='QR-001'; got: {debug_messages}"
     )
 
 
@@ -587,9 +587,9 @@ def _make_scenarios_index() -> dict[str, Scenario]:
 
     The workflow scenario ensures tests that call _retrieve_similar with
     a non-corpus order_id (e.g., "TEST-001") exercise the retrieval path
-    rather than expecting only query-category results. Under GH-213, callers
+    rather than expecting only query-category results. Under, callers
     that use _make_ctx() (order_id="TEST-001") are not in the index, so the
-    GH-213 guard is inert and retrieval proceeds normally.
+     guard is inert and retrieval proceeds normally.
     """
     return {
         "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
@@ -724,9 +724,9 @@ def test_handle_clinical_query_trace_query_text_hash_is_hmac() -> None:
 
 
 def test_handle_clinical_query_scenarios_cited() -> None:
-    """GH-225: scenarios_cited is always () — _retrieve_similar no longer called.
+    """scenarios_cited is always () — _retrieve_similar no longer called.
 
-    The production scenarios index is empty and the GH-213 guard always returned
+    The production scenarios index is empty and the guard always returned
     (). scenarios_cited is now hardcoded to () in handle_clinical_query.
     """
     from samantha_server.engine.decision import QueryTrace
@@ -748,14 +748,14 @@ def test_handle_clinical_query_scenarios_cited() -> None:
 
 
 def test_handle_clinical_query_scenarios_cited_empty_when_all_query() -> None:
-    """GH-198 / GH-213: when the current scenario's order_id is in the
+    """When the current scenario's order_id is in the
     scenarios_index (i.e., this is a replay-against-corpus sweep), the
     _retrieve_similar guard fires and QueryTrace.scenarios_cited must be ().
 
     Pins the data-flow from the guard through to the receipt-bound
     QueryTrace — the unit test on _retrieve_similar alone does not cover
-    this seam. Under GH-213, the guard is structural (order_id in index)
-    rather than the GH-198 all-query category check.
+    this seam. Under, the guard is structural (order_id in index)
+    rather than the all-query category check.
     """
     from samantha_server.engine.decision import QueryTrace
     from samantha_server.llm.handlers import handle_clinical_query
@@ -979,10 +979,10 @@ def test_handle_clinical_query_age_over_89_emits_refusal_receipt() -> None:
 
 
 def test_handle_clinical_query_invokes_phi_safe_on_happy_path() -> None:
-    """PR #239 review H1: pin that `phi_safe(ctx)` is invoked on a normal
+    """Pin that `phi_safe(ctx)` is invoked on a normal
     (non-elderly) clinical_query.
 
-    GH-225 made `phi_safe(ctx)` a fire-and-forget statement-level call (its
+     made `phi_safe(ctx)` a fire-and-forget statement-level call (its
     SafeContext return is no longer threaded into the prompt builders). The
     age>89 refusal path is covered by
     `test_handle_clinical_query_age_over_89_emits_refusal_receipt`, but no
@@ -1039,16 +1039,16 @@ def test_handle_clinical_query_model_load_error_returns_llm_refusal() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-34 Slice 4: Disposition model + parse_disposition
-# GH-193 Slice 6: TestDispositionModel and TestParseDisposition DELETED.
-# parse_disposition and Disposition were hard-cutover-removed (GH-193).
+# Disposition model + parse_disposition
+# TestDispositionModel and TestParseDisposition DELETED.
+# parse_disposition and Disposition were hard-cutover-removed.
 # The specimen-review path now uses SpecimenReviewResponseV1 JSON parsing;
 # there is no free-text fallback and no line-scan parser.
 # ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
-# GH-34 Slice 5: build_specimen_review_prompt + handle_pending_llm_review
+# build_specimen_review_prompt + handle_pending_llm_review
 # ---------------------------------------------------------------------------
 
 
@@ -1078,13 +1078,13 @@ def _make_llm_review_ctx(specimen_type: str = "frozen_section") -> SpecimenConte
 
 
 # PR204 review #6: TestBuildSpecimenReviewPrompt and its 8 tests DELETED.
-# build_specimen_review_prompt was orphaned by the GH-193 hard cutover; the new
+# build_specimen_review_prompt was orphaned by the hard cutover; the new
 # JSON path uses _build_specimen_review_messages, whose injection coverage lives
 # in tests/llm/test_specimen_review_json_mode.py.
 
 
 class TestHandlePendingLlmReview:
-    """GH-34 Slice 5: handle_pending_llm_review success paths."""
+    """handle_pending_llm_review success paths."""
 
     def test_accepted_disposition_returns_accepted_state(self) -> None:
         from samantha_server.engine.decision import EngineDecision, LLMReviewTrace
@@ -1151,7 +1151,7 @@ class TestHandlePendingLlmReview:
 
 
 # ---------------------------------------------------------------------------
-# GH-34 Slice 6: Error translation in handle_pending_llm_review
+# Error translation in handle_pending_llm_review
 # ---------------------------------------------------------------------------
 
 
@@ -1256,7 +1256,7 @@ class TestHandlePendingLlmReviewFlagLifecycle:
 
 
 class TestHandlePendingLlmReviewErrors:
-    """GH-34 Slice 6: error paths emit typed RefusalTrace decisions."""
+    """Error paths emit typed RefusalTrace decisions."""
 
     def test_skill_loader_error_returns_skill_unavailable(self) -> None:
         """SkillLoaderError → refused_skill_unavailable + STAGE_PRE_SKILL_UNAVAILABLE."""
@@ -1295,7 +1295,7 @@ class TestHandlePendingLlmReviewErrors:
         trace = decision.decision_traces[0]
         assert isinstance(trace, RefusalTrace)
         assert trace.refusal_reason == "STAGE_PRE_LLM_UNAVAILABLE"
-        # PR #286 review #8: pin underlying_error_type at the handler level
+        # Pin underlying_error_type at the handler level
         # so a regression in the threading wouldn't survive to the slower
         # integration tests.
         assert trace.underlying_error_type == "LLMInferenceError"
@@ -1399,7 +1399,7 @@ class TestHandlePendingLlmReviewErrors:
 
 
 # ---------------------------------------------------------------------------
-# GH-152: database_state.orders injection into the query path
+# database_state.orders injection into the query path
 # ---------------------------------------------------------------------------
 
 
@@ -1428,7 +1428,7 @@ _SAMPLE_ORDERS: tuple[dict[str, Any], ...] = (
 def test_build_query_prompt_includes_orders_block() -> None:
     """When orders are supplied, build_query_prompt must render them in the prompt.
 
-    GH-152: handle_clinical_query previously could not answer "which orders are
+    handle_clinical_query previously could not answer "which orders are
     in state X" questions because the database_state.orders list never reached
     the prompt. The orders parameter on build_query_prompt is the channel that
     closes that gap.
@@ -1638,7 +1638,7 @@ def test_coerce_orders_drops_oversized_fields() -> None:
 
 
 def test_llm_order_block_accepts_fixation_and_ordered_tests() -> None:
-    """LLMOrderBlock must accept fixation_time_hours and ordered_tests (GH-226
+    """LLMOrderBlock must accept fixation_time_hours and ordered_tests (
     Slice B). QR-023 passes both fields in its orders payload; without this
     they are silently dropped by extra='ignore'."""
     from samantha_server.llm.handlers import LLMOrderBlock
@@ -1685,14 +1685,14 @@ def test_orders_canonical_json_includes_new_fields() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PR #240 review H1 — boundary coverage for new LLMOrderBlock fields (GH-226)
+# review H1 — boundary coverage for new LLMOrderBlock fields
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("value", [0.0, 200.0])
 def test_llm_order_block_accepts_fixation_at_inclusive_boundary(value: float) -> None:
     """fixation_time_hours bounds are inclusive: ge=0 and le=200 must accept
-    the exact boundary values (PR #240 review H1)."""
+    the exact boundary values."""
     from samantha_server.llm.handlers import LLMOrderBlock
 
     block = LLMOrderBlock.model_validate({"order_id": "ORD-1", "fixation_time_hours": value})
@@ -1700,7 +1700,7 @@ def test_llm_order_block_accepts_fixation_at_inclusive_boundary(value: float) ->
 
 
 def test_llm_order_block_rejects_negative_fixation_time() -> None:
-    """fixation_time_hours=-1.0 violates ge=0 and must raise (PR #240 review H1).
+    """fixation_time_hours=-1.0 violates ge=0 and must raise.
 
     Pinned separately from the upper-bound test because a regression flipping
     ge=0 to gt=0 (or removing the lower bound entirely) would otherwise slip
@@ -1716,7 +1716,7 @@ def test_llm_order_block_rejects_negative_fixation_time() -> None:
 
 def test_llm_order_block_rejects_oversize_ordered_tests_tuple() -> None:
     """ordered_tests with 51 items exceeds max_length=50 and must raise
-    (PR #240 review H1). Pins the outer tuple cap so a regression removing
+. Pins the outer tuple cap so a regression removing
     `Field(max_length=50)` from the Annotated wrapper would surface."""
     from pydantic import ValidationError
 
@@ -1730,7 +1730,7 @@ def test_llm_order_block_rejects_oversize_ordered_tests_tuple() -> None:
 
 def test_llm_order_block_rejects_ordered_tests_item_exceeding_100_chars() -> None:
     """An individual ordered_tests item over 100 chars must raise
-    (PR #240 review H1). Pins the inner per-item cap; a regression dropping
+. Pins the inner per-item cap; a regression dropping
     the nested `Annotated[str, Field(max_length=100)]` would otherwise pass."""
     from pydantic import ValidationError
 
@@ -1742,7 +1742,7 @@ def test_llm_order_block_rejects_ordered_tests_item_exceeding_100_chars() -> Non
 
 
 # ---------------------------------------------------------------------------
-# PR #240 review M1 — _coerce_orders skip-path coverage for new fields
+# review M1 — _coerce_orders skip-path coverage for new fields
 # ---------------------------------------------------------------------------
 
 
@@ -1752,7 +1752,7 @@ def test_coerce_orders_skips_entry_with_out_of_bound_fixation(
     """An out-of-bound fixation_time_hours must cause _coerce_orders to drop
     the entire order entry (not coerce/clamp it) with a WARNING log.
 
-    PR #240 review M1: the existing `test_coerce_orders_drops_oversized_fields`
+     review M1: the existing `test_coerce_orders_drops_oversized_fields`
     pins this skip-vs-coerce behavior for `specimen_type`; pin it for
     `fixation_time_hours` too so a future change replacing the Pydantic bound
     with a clamping validator would surface as a test break.
@@ -1911,7 +1911,7 @@ def test_render_query_block_empty_string_returns_sentinel() -> None:
 def test_build_query_messages_query_block_is_first(monkeypatch: pytest.MonkeyPatch) -> None:
     """_build_query_messages: <query> block must appear before <orders> block.
 
-    GH-225: <similar_scenarios> and <safe_context> blocks removed. Only
+    <similar_scenarios> and <safe_context> blocks removed. Only
     <query> and <orders> remain in the user message. (Issue #4, Medium)
     """
     from samantha_server.llm.handlers import _build_query_messages
@@ -1929,7 +1929,7 @@ def test_build_query_messages_query_block_is_first(monkeypatch: pytest.MonkeyPat
 def test_build_query_prompt_query_block_is_first() -> None:
     """build_query_prompt: <query> block must appear before <skill>.
 
-    GH-225: <similar_scenarios> block removed. (Issue #4, Medium)
+    <similar_scenarios> block removed. (Issue #4, Medium)
     """
     from samantha_server.llm.handlers import build_query_prompt
 
@@ -1942,10 +1942,10 @@ def test_build_query_prompt_query_block_is_first() -> None:
 
 
 def test_build_query_prompt_no_safe_context_or_similar_scenarios_blocks() -> None:
-    """PR #239 review M3: free-text path PHI-regression pin.
+    """Free-text path PHI-regression pin.
 
     Symmetric to `_build_query_messages` Slice A/B tests at
-    test_handlers_json_mode.py:712-753. After GH-225 the
+    test_handlers_json_mode.py:712-753. After the
     `<safe_context>` and `<similar_scenarios>` blocks are structurally
     absent from `build_query_prompt`; this test fires if either block
     is re-added (which would re-expose the PHI-stripped SafeContext
@@ -1959,10 +1959,10 @@ def test_build_query_prompt_no_safe_context_or_similar_scenarios_blocks() -> Non
         query_text="What orders are ready?",
     )
     assert "<safe_context>" not in prompt, (
-        "<safe_context> block must not appear in clinical_query free-text prompts (GH-225)"
+        "<safe_context> block must not appear in clinical_query free-text prompts"
     )
     assert "<similar_scenarios>" not in prompt, (
-        "<similar_scenarios> block must not appear in clinical_query free-text prompts (GH-225)"
+        "<similar_scenarios> block must not appear in clinical_query free-text prompts"
     )
 
 
@@ -2012,7 +2012,7 @@ def test_render_query_block_escapes_ampersand() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-233 Slice 3: QueryTrace.prompt_timestamp_hash + handler threading
+# QueryTrace.prompt_timestamp_hash + handler threading
 # ---------------------------------------------------------------------------
 
 
@@ -2041,7 +2041,7 @@ def test_query_trace_records_prompt_timestamp_hash_when_provided() -> None:
 def test_free_text_mode_records_prompt_timestamp_hash(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """PR #242 fix-review: the free-text branch (handlers.py:804) also writes
+    """The free-text branch (handlers.py:804) also writes
     prompt_timestamp_hash to QueryTrace. Slice 3 tests above only exercise
     the JSON branch (default mode), so this pins the free-text path.
     """
@@ -2069,7 +2069,7 @@ def test_free_text_mode_records_prompt_timestamp_hash(
 
 
 def test_query_trace_prompt_timestamp_hash_is_deterministic() -> None:
-    """PR #242 fix-review Low #8: identical prompt_timestamp → identical hash;
+    """Identical prompt_timestamp → identical hash;
     distinct timestamp → distinct hash. Pins the HMAC-key-encoding contract.
     """
     from samantha_server.engine.decision import QueryTrace
@@ -2117,7 +2117,7 @@ def test_query_trace_prompt_timestamp_hash_empty_when_none() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-227 S4: handle_clinical_query extracts and plumbs user_role
+# handle_clinical_query extracts and plumbs user_role
 # ---------------------------------------------------------------------------
 
 
@@ -2361,7 +2361,7 @@ def test_handle_clinical_query_absent_role_coercion_failure_false() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-274: LIS-pattern priority pre-sort for the <orders> block.
+# LIS-pattern priority pre-sort for the <orders> block.
 #
 # In a real LIS, a query like "which orders should I do first?" is answered
 # by `SELECT * FROM orders ORDER BY priority_rank DESC, flags_present DESC,
@@ -2371,12 +2371,12 @@ def test_handle_clinical_query_absent_role_coercion_failure_false() -> None:
 #
 # Pre-sorting at scaffolding time matches production semantics and removes
 # the cross-model sequence-ordering failures (QR-020, QR-021 on every
-# non-Gemma candidate tested in GH-270).
+# non-Gemma candidate tested here).
 # ---------------------------------------------------------------------------
 
 
 def test_orders_priority_sorted_orders_rush_before_routine() -> None:
-    """GH-274: rush priority comes before routine in the priority sort."""
+    """Rush priority comes before routine in the priority sort."""
     from samantha_server.llm.handlers import _coerce_orders, _orders_priority_sorted
 
     orders = _coerce_orders(
@@ -2392,7 +2392,7 @@ def test_orders_priority_sorted_orders_rush_before_routine() -> None:
 
 
 def test_orders_priority_sorted_flagged_before_unflagged_within_priority() -> None:
-    """GH-274: within same priority tier, flagged orders come before unflagged.
+    """Within same priority tier, flagged orders come before unflagged.
 
     Mirrors the skill body's 3-key sort: priority DESC, flags-present DESC,
     created_at ASC. A FIXATION_WARNING flag on a rush order bumps it ahead
@@ -2422,7 +2422,7 @@ def test_orders_priority_sorted_flagged_before_unflagged_within_priority() -> No
 
 
 def test_orders_priority_sorted_older_first_within_tier() -> None:
-    """GH-274: within same priority + flags tier, older orders come first."""
+    """Within same priority + flags tier, older orders come first."""
     from samantha_server.llm.handlers import _coerce_orders, _orders_priority_sorted
 
     orders = _coerce_orders(
@@ -2452,7 +2452,7 @@ def test_orders_priority_sorted_older_first_within_tier() -> None:
 
 
 def test_orders_priority_sorted_full_three_key_sort() -> None:
-    """GH-274: rush+flagged, rush+oldest, rush+newest, routine+oldest, routine+newest.
+    """Rush+flagged, rush+oldest, rush+newest, routine+oldest, routine+newest.
 
     Locks in the full 3-key sort from the SKILL.md `### prioritized_list`
     section. Mirrors the QR-020 expected sequence shape: filter to ACCEPTED
@@ -2498,7 +2498,7 @@ def test_orders_priority_sorted_full_three_key_sort() -> None:
 
 
 def test_orders_priority_sorted_missing_priority_sorts_last() -> None:
-    """GH-274: an order with no priority field defaults to lowest tier.
+    """An order with no priority field defaults to lowest tier.
 
     Real LIS data may have missing fields; the sort must be robust. Treat
     `None` priority as below 'routine' so unknown-priority orders surface
@@ -2526,7 +2526,7 @@ def test_orders_priority_sorted_missing_priority_sorts_last() -> None:
 
 
 def test_orders_priority_sorted_empty_tuple_returns_empty_tuple() -> None:
-    """PR #277 review #6: empty-tuple invariant.
+    """Empty-tuple invariant.
 
     The production guard (`if canonical_orders:` in `handle_clinical_query`)
     makes this unreachable today, but pin the invariant in case the guard
@@ -2539,7 +2539,7 @@ def test_orders_priority_sorted_empty_tuple_returns_empty_tuple() -> None:
 
 
 def test_orders_priority_sorted_null_created_at_sorts_first_within_tier() -> None:
-    """PR #277 review #6: a missing `created_at` (None) sorts FIRST within tier.
+    """A missing `created_at` (None) sorts FIRST within tier.
 
     The implementation uses `o.created_at or ""` as the ASC sort key. An
     empty string is lexicographically less than any real ISO-8601 string,
@@ -2577,7 +2577,7 @@ def test_orders_priority_sorted_null_created_at_sorts_first_within_tier() -> Non
 
 
 def test_orders_priority_sorted_unrecognized_priority_string_defaults_to_lowest() -> None:
-    """PR #277 review #6: a priority value not in `_PRIORITY_RANK` ranks 0.
+    """A priority value not in `_PRIORITY_RANK` ranks 0.
 
     `_PRIORITY_RANK.get(o.priority or "", 0)` covers None (tested) AND any
     unrecognized non-None string — `"stat"`, `"urgent"`, a case-mismatch
@@ -2619,7 +2619,7 @@ def test_orders_priority_sorted_unrecognized_priority_string_defaults_to_lowest(
 
 
 def test_handle_clinical_query_prompt_orders_block_uses_priority_sort() -> None:
-    """GH-274: the `<orders>` block in the LLM prompt is priority-sorted.
+    """The `<orders>` block in the LLM prompt is priority-sorted.
 
     Constructs orders where canonical (order_id) order differs from
     priority order, then verifies the rush order appears *before* the
@@ -2668,17 +2668,17 @@ def test_handle_clinical_query_prompt_orders_block_uses_priority_sort() -> None:
     assert b_pos > -1 and a_pos > -1, "both order IDs must appear in the prompt"
     assert b_pos < a_pos, (
         "rush order ORD-B must appear before routine order ORD-A in the "
-        "<orders> block (GH-274 priority pre-sort)"
+        "<orders> block (priority pre-sort)"
     )
 
 
 def test_query_trace_database_state_hash_uses_canonical_not_priority_order() -> None:
-    """GH-274: the receipt's database_state_hash continues to be computed from
+    """The receipt's database_state_hash continues to be computed from
     the canonical (order_id) encoding, not the priority-sorted encoding.
 
     Audit invariant: the hash is a set-fingerprint of the order set, so it
     must be stable under different fixture orderings AND stable across the
-    GH-274 prompt-sort change. Verifies the hash matches the canonical-
+     prompt-sort change. Verifies the hash matches the canonical-
     order encoding, NOT the priority-order encoding.
     """
     from samantha_server.engine.decision import QueryTrace
@@ -2722,12 +2722,12 @@ def test_query_trace_database_state_hash_uses_canonical_not_priority_order() -> 
 
 
 # ---------------------------------------------------------------------------
-# GH-369: order_id stamping on LLM-path decisions
+# order_id stamping on LLM-path decisions
 # ---------------------------------------------------------------------------
 
 
 class TestMakeRefusalDecisionOrderId:
-    """GH-369 Slice 1: _make_refusal_decision propagates order_id."""
+    """_make_refusal_decision propagates order_id."""
 
     def test_order_id_kwarg_is_forwarded_to_decision(self) -> None:
         """Passing order_id='ORD-X' sets decision.order_id == 'ORD-X'."""
@@ -2756,7 +2756,7 @@ class TestMakeRefusalDecisionOrderId:
 
 
 class TestHandlePendingLlmReviewOrderId:
-    """GH-369 Slice 2: handle_pending_llm_review stamps ctx.order.order_id."""
+    """handle_pending_llm_review stamps ctx.order.order_id."""
 
     def test_accepted_decision_carries_order_id(self) -> None:
         """Success path (accepted): decision.order_id == ctx.order.order_id."""
@@ -2843,7 +2843,7 @@ class TestHandlePendingLlmReviewOrderId:
     def test_unparseable_response_carries_order_id(self) -> None:
         """Unparseable-response refusal (refused_unparseable_response): decision.order_id stamped.
 
-        GH-369: the PydanticValidationError branch in _handle_pending_llm_review_json
+        The PydanticValidationError branch in _handle_pending_llm_review_json
         stamps order_id=ctx.order.order_id. This is the only review refusal path that
         was not previously covered for order_id.
         """
@@ -2860,7 +2860,7 @@ class TestHandlePendingLlmReviewOrderId:
 
 
 class TestHandleClinicalQueryOrderIdIsNone:
-    """GH-369 Slice 4: multi-order query path keeps decision.order_id == None."""
+    """Multi-order query path keeps decision.order_id == None."""
 
     def test_success_path_order_id_is_none(self) -> None:
         """handle_clinical_query success: order_id must be None (multi-order path)."""
@@ -2901,7 +2901,7 @@ class TestHandleClinicalQueryOrderIdIsNone:
     def test_phi_boundary_refusal_order_id_is_none(self) -> None:
         """Query-path PHI-boundary refusal (age > 89): order_id must stay None.
 
-        GH-369: the query path never stamps order_id, including refusal exits.
+        The query path never stamps order_id, including refusal exits.
         Mirrors the age>89 fixture from
         test_handle_clinical_query_age_over_89_emits_refusal_receipt.
         """

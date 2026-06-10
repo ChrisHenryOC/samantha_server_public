@@ -1,4 +1,4 @@
-"""Tests for QueryTrace additive extension (GH-192 Slice 3).
+"""Tests for QueryTrace additive extension.
 
 Tests:
 - Existing receipt JSON (without new fields) deserializes cleanly with
@@ -18,7 +18,7 @@ import pytest
 
 
 def test_query_trace_old_json_deserializes_with_new_fields_none() -> None:
-    """Pre-GH-192 QueryTrace JSON deserializes; new fields are None."""
+    """Legacy QueryTrace JSON deserializes; new fields are None."""
     from samantha_server.engine.decision import QueryTrace
 
     # Hand-built JSON representative of pre-fix receipts (no new fields).
@@ -274,12 +274,12 @@ def test_response_text_hash_same_json_failure_vs_free_text() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-220 Slice 2: QueryTrace.parsed_answer_type widening
+# QueryTrace.parsed_answer_type widening
 # ---------------------------------------------------------------------------
 
 
 def test_query_trace_parsed_answer_type_accepts_order_status() -> None:
-    """GH-220 Slice 2: QueryTrace accepts parsed_answer_type='order_status'."""
+    """QueryTrace accepts parsed_answer_type='order_status'."""
     from samantha_server.engine.decision import QueryTrace
 
     trace = QueryTrace(

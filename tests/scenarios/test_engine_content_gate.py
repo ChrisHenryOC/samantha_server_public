@@ -1,4 +1,4 @@
-"""GH-194: Engine content gate — LLM-content correctness counts toward included_accuracy.
+"""Engine content gate — LLM-content correctness counts toward included_accuracy.
 
 Tests are organized by slice:
   Slice 1: StepVerdict.status Literal extension.
@@ -49,7 +49,7 @@ def _make_step_verdict(status: str) -> StepVerdict:
 
 
 class TestStepVerdictStatusLiteral:
-    """GH-194 Slice 1: new status values accepted by StepVerdict."""
+    """New status values accepted by StepVerdict."""
 
     @pytest.mark.parametrize(
         "status",
@@ -97,7 +97,7 @@ class TestStepVerdictStatusLiteral:
 
 
 class TestScenarioExpectedQueryContent:
-    """GH-194 Slice 2: Scenario.expected_query_content typed accessor."""
+    """Scenario.expected_query_content typed accessor."""
 
     def test_returns_frozenset_when_order_ids_present(self) -> None:
         """When raw_expected_output has a list of strings, returns frozenset[str]."""
@@ -229,7 +229,7 @@ class TestScenarioExpectedQueryContent:
 
 
 class TestVerdictForStepHallucinationChecks:
-    """GH-194 Slice 3: hallucinated_state / hallucinated_rule / hallucinated_flag."""
+    """hallucinated_state / hallucinated_rule / hallucinated_flag."""
 
     @pytest.fixture()
     def rule_index(self) -> object:
@@ -434,7 +434,7 @@ class TestVerdictForStepHallucinationChecks:
 
 
 class TestVerdictForStepLLMReview:
-    """GH-194 Slice 4: content gate for llm_review routing_path steps."""
+    """Content gate for llm_review routing_path steps."""
 
     @pytest.fixture()
     def rule_index(self) -> object:
@@ -639,7 +639,7 @@ class TestVerdictForStepLLMReview:
 # Slice 5: mismatch_query_response / invalid_json / empty_response for query
 # ---------------------------------------------------------------------------
 
-# GH-334 helpers: stub-LLM pattern for the receipt-based harness.
+# Stub-LLM pattern for the receipt-based harness.
 # The real dispatch path calls handle_clinical_query → complete_json() and
 # parses the response as QueryResponseV1. To control the QueryTrace that ends
 # up in the persisted receipt, we supply a stub LLMClient whose complete_json()
@@ -649,7 +649,7 @@ class TestVerdictForStepLLMReview:
 def _make_stub_llm(response_text: str) -> object:
     """Return a stub LLMClient whose complete_json() always returns *response_text*.
 
-    Used by GH-334 migration: drive real dispatch with a controlled LLM response
+    Used by migration: drive real dispatch with a controlled LLM response
     so the production receipt path persists a deterministic QueryTrace.
     """
     from unittest.mock import MagicMock
@@ -799,9 +799,9 @@ def _run_single_step_query_replay(
 
 
 class TestQueryContentGate:
-    """GH-194 Slice 5: content gate applied post-loop to last LLM-routed query step.
+    """Content gate applied post-loop to last LLM-routed query step.
 
-    GH-334: migrated from stale dispatch-proxy injection to the receipt-based
+    Migrated from stale dispatch-proxy injection to the receipt-based
     harness. Each test drives the real dispatch_event (via POST /events) with a
     stub LLMClient whose complete_json() returns a crafted QueryResponseV1 JSON
     text. The production handle_clinical_query parses it and persists the resulting
@@ -933,7 +933,7 @@ class TestQueryContentGate:
     def test_query_content_gate_empty_response(self) -> None:
         """When response_text_hash == sha256('') and parsed_order_ids is None → empty_response.
 
-        GH-334: the production handle_clinical_query cannot produce
+        The production handle_clinical_query cannot produce
         (parsed_order_ids=None, parse_failure=None, response_text_hash=sha256(''))
         via a stub response — if the LLM returns an empty string it triggers a
         json_decode failure, not the empty_response branch. This test is therefore
@@ -1098,7 +1098,7 @@ class TestQueryContentGate:
         )
 
     # ---------------------------------------------------------------------------
-    # GH-220 Slice 4: order_status branch in the content gate
+    # order_status branch in the content gate
     # ---------------------------------------------------------------------------
 
     def _query_scenario_order_status(
@@ -1142,7 +1142,7 @@ class TestQueryContentGate:
         }
 
     def test_query_gate_order_status_subject_id_match_passes(self, tmp_path: object) -> None:
-        """GH-220 Slice 4: order_status fixture where model emits correct subject_id → pass."""
+        """order_status fixture where model emits correct subject_id → pass."""
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -1159,7 +1159,7 @@ class TestQueryContentGate:
         assert step_status == "pass", f"Step status: {step_status!r}"
 
     def test_query_gate_order_status_wrong_subject_fails(self, tmp_path: object) -> None:
-        """GH-220 Slice 4: order_status fixture where model emits wrong subject_id → mismatch."""
+        """order_status fixture where model emits wrong subject_id → mismatch."""
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -1185,7 +1185,7 @@ class TestQueryContentGate:
         )
 
     def test_query_gate_order_status_with_wrong_answer_type_fails(self, tmp_path: object) -> None:
-        """GH-220 Slice 4: order_status fixture but model emits order_list → mismatch.
+        """order_status fixture but model emits order_list → mismatch.
 
         The model used the wrong shape even if the order_id happens to match.
         The gate must fail because parsed_answer_type != expected answer_type.
@@ -1225,7 +1225,7 @@ class TestQueryContentGate:
         After Cluster D, the warning originates in samantha_server.scenarios.loader
         (via Scenario.expected_answer_type) rather than in replay itself.
 
-        Note: "prioritized_list" was used here before GH-222 added it to ANSWER_TYPES.
+        Note: "prioritized_list" was used here before added it to ANSWER_TYPES.
         The test now uses a synthetic type that will never be a valid answer_type.
         """
         import json
@@ -1307,7 +1307,7 @@ class TestQueryContentGate:
         the endpoint path: step 1 (correct order_ids → pass) must remain pass
         when step 2 has wrong order_ids (→ mismatch_query_response).
 
-        GH-324 Step 5: on the endpoint path, resolve_transition is not called
+        On the endpoint path, resolve_transition is not called
         (the endpoint already resolves symbolic transitions). The desync prevention
         is still exercised via the _last_query_gate_target logic.
         """
@@ -1411,7 +1411,7 @@ class TestQueryContentGate:
         )
 
     # ---------------------------------------------------------------------------
-    # GH-222 Slice 2: prioritized_list branch in the content gate
+    # prioritized_list branch in the content gate
     # ---------------------------------------------------------------------------
 
     def _query_scenario_prioritized_list(
@@ -1455,7 +1455,7 @@ class TestQueryContentGate:
         }
 
     def test_query_gate_prioritized_list_exact_sequence_passes(self, tmp_path: object) -> None:
-        """GH-222 Slice 2: prioritized_list where model emits exact sequence → pass."""
+        """prioritized_list where model emits exact sequence → pass."""
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -1472,7 +1472,7 @@ class TestQueryContentGate:
         assert step_status == "pass", f"Step status: {step_status!r}"
 
     def test_query_gate_prioritized_list_wrong_order_fails(self, tmp_path: object) -> None:
-        """GH-222 Slice 2: prioritized_list where model emits same set in wrong rank → fail.
+        """prioritized_list where model emits same set in wrong rank → fail.
 
         The diagnostic must name expected_sequence and parsed_sequence.
         """
@@ -1501,7 +1501,7 @@ class TestQueryContentGate:
         )
 
     def test_query_gate_prioritized_list_wrong_answer_type_fails(self, tmp_path: object) -> None:
-        """GH-222 Slice 2: fixture is prioritized_list but model emits order_list → fail.
+        """Fixture is prioritized_list but model emits order_list → fail.
 
         Correct IDs in correct order but wrong answer_type must fail.
         """
@@ -1551,19 +1551,19 @@ class TestQueryContentGate:
 
 
 # ---------------------------------------------------------------------------
-# GH-231 F-1: order_list gate — answer_type check before set-equality
+# order_list gate — answer_type check before set-equality
 # ---------------------------------------------------------------------------
 
 
 class TestOrderListAnswerTypeGate:
-    """GH-231 F-1: order_list fixture must fail when model returns wrong answer_type.
+    """order_list fixture must fail when model returns wrong answer_type.
 
-    The order_list gate's elif branch (L1250 pre-GH-231) compared only
+    The order_list gate's elif branch (L1250 legacy) compared only
     parsed_order_ids via set-equality, ignoring parsed_answer_type. A model
     that returns answer_type="order_status" with matching order_ids would pass
-    silently. After GH-231, the branch checks answer_type first.
+    silently. After, the branch checks answer_type first.
 
-    GH-334: migrated from stale dispatch-proxy injection to the receipt-based
+    Migrated from stale dispatch-proxy injection to the receipt-based
     harness using a stub LLM whose complete_json() returns crafted JSON.
     """
 
@@ -1572,7 +1572,7 @@ class TestOrderListAnswerTypeGate:
         return {
             "scenario_id": "QRY-GH231-F1-01",
             "category": "query",
-            "description": "GH-231 F-1: order_list fixture for answer_type gate test",
+            "description": "F-1: order_list fixture for answer_type gate test",
             "events": [
                 {
                     "step": 1,
@@ -1604,11 +1604,11 @@ class TestOrderListAnswerTypeGate:
         }
 
     def test_order_list_fixture_with_wrong_answer_type_fails(self, tmp_path: object) -> None:
-        """GH-231 F-1: order_list fixture where model returns order_status → mismatch.
+        """order_list fixture where model returns order_status → mismatch.
 
-        Before GH-231 the order_list elif branch had no answer_type check — only
+        Before the order_list elif branch had no answer_type check — only
         set-equality on order_ids. A model returning order_status with matching
-        order_ids would pass silently. After GH-231 the branch must check
+        order_ids would pass silently. After the branch must check
         parsed_answer_type == "order_list" first.
         """
         from pathlib import Path
@@ -1632,7 +1632,7 @@ class TestOrderListAnswerTypeGate:
         )
 
     def test_order_list_fixture_with_correct_answer_type_passes(self, tmp_path: object) -> None:
-        """GH-231 F-1: order_list fixture with correct answer_type and order_ids → pass."""
+        """order_list fixture with correct answer_type and order_ids → pass."""
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -1648,17 +1648,17 @@ class TestOrderListAnswerTypeGate:
 
 
 # ---------------------------------------------------------------------------
-# GH-231 F-6: no_orders/uncertain gate branch
+# no_orders/uncertain gate branch
 # ---------------------------------------------------------------------------
 
 
 class TestNoOrdersUncertainGateGH231F6:
-    """GH-231 F-6: no_orders and uncertain fixtures must validate answer_type + empty ids.
+    """no_orders and uncertain fixtures must validate answer_type + empty ids.
 
-    Before GH-231 these fixture types fell through the gate (no branch covered them),
+    Before these fixture types fell through the gate (no branch covered them)
     so a model returning order_list with non-empty ids would pass silently.
 
-    GH-334: migrated from stale dispatch-proxy injection to the receipt-based
+    Migrated from stale dispatch-proxy injection to the receipt-based
     harness using a stub LLM whose complete_json() returns crafted JSON.
     """
 
@@ -1667,7 +1667,7 @@ class TestNoOrdersUncertainGateGH231F6:
         return {
             "scenario_id": "QRY-GH231-F6-01",
             "category": "query",
-            "description": "GH-231 F-6: no_orders fixture",
+            "description": "F-6: no_orders fixture",
             "events": [
                 {
                     "step": 1,
@@ -1703,7 +1703,7 @@ class TestNoOrdersUncertainGateGH231F6:
         return {
             "scenario_id": "QRY-GH231-F6-02",
             "category": "query",
-            "description": "GH-231 F-6: uncertain fixture",
+            "description": "F-6: uncertain fixture",
             "events": [
                 {
                     "step": 1,
@@ -1735,10 +1735,10 @@ class TestNoOrdersUncertainGateGH231F6:
         }
 
     def test_no_orders_fixture_with_order_list_response_fails(self, tmp_path: object) -> None:
-        """GH-231 F-6: no_orders fixture where model returns order_list with ids → mismatch.
+        """no_orders fixture where model returns order_list with ids → mismatch.
 
-        Before GH-231 the gate had no branch for no_orders/uncertain with empty order_ids,
-        so the empty-set path fell through and passed silently. After GH-231, the gate checks
+        Before the gate had no branch for no_orders/uncertain with empty order_ids
+        so the empty-set path fell through and passed silently. After, the gate checks
         fixture answer_type BEFORE the empty-ids path, requiring parsed_answer_type match.
         """
         from pathlib import Path
@@ -1760,7 +1760,7 @@ class TestNoOrdersUncertainGateGH231F6:
         )
 
     def test_no_orders_fixture_with_correct_response_passes(self, tmp_path: object) -> None:
-        """GH-231 F-6: no_orders fixture where model returns no_orders with empty ids → pass."""
+        """no_orders fixture where model returns no_orders with empty ids → pass."""
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -1775,7 +1775,7 @@ class TestNoOrdersUncertainGateGH231F6:
         assert verdict.status == "pass", f"Expected pass, got {verdict.status!r}"
 
     def test_uncertain_fixture_with_order_list_response_fails(self, tmp_path: object) -> None:
-        """GH-231 F-6: uncertain fixture where model returns order_list → mismatch."""
+        """Uncertain fixture where model returns order_list → mismatch."""
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -1794,7 +1794,7 @@ class TestNoOrdersUncertainGateGH231F6:
         )
 
     def test_uncertain_fixture_with_correct_response_passes(self, tmp_path: object) -> None:
-        """GH-231 F-6: uncertain fixture where model returns uncertain with empty ids → pass."""
+        """Uncertain fixture where model returns uncertain with empty ids → pass."""
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -1811,7 +1811,7 @@ class TestNoOrdersUncertainGateGH231F6:
     def test_no_orders_fixture_with_correct_type_but_non_empty_ids_fails(
         self, tmp_path: object
     ) -> None:
-        """PR #238 review M1: pins the F-6 gate's *second* elif arm.
+        """Pins the F-6 gate's *second* elif arm.
 
         no_orders fixture: model returns `parsed_answer_type=no_orders` (correct)
         but with non-empty `parsed_order_ids` (wrong) → must mismatch. Without

@@ -59,7 +59,7 @@ def test_only_event_dispatch_context_defines_routing_path_field() -> None:
       - EventDispatchContext: orchestrator-side dispatch metadata.
       - StepVerdict: replay harness output (scenarios/replay.py). Records the
         routing path *actually taken* per step so the latency bucket is keyed
-        on actual path, not scenario category (GH-121 Critical #2). StepVerdict
+        on actual path, not scenario category. StepVerdict
         is a replay-only output model — not an engine output model — so this
         does not breach the engine-purity invariant.
 
@@ -80,15 +80,15 @@ def test_only_event_dispatch_context_defines_routing_path_field() -> None:
             # Orchestrator-side dispatch metadata (Phase 3 Step 4).
             "EventDispatchContext",
             # Replay harness step output. Records the routing path per step
-            # for routing_path-keyed latency bucketing (GH-121 Critical #2).
+            # for routing_path-keyed latency bucketing.
             # Not an engine output; not a purity violation.
             "StepVerdict",
-            # Phase 3 Step 10 trace serializer output (GH-125). The TypedDict
+            # Phase 3 Step 10 trace serializer output. The TypedDict
             # mirrors the documented Langfuse trace shape, which carries
             # routing_path as a top-level dashboard filter. Not an engine
             # output — produced by the observability layer.
             "TraceDict",
-            # GH-182: unified span-stamping carrier. Holds the union of fields
+            # Unified span-stamping carrier. Holds the union of fields
             # needed by stamp_trace_attributes() to replace three drifting call
             # sites. Observability-layer dataclass — not an engine output.
             "TraceContext",

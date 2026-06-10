@@ -1,4 +1,4 @@
-"""Tests for _aggregate_n_sweep_reports (GH-262 Slice 2).
+"""Tests for _aggregate_n_sweep_reports.
 
 Verifies per-fixture pass/total aggregation across multiple AccuracyReport
 instances. Tests corpus-stability assertion (scenario set must be identical

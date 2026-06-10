@@ -50,7 +50,7 @@ def _make_dispatch_via_evaluate_patch(rule_index: object) -> object:
     accuracy without loading MLX. Deterministic steps are delegated to the real
     routing.dispatch_event.
 
-    On the endpoint path (GH-324), routing.dispatch_event is the call site so
+    On the endpoint path, routing.dispatch_event is the call site so
     this must be patched there, not at samantha_server.scenarios.replay.dispatch_event.
     """
     import samantha_server.api.routing as _routing_mod
