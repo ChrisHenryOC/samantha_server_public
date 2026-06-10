@@ -1,4 +1,4 @@
-"""Chart 11 (GH-311): single signed-receipt evidence card."""
+"""Chart 11: single signed-receipt evidence card."""
 
 from __future__ import annotations
 

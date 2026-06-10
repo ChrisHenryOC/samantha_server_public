@@ -1,4 +1,4 @@
-"""Tests for --receipts-db-path CLI argument (GH-306).
+"""Tests for --receipts-db-path CLI argument.
 
 Verifies:
 - --receipts-db-path=PATH parses to args.receipts_db_path == Path(PATH)
@@ -6,7 +6,7 @@ Verifies:
 - --help output contains --receipts-db-path
 - main() with --receipts-db-path creates a SQLite DB at that path with the
   receipts schema (deterministic-only corpora produce a schema-only DB by
-  design — see GH-156 design note in replay.py)
+  design — see design note in replay.py)
 - PR315 review #1+#8+#9: argparse validator rejects unwritable parent dirs
   at parse time (one error, not N × sweep × model tracebacks)
 - PR315 review #7: main() refuses --receipts-db-path that aliases the
@@ -141,7 +141,7 @@ def test_main_creates_receipts_db_at_supplied_path(tmp_path: Path) -> None:
     """main() with --receipts-db-path persists a SQLite receipts DB at that path.
 
     The fixture uses ``category: "rule_coverage"`` (deterministic-only), so
-    by GH-156 design replay() takes the ``_init_receipts_schema`` branch and
+    by design replay takes the ``_init_receipts_schema`` branch and
     writes the schema without constructing _ReplayDeps. The DB is therefore
     schema-populated but row-empty by design; assert specifically the
     ``receipts`` table exists rather than "any table".
@@ -162,7 +162,7 @@ def test_main_creates_receipts_db_at_supplied_path(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert db_path.exists(), (
-        f"GH-306: receipts DB must exist at {db_path} after main() -- "
+        f"Receipts DB must exist at {db_path} after main() -- "
         "the flag was not forwarded to replay()."
     )
     conn = sqlite3.connect(db_path)
@@ -172,7 +172,7 @@ def test_main_creates_receipts_db_at_supplied_path(tmp_path: Path) -> None:
     finally:
         conn.close()
     assert "receipts" in tables, (
-        f"GH-306: receipts DB at {db_path} missing 'receipts' table. Got tables={tables!r}"
+        f"Receipts DB at {db_path} missing 'receipts' table. Got tables={tables!r}"
     )
 
 
@@ -220,7 +220,7 @@ def test_main_splits_receipts_db_path_per_model_under_multi_model(
     """PR315 review #6: --models A,B --receipts-db-path foo.db → per-model files.
 
     Without the split, both models' receipts append to the same file with no
-    model_id discriminator column; the GH-311 chart consumer would have to
+    model_id discriminator column; the chart consumer would have to
     demux via Langfuse trace_id (only available when Langfuse was enabled).
     Also covers PR315 review #3: the multi-model Langfuse path forwards the
     derived per-model path.

@@ -45,7 +45,7 @@ def _find_config_vars(config_path: Path) -> set[str]:
       _required_int("VAR_NAME", ...)
       _required_float("VAR_NAME", ...)
 
-    PR #131 M7: this scan is **deliberately limited to helper call sites**
+     M7: this scan is **deliberately limited to helper call sites**
     per the plan's spec. Bare ``os.environ.get(...)`` literals are
     intentionally not included — they're for ad-hoc internal reads
     (PYTEST_CURRENT_TEST sentinel, model-path resolution side paths) and

@@ -107,7 +107,7 @@ class TestCanonicalFieldsFixture:
 
 
 class TestAnatomicSiteNoDrift:
-    """GH-234 S4: Structural drift-check between canonical-fields.json and rule specs.
+    """Structural drift-check between canonical-fields.json and rule specs.
 
     Invariant: every value in canonical-fields.json anatomic_site must appear in
     exactly one of: ACC-003's blacklist, ACC-011's whitelist, or the explicit

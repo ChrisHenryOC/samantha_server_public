@@ -1,4 +1,4 @@
-"""GH-285: LLM-unavailable refusals silently pass query/llm_review scenarios.
+"""LLM-unavailable refusals silently pass query/llm_review scenarios.
 
 Tests are organized by slice:
   Slice 1: query scenario with LLM failure surfaces llm_unavailable (not pass).
@@ -34,7 +34,7 @@ def _write_query_scenario(tmp_path: Path, scenario_id: str) -> None:
     fixture = {
         "scenario_id": scenario_id,
         "category": "query",
-        "description": f"GH-285 query fixture {scenario_id}",
+        "description": f"Query fixture {scenario_id}",
         "query": "What orders are pending?",
         "database_state": {"orders": []},
         "expected_output": {
@@ -74,7 +74,7 @@ def _write_llm_review_scenario(tmp_path: Path, scenario_id: str) -> None:
     fixture = {
         "scenario_id": scenario_id,
         "category": "llm_review",
-        "description": f"GH-285 llm_review fixture {scenario_id}",
+        "description": f"llm_review fixture {scenario_id}",
         "events": [
             {
                 "step": 1,
@@ -139,7 +139,7 @@ def _timeout_error() -> LLMTimeoutError:
 
 
 class TestSlice1QueryLlmUnavailable:
-    """GH-285 Slice 1: query scenario surfaces llm_unavailable when LLM raises."""
+    """Query scenario surfaces llm_unavailable when LLM raises."""
 
     def test_llm_unavailable_in_step_verdict_status_literal(self) -> None:
         """llm_unavailable must appear in the StepVerdict.status Literal."""
@@ -290,7 +290,7 @@ class TestSlice1QueryLlmUnavailable:
 
 
 class TestSlice2UnderlyingErrorType:
-    """GH-285 Slice 2: underlying_error_type appears in content_diagnostic."""
+    """underlying_error_type appears in content_diagnostic."""
 
     def test_refusal_trace_accepts_underlying_error_type(self) -> None:
         """RefusalTrace must accept an optional underlying_error_type field."""
@@ -375,7 +375,7 @@ class TestSlice2UnderlyingErrorType:
 
 
 class TestSlice3LlmReviewLlmUnavailable:
-    """GH-285 Slice 3: llm_review scenario surfaces llm_unavailable when LLM raises."""
+    """llm_review scenario surfaces llm_unavailable when LLM raises."""
 
     def test_llm_review_with_llm_failure_does_not_pass(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -424,7 +424,7 @@ class TestSlice3LlmReviewLlmUnavailable:
         assert llm_step.status == "llm_unavailable", (
             f"Expected step status='llm_unavailable', got {llm_step.status!r}"
         )
-        # PR #286 review #9: pin the per-step llm_review diagnostic format
+        # Pin the per-step llm_review diagnostic format
         # explicitly so a regression that drops `underlying=` or shifts the
         # field order fails loudly. The query gate adds `outcome=`; this
         # gate intentionally omits it (asymmetry documented in replay.py).
@@ -435,7 +435,7 @@ class TestSlice3LlmReviewLlmUnavailable:
     def test_llm_model_load_error_surfaces_in_diagnostic(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """PR #286 review #10: LLMModelLoadError is the third LLMClientError
+        """LLMModelLoadError is the third LLMClientError
         subclass; the other two are covered by sibling tests. Adding this one
         guards against a future handler refactor that splits model-load to
         its own branch — without explicit coverage that path could land

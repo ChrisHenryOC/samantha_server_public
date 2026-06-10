@@ -10,7 +10,7 @@ def _section_between(start_anchor: str, body: str, end_marker: str = "\n## ") ->
 
     Section-bounded slicing prevents a misplaced edit in a neighbouring
     section from silently satisfying anatomic-site anchor assertions
-    (PR #267 review finding #3).
+.
     """
     start_idx = body.find(start_anchor)
     if start_idx == -1:
@@ -26,7 +26,7 @@ def test_discover_includes_specimen_review() -> None:
 
 
 def test_specimen_review_anatomic_site_documents_internal_code_worked_example() -> None:
-    """GH-265: anatomic-site escalate section must include an opaque-internal-code worked example.
+    """Anatomic-site escalate section must include an opaque-internal-code worked example.
 
     LR-006 regression: model accepts the novel anatomic_site `IL-3-bx` instead of
     escalating (0/5 stable failure on gemma-4-26B-A4B-it-MLX-4bit, full-corpus
@@ -79,7 +79,7 @@ def test_specimen_review_anatomic_site_documents_internal_code_worked_example() 
 
 
 def test_specimen_review_anatomic_site_worked_example_has_no_backtick_fences() -> None:
-    """PR #267 review #1: anatomic-site worked example must not use markdown fences.
+    """Anatomic-site worked example must not use markdown fences.
 
     The `### Behavior contract` instructs the LLM to emit "no markdown fences";
     ICL models follow in-context examples over instructions, so fenced examples
@@ -87,7 +87,7 @@ def test_specimen_review_anatomic_site_worked_example_has_no_backtick_fences() -
     in `test_query_routing_skill_contains_no_backtick_fences` after the QR-022
     fix. Scoped to the anatomic-site section so this PR does not regress on the
     pre-existing fenced `### Examples` block at the file bottom (out of scope
-    for GH-265; deferred to a follow-up).
+    here; deferred to a follow-up).
     """
     body = load("specimen-review")
     # Bound tightly at `### Behavior contract` (the next heading after the

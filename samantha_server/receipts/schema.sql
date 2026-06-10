@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS receipts (
                                               -- query (Step 9),
                                               -- needs_clarification (Step 10),
                                               -- and refusal (Step 11)
-    order_id          TEXT,                  -- GH-367: synthetic LIS order identifier;
+    order_id          TEXT,                  -- Synthetic LIS order identifier;
                                               -- NULL for multi-order query events and
                                               -- LLM paths (whose query decision_traces
                                               -- carry parsed_order_ids in payload_json).
@@ -28,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_receipts_rule        ON receipts(applied_rule_id)
 CREATE INDEX IF NOT EXISTS idx_receipts_signed_at   ON receipts(signed_at_utc);
 -- M-12: outcome index for fetch_by_outcome() — avoids full table scan.
 CREATE INDEX IF NOT EXISTS idx_receipts_outcome     ON receipts(outcome);
--- GH-367: order_id index for fetch_by_order_id() — avoids full table scan.
+-- order_id index for fetch_by_order_id() — avoids full table scan.
 CREATE INDEX IF NOT EXISTS idx_receipts_order_id    ON receipts(order_id);
 
 -- Append-only convention; enforced at runtime by opening the audit-side

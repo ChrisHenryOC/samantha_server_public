@@ -23,7 +23,7 @@ uv run python -m scripts.vendor_scenarios
 
 ## 2. RUN
 
-Invoke the canonical replay entry point (GH-184):
+Invoke the canonical replay entry point:
 
 ```bash
 uv run python -m samantha_server.scenarios.replay tests/fixtures/scenarios/
@@ -35,8 +35,8 @@ The canonical flags:
   and a combined cross-model summary is printed at the end.
 - `--include-category=query,llm_review` — run only the specified categories (useful for
   the live_llm shim tests and for targeted debugging).
-- `--receipts-db-path=PATH` (GH-306) — persist replay receipts to this SQLite file
-  instead of the default in-memory store. Required upstream of the GH-311
+- `--receipts-db-path=PATH` — persist replay receipts to this SQLite file
+  instead of the default in-memory store. Required upstream of the
   receipts-evidence chart bundle. Pointing at the configured production
   `RECEIPTS_DB_PATH` is refused. When combined with `--models`, each model's
   receipts go to a per-model file (`<stem>-<safe_model_id><suffix>`) so chart

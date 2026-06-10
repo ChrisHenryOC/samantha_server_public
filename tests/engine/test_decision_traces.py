@@ -289,7 +289,7 @@ def test_engine_decision_decision_traces_round_trips_json() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-362: _REFUSAL_REASONS Literal narrowing — prune dead Stage A/B codes
+# _REFUSAL_REASONS Literal narrowing — prune dead Stage A/B codes
 # ---------------------------------------------------------------------------
 
 _EXPECTED_REFUSAL_REASONS = {
@@ -312,7 +312,7 @@ _PRUNED_REFUSAL_REASONS = {
 
 
 def test_refusal_reasons_literal_is_exactly_four_kept_codes() -> None:
-    """GH-362(a): _REFUSAL_REASONS Literal contains exactly the 4 kept codes."""
+    """(a): _REFUSAL_REASONS Literal contains exactly the 4 kept codes."""
     from samantha_server.engine.decision import _REFUSAL_REASONS  # type: ignore[attr-defined]
 
     actual = set(typing.get_args(_REFUSAL_REASONS))
@@ -321,7 +321,7 @@ def test_refusal_reasons_literal_is_exactly_four_kept_codes() -> None:
 
 @pytest.mark.parametrize("pruned_code", sorted(_PRUNED_REFUSAL_REASONS))
 def test_pruned_refusal_reason_raises_validation_error(pruned_code: str) -> None:
-    """GH-362(b/c): each pruned code raises ValidationError on RefusalTrace construction.
+    """(b/c): each pruned code raises ValidationError on RefusalTrace construction.
 
     The narrowed Literal rejects the value at field validation (before the stage
     invariant runs), so a uniform refusal_stage="PRE" construction triggers the
@@ -342,7 +342,7 @@ def test_pruned_refusal_reason_raises_validation_error(pruned_code: str) -> None
 
 
 def test_kept_stage_pre_codes_construct_successfully() -> None:
-    """GH-362(d): all 4 live STAGE_PRE_* codes construct RefusalTrace successfully."""
+    """(d): all 4 live STAGE_PRE_* codes construct RefusalTrace successfully."""
     from samantha_server.engine.decision import RefusalTrace
 
     kept_pre_codes = [

@@ -1,6 +1,6 @@
 """GET /receipts/{receipt_id} and GET /receipts pagination endpoints.
 
-Phase 3 Step 5.5 — GH-120.
+Phase 3 Step 5.5.
 
 Both routes require the ``receipts:read`` RBAC capability. The 404 for an
 unknown receipt_id is returned only after RBAC verification succeeds — an

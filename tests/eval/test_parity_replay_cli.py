@@ -1,4 +1,4 @@
-"""GH-156: parity-replay CLI surface.
+"""Parity-replay CLI surface.
 
 Exercises arg parsing, subset filtering, output-path defaulting, and the
 plumb-through to `replay()` + `write_parity_report`. The CLI mocks

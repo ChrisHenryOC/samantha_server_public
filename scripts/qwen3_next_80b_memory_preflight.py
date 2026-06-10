@@ -10,14 +10,14 @@ Usage:
     # psutil is in the `dev` dependency group (not main deps — kept out
     # of production runtime installs). `uv sync` (the default, includes
     # dev) is sufficient. If you've run `uv sync --no-dev`, re-run
-    # `uv sync` to install psutil before running this script. GH-275 /
-    # PR #280 review.
+    # `uv sync` to install psutil before running this script. 
+    # review.
 
     set -a && source .env && set +a
     export LLM_MODEL_NAME=mlx-community/Qwen3-Next-80B-A3B-Instruct-4bit  # nosec: model-id
     uv run python -m scripts.qwen3_next_80b_memory_preflight
 
-Threshold contract (GH-275; pre-GH-275 the script measured the wrong
+Threshold contract (note: the legacy script measured the wrong
 process and the threshold was unit-mismatched):
 
 - **pass** — `psutil.virtual_memory().available > 12 GB` after a single
@@ -42,7 +42,7 @@ Why system-wide and not server-process RSS:
     wouldn't capture KV-cache pressure from concurrent activity. The
     operational question is: "will the next sweep OOM the system?" —
     answered most reliably by system-wide available memory. The
-    pre-GH-275 implementation used `resource.getrusage(RUSAGE_SELF)`
+    legacy implementation used `resource.getrusage(RUSAGE_SELF)`
     which measured the Python client's RSS (~40 MB), meaningless for
     the actual decision.
 
@@ -117,7 +117,7 @@ def main() -> int:
         return 1
 
     print(f"oMLX client constructed; model_id={client.model_id}")
-    # PR #280 review #1: wrap psutil call so an OSError / AccessDenied
+    # Wrap psutil call so an OSError / AccessDenied
     # surface a labeled FAIL: message rather than a raw traceback.
     # Operators / monitoring keying on the FAIL: prefix would miss the
     # event otherwise.
@@ -143,7 +143,7 @@ def main() -> int:
         print("FAIL: completion returned empty text")
         return 1
 
-    # PR #280 review #1: wrap psutil call (same rationale as above).
+    # Wrap psutil call (same rationale as above).
     try:
         post_available = _system_memory_available_gb()
     except Exception as exc:

@@ -48,7 +48,7 @@ def test_access_log_request_id_matches_response_header(
 ) -> None:
     """The logged request_id is a valid UUID4 matching the X-Request-ID response header.
 
-    PR #131 H1 regression: when the middleware order was inverted,
+     H1 regression: when the middleware order was inverted
     every log line emitted ``request_id=""``. This assertion would have
     caught it (the existing key-presence check did not).
     """
@@ -79,7 +79,7 @@ def test_access_log_request_id_matches_response_header(
     assert json_records, "No JSON access log records found"
     assert json_records[0]["request_id"] == header_id, (
         "Access log request_id must match X-Request-ID response header — "
-        "if these diverge, middleware order has regressed (PR #131 H1)."
+        "if these diverge, middleware order has regressed."
     )
 
 

@@ -1,4 +1,4 @@
-"""GH-156: replay() additive kwargs for parity-replay support.
+"""replay() additive kwargs for parity-replay support.
 
 Three additive kwargs:
 - `receipts_db_path: Path | None` — when set, replay receipts go to that
@@ -78,7 +78,7 @@ def test_replay_writes_receipts_to_explicit_db_path(tmp_path: Path) -> None:
     replay(tmp_path, receipts_db_path=db_path)
 
     assert db_path.exists(), (
-        f"GH-156: receipts_db_path={db_path} must exist after replay() — "
+        f"receipts_db_path={db_path} must exist after replay() — "
         f"the parity CLI relies on this for receipt-store isolation."
     )
     # The DB has the receipts schema; the deterministic-only scenario above
@@ -95,7 +95,7 @@ def test_replay_writes_receipts_to_explicit_db_path(tmp_path: Path) -> None:
     # Schema must include the receipts table; even a zero-row scenario
     # leaves the table behind.
     assert tables, (
-        f"GH-156: receipts DB at {db_path} has no tables — schema not "
+        f"Receipts DB at {db_path} has no tables — schema not "
         f"initialised. Got tables={tables!r}"
     )
 
@@ -115,7 +115,7 @@ def test_replay_default_keeps_receipts_in_memory(tmp_path: Path) -> None:
     replay(tmp_path)
     after = {p.name for p in tmp_path.rglob("*") if p.is_file()}
     assert after == before, (
-        "GH-156: default receipts_db_path=None must not create any DB "
+        "Default receipts_db_path=None must not create any DB "
         f"file. New files appeared: {after - before}"
     )
     assert not home_db.exists()
@@ -138,13 +138,13 @@ def test_replay_include_scenario_ids_filters_population(tmp_path: Path) -> None:
     report = replay(tmp_path, include_scenario_ids={"SC-INC01", "SC-INC03"})
 
     assert report.overall_total == 2, (
-        f"GH-156: filtered population must be 2 (SC-INC01 + SC-INC03); "
+        f"Filtered population must be 2 (SC-INC01 + SC-INC03); "
         f"got overall_total={report.overall_total}. Filter must apply "
         f"before fan-out, not after."
     )
     seen_ids = {v.scenario_id for v in report.scenario_verdicts}
     assert seen_ids == {"SC-INC01", "SC-INC03"}, (
-        f"GH-156: scenario_verdicts must contain only the filtered ids; got {sorted(seen_ids)}"
+        f"scenario_verdicts must contain only the filtered ids; got {sorted(seen_ids)}"
     )
 
 
@@ -192,7 +192,7 @@ def test_replay_skiplist_path_overrides_default_lookup(tmp_path: Path) -> None:
 
     # SC-SKIP01 must be in overall_total (not skipped via parity skiplist).
     assert report.overall_total == 1, (
-        f"GH-156: skiplist_path override must replace default lookup; "
+        f"skiplist_path override must replace default lookup; "
         f"got overall_total={report.overall_total} (default would have "
         f"excluded SC-SKIP01)"
     )

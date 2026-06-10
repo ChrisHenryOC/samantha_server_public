@@ -13,7 +13,7 @@ Design reference:
 
 Architectural invariants honored here:
 - PHI boundary (G18): every prompt construction routes through phi_safe(ctx)
-  before any LLMClient.complete() call. One deliberate exception (GH-212,
+  before any LLMClient.complete call. One deliberate exception (
   2026-05-11 PHI clarification): event_data["query"] is extracted from the
   raw SpecimenContext and embedded in the prompt under the local-LLM +
   self-hosted-Langfuse topology. The receipt-bearing query_text_hash on
@@ -77,7 +77,7 @@ from samantha_server.skills.loader import load as load_skill
 _logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Query-block rendering (GH-212 / PR215 review hardening)
+# Query-block rendering
 # ---------------------------------------------------------------------------
 
 _MAX_QUERY_TEXT_LEN: Final = 1024  # per-field cap; security review §F-1
@@ -109,7 +109,7 @@ def _render_query_block(query_text: str) -> str:
     return f"<query>{saxutils_escape(cleaned)}</query>"
 
 
-# GH-193 Slice 4: Disposition class and parse_disposition() deleted (hard cutover).
+# Disposition class and parse_disposition() deleted (hard cutover).
 # The specimen-review path now always uses _handle_pending_llm_review_json() which
 # parses SpecimenReviewResponseV1 JSON. There is no free-text fallback.
 
@@ -185,7 +185,7 @@ def _canonical_response_hash(model: QueryResponseV1 | SpecimenReviewResponseV1) 
 class LLMOrderBlock(BaseModel, frozen=True):
     """Canonical, frozen, length-bounded projection of one order for the prompt.
 
-    GH-152 / PR #161 review:
+    Review notes:
     - Frozen Pydantic model (replaces `tuple[Mapping[str, object], ...]`):
       caller-supplied dicts are validated at construction; missing required
       keys raise loudly, oversized strings are rejected, and unknown keys
@@ -196,7 +196,7 @@ class LLMOrderBlock(BaseModel, frozen=True):
     - String-field length caps mirror `FIELD_MAX_LENGTHS` from
       `models.context` (M-7).
 
-    GH-226: `fixation_time_hours` and `ordered_tests` were added so the
+    `fixation_time_hours` and `ordered_tests` were added so the
     `<orders>` prompt block carries the fields QR-023 needs (HER2 fixation
     timing). Their bounds are NOT sourced from `FIELD_MAX_LENGTHS`:
 
@@ -217,7 +217,7 @@ class LLMOrderBlock(BaseModel, frozen=True):
     identifiers and operational timestamps, not patient identifiers. Do
     not conflate with the per-event `Order.order_id` surface in
     `phi.py`'s `_ORDER_PASS_THROUGH`, which is a separate (verbatim port
-    from samantha-public) field with different provenance. (Per GH-367 that
+    from samantha-public) field with different provenance. (Per that
     per-event `order_id` is now a pass-through too, not hashed.) `ordered_tests`
     (e.g., "ER", "PR", "HER2 IHC") names panel components — also not PHI.
     """
@@ -308,7 +308,7 @@ def _orders_canonical_json(orders: tuple[LLMOrderBlock, ...]) -> str:
       different fixture orderings of the same order set produce the same
       hash.
 
-    - **Prompt path** (GH-274) — input is the LIS-priority-sorted tuple
+    - **Prompt path** — input is the LIS-priority-sorted tuple
       from ``_orders_priority_sorted(canonical_orders)``. The resulting
       JSON is rendered verbatim into the prompt's ``<orders>`` block so
       the LLM sees orders pre-sorted the way a real LIS query would emit
@@ -316,7 +316,7 @@ def _orders_canonical_json(orders: tuple[LLMOrderBlock, ...]) -> str:
 
     Audit-recovery contract: given a receipt's ``database_state_hash`` and
     the prompt's ``<orders>`` JSON (captured on the LLM span via
-    ``gen_ai.prompt`` per PR #269), a verifier reconstructs the hash by:
+    ``gen_ai.prompt``), a verifier reconstructs the hash by:
 
       1. Parse the prompt JSON into a list of order dicts.
       2. Pass through ``_coerce_orders`` — which re-canonicalises by
@@ -324,7 +324,7 @@ def _orders_canonical_json(orders: tuple[LLMOrderBlock, ...]) -> str:
       3. Re-encode via this function, HMAC, and compare against the
          receipt hash.
 
-    The pre-GH-274 invariant "rendered block and ``database_state_hash``
+    The legacy invariant "rendered block and ``database_state_hash``
     cannot diverge" is intentionally relaxed; the two derive from the
     same order set but with different list orderings, and the recovery
     path above proves equivalence at audit time.
@@ -336,7 +336,7 @@ def _orders_canonical_json(orders: tuple[LLMOrderBlock, ...]) -> str:
     )
 
 
-# GH-274: priority-rank map for the LIS-style sort used by the prompt's
+# Priority-rank map for the LIS-style sort used by the prompt's
 # `<orders>` block. Mirrors the 3-key sort documented in
 # `samantha_server/skills/specs/query_routing/SKILL.md` § prioritized_list:
 # key 1 (priority DESC), key 2 (flags-present DESC), key 3 (created_at ASC).
@@ -363,7 +363,7 @@ def _orders_priority_sorted(
        ISO-8601 strings (older string compares as "less", which sorts first
        under ascending order — correct for "oldest first").
 
-    GH-274 background: cross-model failures on QR-020 / QR-021 (every non-
+     background: cross-model failures on QR-020 / QR-021 (every non-
     Gemma candidate in the 2026-05-15 model retest failed these sequence-
     ordering queries) traced back to the corpus testing the LLM at
     SQL-equivalent ORDER BY + LIMIT work that a real LIS would do server-
@@ -397,18 +397,18 @@ def build_query_prompt(
     """Assemble the LLM prompt for a clinical query.
 
     Layout (stable, documented order):
-    1. <query> block — the literal query text (GH-212); sentinel when absent.
-    2. <user_role> block — the role of the requesting user (GH-227);
+    1. <query> block — the literal query text; sentinel when absent.
+    2. <user_role> block — the role of the requesting user;
        only when ``user_role`` is non-None.
-    3. <prompt_timestamp> block — "now" anchor for temporal reasoning (GH-233);
+    3. <prompt_timestamp> block — "now" anchor for temporal reasoning;
        only when ``prompt_timestamp`` is non-None.
     4. <skill> block — the verbatim skill body.
     5. <orders> block — the canonical JSON of database_state.orders, only
-       when ``orders_json`` is non-empty (GH-152).
+       when ``orders_json`` is non-empty.
 
-    GH-225: <similar_scenarios> and <safe_context> blocks removed.
+    <similar_scenarios> and <safe_context> blocks removed.
     similar_scenarios always rendered '(none available)' (production index
-    empty + GH-213 guard returns ()). safe_context block removed from
+    empty + the corpus guard returns ()). safe_context block removed from
     clinical_query path (ctx.order is a harness artifact for query events;
     audit role served by receipts + Langfuse span metadata).
 
@@ -419,25 +419,25 @@ def build_query_prompt(
     orders_json:
         Pre-canonicalized JSON encoding of the orders payload, **rendered
         verbatim into the prompt's `<orders>` block**. Empty string omits
-        the block. As of GH-274 this is the LIS-priority-sorted encoding
+        the block. This is the LIS-priority-sorted encoding
         (`_orders_canonical_json(_orders_priority_sorted(...))`), NOT the
         canonical-(order_id) JSON used to derive the receipt's
         ``database_state_hash``. The two encodings derive from the same
         order set but apply different list orderings — see
         ``_orders_canonical_json`` for the audit-recovery contract. (The
-        pre-GH-274 invariant "rendered block and `database_state_hash`
+        legacy invariant "rendered block and `database_state_hash`
         cannot diverge" is intentionally relaxed.)
     query_text:
-        The literal query string from event_data (GH-212). Must be
+        The literal query string from event_data. Must be
         extracted from the raw SpecimenContext BEFORE phi_safe() runs.
         XML-escaped via saxutils to prevent fence breakout. Empty string
         emits a ``(no query provided)`` sentinel.
     user_role:
-        The role of the requesting user (GH-227). When non-None, emitted as
+        The role of the requesting user. When non-None, emitted as
         ``<user_role>…</user_role>`` between ``<query>`` and
         ``<prompt_timestamp>``. None omits the block entirely.
     prompt_timestamp:
-        ISO-8601 "now" anchor for temporal-reasoning queries (GH-233).
+        ISO-8601 "now" anchor for temporal-reasoning queries.
         When non-None, emitted as ``<prompt_timestamp>…</prompt_timestamp>``
         between ``<user_role>`` (or ``<query>``) and ``<skill>``. None omits
         the block entirely.
@@ -447,19 +447,19 @@ def build_query_prompt(
     str
         The assembled prompt string; deterministic for identical inputs.
     """
-    # --- 1. Query block (GH-212) ---
+    # --- 1. Query block ---
     query_block = _render_query_block(query_text)
 
     blocks = [query_block]
 
-    # --- 2. User-role block (GH-227) ---
+    # --- 2. User-role block ---
     # XML-escape for fence-breakout defense; valid roles contain only
     # lowercase ASCII letters and underscores so this is a no-op in practice.
     if user_role is not None:
         escaped_role = saxutils_escape(user_role)
         blocks.append(f"<user_role>{escaped_role}</user_role>")
 
-    # --- 3. Prompt-timestamp block (GH-233) ---
+    # --- 3. Prompt-timestamp block ---
     # XML-escape for fence-breakout defense, mirroring _render_query_block.
     # No-op for well-formed ISO-8601 inputs.
     if prompt_timestamp is not None:
@@ -470,7 +470,7 @@ def build_query_prompt(
     skill_block = f"<skill>\n{skill_body}\n</skill>"
     blocks.append(skill_block)
 
-    # --- 5. Database-state orders block (GH-152) ---
+    # --- 5. Database-state orders block ---
     if orders_json:
         blocks.append(f"<orders>\n{orders_json}\n</orders>")
     return "\n\n".join(blocks)
@@ -488,16 +488,16 @@ def _retrieve_similar(
 ) -> tuple[Scenario, ...]:
     """Return up to k scenarios that match ctx.current_state and category="query".
 
-    GH-225: intentionally not called from `handle_clinical_query`
-    (production `scenarios_index` is empty and the GH-213 corpus guard
+    Intentionally not called from `handle_clinical_query`
+    (production `scenarios_index` is empty and the corpus guard
     always returned ()). Retained for the Phase 3 exemplar-corpus
-    rollout (M-21) so the GH-213 corpus-leakage guard and the
+    rollout (M-21) so the corpus-leakage guard and the
     deterministic ordering invariant do not have to be rebuilt from
     scratch when the index is populated. A dead-code sweep should
     consult this note before deletion.
 
     Algorithm v1 (simple, auditable):
-    - Guard (GH-213): if ctx.order.order_id is a key in scenarios_index the
+    - Guard: if ctx.order.order_id is a key in scenarios_index the
       index IS the test corpus being evaluated — return () to prevent
       sibling-fixture leakage. Production order_ids are never in the index.
     - Filter: category == "query" AND any step has matching current_state.
@@ -523,13 +523,13 @@ def _retrieve_similar(
     tuple[Scenario, ...]
         At most k scenarios, sorted by scenario_id. May be empty.
     """
-    # GH-213 (supersedes GH-198): replay-against-test-corpus detection.
+    # Replay-against-test-corpus detection.
     # Production order_ids never appear in scenarios_index, so this guard is inert there.
     if ctx.order.order_id in scenarios_index:
-        # GH-367: order_id is a synthetic LIS identifier (not PHI, not Safe Harbor).
+        # order_id is a synthetic LIS identifier (not PHI, not Safe Harbor).
         # Log the raw order_id directly — no hashing required inside the trust boundary.
         _logger.debug(
-            "GH-213 corpus guard fired: order_id=%s is in scenarios_index; "
+            "Corpus guard fired: order_id=%s is in scenarios_index; "
             "returning () to prevent sibling-fixture leakage.",
             ctx.order.order_id,
         )
@@ -583,15 +583,15 @@ def handle_clinical_query(
     scenarios_index:
         A mapping of scenario_id → Scenario. Accepted for interface
         stability and forward-compatibility; not consumed in the
-        function body post-GH-225 (the `<similar_scenarios>` block was
-        removed because the production index is empty and the GH-213
+        function body (the `<similar_scenarios>` block was
+        removed because the production index is empty and the
         replay guard always returned ()). When the exemplar-corpus
         rollout (Phase 3 M-21) reattaches `_retrieve_similar`, this
         parameter becomes live again without a signature change.
     skills_index:
         A mapping of skill_name → SkillSpec for skill lookup.
     prompt_timestamp:
-        ISO-8601 "now" anchor for temporal-reasoning queries (GH-233).
+        ISO-8601 "now" anchor for temporal-reasoning queries.
         When non-None, emitted as ``<prompt_timestamp>`` in the prompt
         and hashed onto ``QueryTrace.prompt_timestamp_hash``.
     counters:
@@ -615,18 +615,18 @@ def handle_clinical_query(
     # QueryTrace.query_text_hash. Do NOT narrow this to query_text alone; that
     # would silently break the receipt audit contract.
     query_text_hash = _phi._hmac_hex(_phi._canonical_event_data(ctx.event.event_data))
-    # GH-212: extract query text from the raw context BEFORE phi_safe() strips it.
+    # Extract query text from the raw context BEFORE phi_safe() strips it.
     # The 2026-05-11 PHI clarification permits query text in the prompt (local LLM
     # + self-hosted Langfuse). The query_text_hash on QueryTrace is unchanged.
     # Mirror _coerce_orders: event_data values may be any JSON type; only accept str.
     #
-    # RESIDUAL-RISK CALLOUT (GH-225): `query_text` is the ONLY free-text
+    # RESIDUAL-RISK CALLOUT: `query_text` is the ONLY free-text
     # user-controlled content in the clinical_query prompt (<safe_context> was
     # removed). The exposure is bounded by two preconditions that MUST hold:
     #   1. Local-LLM topology (no third-party hosted inference).
     #   2. Self-hosted Langfuse (or any tracing/OTel sink) inside the trust and
     #      compliance boundary — no external SaaS that would receive the raw query.
-    # GH-363: the prompt (including verbatim clinical query text) is stamped to
+    # The prompt (including verbatim clinical query text) is stamped to
     # Langfuse BY DEFAULT. Precondition #3 (SAMANTHA_STAMP_PROMPT defaults to off)
     # no longer holds; it has been removed as a guard. The sole PHI guard is the
     # self-hosted Langfuse topology (precondition #2 above). To disable stamping,
@@ -645,7 +645,7 @@ def handle_clinical_query(
         )
         query_text = ""
 
-    # GH-227: extract user_role from event_data via the canonical helper (PR243 S4).
+    # Extract user_role from event_data via the canonical helper (PR243 S4).
     # parse_user_role logs WARNING (never the raw value) and increments the counter
     # on invalid input — single authoritative extraction site.
     user_role, user_role_coercion_failure = parse_user_role(
@@ -664,8 +664,8 @@ def handle_clinical_query(
             current_state=ctx.current_state,
         )
 
-    # GH-225 Slice A: _retrieve_similar no longer called; production index is empty
-    # and GH-213 guard always returned (). scenarios_cited hardcoded to ().
+    # _retrieve_similar no longer called; production index is empty
+    # and the corpus guard always returned (). scenarios_cited hardcoded to ().
     # _retrieve_similar is kept defined for future exemplar-corpus rollout
     # (Phase 3 M-21; see the function's docstring for the dead-code-sweep note).
     scenarios_cited: tuple[str, ...] = ()
@@ -673,11 +673,11 @@ def handle_clinical_query(
     # PHIBoundaryError must be caught here and converted to a refusal receipt.
     # Allowing it to escape would produce zero audit-trail record for
     # age > 89 queries — a silent failure on the HIPAA Safe Harbor guard.
-    # GH-225: the SafeContext return value is no longer threaded into the
+    # The SafeContext return value is no longer threaded into the
     # prompt builders (no <safe_context> block on the clinical_query path).
     # phi_safe(ctx) is retained as a side-effecting boundary check.
     try:
-        phi_safe(ctx)  # PHI boundary guard — do not remove (GH-225)
+        phi_safe(ctx) # PHI boundary guard — do not remove
     except PHIBoundaryError:
         # Log at WARNING without exc_info: exception chain may contain PHI.
         _logger.warning("PHIBoundaryError during clinical query; returning refused_phi_boundary.")
@@ -688,8 +688,8 @@ def handle_clinical_query(
             current_state=ctx.current_state,
         )
 
-    # GH-152: extract database_state.orders from event_data and validate.
-    # GH-274: hash and prompt-block now derive from different orderings of
+    # Extract database_state.orders from event_data and validate.
+    # Hash and prompt-block now derive from different orderings of
     # the same canonical order set — hash from order_id-sorted JSON (set-
     # fingerprint, audit-stable); prompt block from LIS-priority-sorted
     # JSON (production-realistic ordering for the model). The two-JSON
@@ -711,7 +711,7 @@ def handle_clinical_query(
 
     skill_doc_hash = _sha256_hex(skill_body)
 
-    # GH-233: hash the prompt_timestamp for the receipt; use the same HMAC
+    # Hash the prompt_timestamp for the receipt; use the same HMAC
     # key as database_state_hash (phi._hmac_hex) so the value is keyed.
     prompt_timestamp_hash = (
         _phi._hmac_hex(prompt_timestamp.encode()) if prompt_timestamp is not None else ""
@@ -802,14 +802,14 @@ def _build_query_messages(
     The user message carries the grounding context: query, optional user_role,
     optional prompt_timestamp, and orders.
 
-    GH-225: <similar_scenarios> and <safe_context> blocks removed from the
+    <similar_scenarios> and <safe_context> blocks removed from the
     clinical_query path. PHI-boundary enforcement lives upstream in
     handle_clinical_query's phi_safe(ctx) call.
 
-    GH-227: <user_role> block emitted in the user message when non-None,
+    <user_role> block emitted in the user message when non-None,
     between <query> and <prompt_timestamp>.
 
-    GH-233: <prompt_timestamp> block emitted in the user message when non-None,
+    <prompt_timestamp> block emitted in the user message when non-None,
     between <user_role> (or <query>) and <orders>.
 
     This split follows the JSON query plan: system = skill doc, user = context + query.
@@ -861,7 +861,7 @@ def _handle_clinical_query_json(
     Calls complete_json() with temperature=0.0. Defensively strips markdown
     fences. Parses the response as QueryResponseV1. On parse failure, records
     parse_failure in the QueryTrace but still returns outcome="query_response"
-    (Phase C / GH-194 will tighten this into a refusal bucket).
+    (Phase C / will tighten this into a refusal bucket).
     """
     messages = _build_query_messages(
         skill_body,
@@ -964,9 +964,9 @@ _DISPOSITION_TO_STATE: Final[Mapping[str, str]] = {
 
 # _DISPOSITION_TO_TRACE_VERB is imported from samantha_server.engine.decision
 # (canonical source co-located with LLMReviewTrace) to avoid drift from
-# handlers.py. GH-184 fix-review H4.
+# handlers.py.
 
-# GH-234: Anatomic-site lists used to infer whether ACC-011 (anatomic_site
+# Anatomic-site lists used to infer whether ACC-011 (anatomic_site
 # LLM-review band) fired. These mirror ACC-003.yaml (blacklist) and ACC-011.yaml
 # (whitelist). TestAnatomicSiteNoDrift.test_handler_blacklist_constant_matches_acc003_yaml
 # and test_handler_whitelist_constant_matches_acc011_yaml enforce drift-freedom:
@@ -1017,7 +1017,7 @@ def _build_specimen_review_messages(
     The user message carries the PHI-stripped context.
 
     trigger_rule_id selects the XML fence used in the instruction block:
-    - "ACC-011" → anatomic_site_under_review (anatomic site LLM-review path, GH-234)
+    - "ACC-011" → anatomic_site_under_review (anatomic site LLM-review path)
     - anything else / None → specimen_type_under_review (default, ACC-010 path)
 
     Mirrors _build_query_messages for the query path.
@@ -1030,7 +1030,7 @@ def _build_specimen_review_messages(
     context_block = f"<safe_context>\n{safe_ctx_json}\n</safe_context>"
 
     if trigger_rule_id == "ACC-011":
-        # GH-234: anatomic_site LLM-review path (ACC-011 fired).
+        # anatomic_site LLM-review path (ACC-011 fired).
         # anatomic_site is not PHI per project memory. XML-escape as a
         # prompt-injection defence (same pattern as specimen_type).
         raw_anatomic_site = (
@@ -1084,7 +1084,7 @@ def _handle_pending_llm_review_json(
     """JSON-mode handler for handle_pending_llm_review.
 
     Hard cutover — always uses JSON path regardless of SAMANTHA_LLM_OUTPUT_MODE.
-    (GH-193: unlike the clinical-query path (GH-192), specimen-review has no
+    (unlike the clinical-query path, specimen-review has no
     free_text fallback. An mlx user will hit NotImplementedError at complete_json
     time — that is the documented consequence of the hard-cutover design.)
 
@@ -1274,8 +1274,8 @@ def handle_pending_llm_review(
     """Handle a PENDING_LLM_REVIEW state via the specimen-review skill.
 
     Called by the router when ctx.current_state == "PENDING_LLM_REVIEW".
-    Always uses the JSON path (hard cutover, GH-193). Unlike handle_clinical_query
-    (GH-192), there is no SAMANTHA_LLM_OUTPUT_MODE branch here — the issue
+    Always uses the JSON path (hard cutover). Unlike handle_clinical_query
+, there is no SAMANTHA_LLM_OUTPUT_MODE branch here — the issue
     demands no bifurcation for the specimen-review path.
 
     Returns an EngineDecision with:
@@ -1465,7 +1465,7 @@ def build_clarification_prompt(
         Mapping from field name to its canonical-value set. Passed in (rather
         than read from `samantha_server.canonicalization.PICK_LISTS` directly)
         so a future role-scoping layer can plug in narrower lists without
-        modifying this helper. GH-214 design comment.
+        modifying this helper.
     """
     fields_content = "\n".join(f"  - {f}" for f in fields_to_clarify)
     fields_block = f"<fields_to_clarify>\n{fields_content}\n</fields_to_clarify>"
@@ -1473,7 +1473,7 @@ def build_clarification_prompt(
     safe_ctx_json = safe_ctx.model_dump_json()
     context_block = f"<safe_context>\n{safe_ctx_json}\n</safe_context>"
     # When no field has a pick list, the `<canonical_values>` block is omitted
-    # entirely (PR #268 review #1) — the instruction must also drop the
+    # entirely — the instruction must also drop the
     # reference to that block, otherwise the model is pointed at scaffolding
     # that doesn't exist.
     if canonical_block:

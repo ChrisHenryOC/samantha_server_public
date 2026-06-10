@@ -6,7 +6,7 @@ import pytest
 
 
 def test_qwen35_27b_returns_enable_thinking_false() -> None:
-    """GH-271: Qwen3.5-27B must be mapped to enable_thinking=False.
+    """Qwen3.5-27B must be mapped to enable_thinking=False.
 
     Without this, `<think>` reasoning tokens bleed into structured JSON
     output during LR-006/QR-024 retest, producing false-negative results
@@ -19,7 +19,7 @@ def test_qwen35_27b_returns_enable_thinking_false() -> None:
 
 
 def test_qwen36_27b_returns_enable_thinking_false() -> None:
-    """GH-271: Qwen3.6-27B must be mapped to enable_thinking=False.
+    """Qwen3.6-27B must be mapped to enable_thinking=False.
 
     Same thinking-mode caveat as Qwen3.5-27B per the 2026-05-15 wiki
     research source.
@@ -108,7 +108,7 @@ def test_qwen35_match_is_substring_tolerant(model_id: str) -> None:
 
 
 def test_empty_model_id_returns_none() -> None:
-    """PR #272 review #3: empty model_id must return None (not match every entry).
+    """Empty model_id must return None (not match every entry).
 
     With the substring-matching rule (`family in model_id`), an empty model_id
     can never contain a non-empty family substring, so the function returns
@@ -121,7 +121,7 @@ def test_empty_model_id_returns_none() -> None:
 
 
 def test_extended_suffix_match_returns_family_kwargs() -> None:
-    """PR #272 review #3: hypothetical extended-suffix model still matches the family.
+    """Hypothetical extended-suffix model still matches the family.
 
     The substring-matching rule is intentional: any variant of the family
     (e.g., `Qwen3.5-27B-Plus-Custom`, a quantization or finetune of the

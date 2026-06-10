@@ -14,7 +14,7 @@ prefix work across calls.  See docs/plans/phase-2-amendment-omlx.md.
 LLM-tier live tests are decorated @pytest.mark.local_omlx so CI's
 addopts filter (-m 'not local_omlx') excludes them.
 
-Request-timing diagnostic surface (GH-229)
+Request-timing diagnostic surface
 ------------------------------------------
 Every complete() and complete_json() call emits one structured log line
 at INFO (success) or WARNING (timeout). Grep for "omlx request timing"
@@ -42,7 +42,7 @@ Phase meanings:
 - total_us          — microseconds from method entry to method exit
                       (includes all phases including any exception path).
 
-Post-GH-229 keepalive disable: an `outcome=timeout` with `pre_send_us`
+After the keepalive disable: an `outcome=timeout` with `pre_send_us`
 low and `server_elapsed_us=never` no longer indicates H1 (stale keepalive
 socket) — that hypothesis is structurally eliminated because every
 request opens a fresh connection. Future occurrences of that shape are
@@ -237,7 +237,7 @@ class OMLXClient:
         # Event hooks record per-call timestamps into _REQUEST_TIMING so we can
         # distinguish "never dispatched" (pool hang) from "no response" (server hang).
         #
-        # GH-229: max_keepalive_connections=0 forces a fresh TCP connection per
+        # max_keepalive_connections=0 forces a fresh TCP connection per
         # request so a stale (server half-closed) keepalive socket can never be
         # handed back from the pool. Diagnostic chain and acceptance evidence
         # live in test_omlx_inference_client_*_gh229.
@@ -370,7 +370,7 @@ class OMLXClient:
         }
         # Truthy check (not `is not None`): an explicit empty dict from the
         # caller means "no override" — treat it identically to None and
-        # omit the field. PR #272 review #1.
+        # omit the field.
         if self._chat_template_kwargs:
             body["chat_template_kwargs"] = self._chat_template_kwargs
 
@@ -412,7 +412,7 @@ class OMLXClient:
                     cause="oMLX response choices[0].text is null (content-filter stop?)",
                 )
             text: str = raw_text
-            # GH-321: read finish_reason with .get() — legacy backends may omit it.
+            # Read finish_reason with .get() — legacy backends may omit it.
             finish_reason: str | None = data["choices"][0].get("finish_reason")
             # Explicit usage validation — silent zero counts would corrupt audit
             # receipts with no observable signal (fix #3).
@@ -444,7 +444,7 @@ class OMLXClient:
                 cause="oMLX returned invalid token counts",
             )
 
-        # GH-321: warn when the output hit the token budget — the response may
+        # Warn when the output hit the token budget — the response may
         # be silently truncated. Use >= (not ==) as a defensive guard: spec-
         # compliant OpenAI-style backends report `completion_tokens <= max_tokens`,
         # but downgrading to `>=` avoids silently missing any future backend or
@@ -476,7 +476,7 @@ class OMLXClient:
         """Send messages to /v1/chat/completions with JSON schema enforcement.
 
         Uses the oMLX response_format={"type":"json_schema","strict":true}
-        extension (confirmed working per GH-191 capability probe).
+        extension (confirmed working probe).
 
         The legacy /v1/completions endpoint silently ignores response_format;
         only the chat completions endpoint honors it.
@@ -505,7 +505,7 @@ class OMLXClient:
         }
         # Truthy check (not `is not None`): an explicit empty dict from the
         # caller means "no override" — treat it identically to None and
-        # omit the field. PR #272 review #1.
+        # omit the field.
         if self._chat_template_kwargs:
             body["chat_template_kwargs"] = self._chat_template_kwargs
 
@@ -543,7 +543,7 @@ class OMLXClient:
                     cause="oMLX chat response message.content is null (content-filter stop?)",
                 )
             text: str = raw_content
-            # GH-321: finish_reason is at choices[0].finish_reason (sibling of
+            # finish_reason is at choices[0].finish_reason (sibling of
             # choices[0].message), not under message. Use .get() — legacy backends
             # may omit the field.
             finish_reason: str | None = data["choices"][0].get("finish_reason")
@@ -574,7 +574,7 @@ class OMLXClient:
                 cause="oMLX returned invalid token counts",
             )
 
-        # GH-321: warn when the output hit the token budget — the response may
+        # Warn when the output hit the token budget — the response may
         # be silently truncated. Use >= (not ==) as a defensive guard: spec-
         # compliant OpenAI-style backends report `completion_tokens <= max_tokens`,
         # but downgrading to `>=` avoids silently missing any future backend or

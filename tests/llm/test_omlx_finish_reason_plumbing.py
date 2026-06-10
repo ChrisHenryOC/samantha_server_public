@@ -1,4 +1,4 @@
-"""Tests for GH-321 Phase 2: finish_reason plumbing in OMLXClient.
+"""Tests for Phase 2: finish_reason plumbing in OMLXClient.
 
 S2.2 — complete() populates LLMResponse.finish_reason from choices[0].finish_reason.
 S2.3 — complete_json() populates LLMResponse.finish_reason from choices[0].finish_reason.

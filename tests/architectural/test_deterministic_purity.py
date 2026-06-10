@@ -74,7 +74,7 @@ _REQUIRED_PATHS: tuple[str, ...] = (
     # samantha_server.{api,llm,observability}. The consumer task
     # (Step 2 placeholder, Step 4 dispatch) lives in api/app.py which
     # is explicitly outside the deterministic core.
-    # GH-116 (Phase 3 Step 2).
+    #
     "samantha_server/queue",
 )
 
@@ -112,7 +112,7 @@ _BANNED_PREFIXES: frozenset[str] = frozenset(
         # Cross-boundary into the Phase 2 LLM module
         "samantha_server.llm",
         # Cross-boundary into Phase 3 orchestrator and observability
-        # surfaces (PR #131 C4 fix-review). The deterministic core must
+        # surfaces. The deterministic core must
         # stay independent of FastAPI-side wiring and the OTel/Langfuse
         # exporter pipeline.
         "samantha_server.api",
@@ -126,7 +126,7 @@ _BANNED_PREFIXES: frozenset[str] = frozenset(
 # (e.g. "samantha_server.api.routing" for `from samantha_server.api.routing import …`).
 # Using specific submodule names rather than top-level package prefixes prevents
 # a future `from samantha_server.api.anything import …` from slipping through
-# silently — only the listed submodules are approved. GH-121 (Phase 3 Step 6 fix-review #15).
+# silently — only the listed submodules are approved. (Phase 3 Step 6 fix-review #15).
 #
 # Add an entry here only with reviewer sign-off. Each entry should
 # carry a comment naming the function or behavior it enables and the
@@ -146,7 +146,7 @@ _ALLOWED: frozenset[tuple[str, str]] = frozenset(
         # EngineDecision). monotonic_ns() is not a wall-clock read — it is a
         # strictly increasing counter with no epoch dependency. Conceptually
         # equivalent to the evaluator's perf_counter_ns allowlist entry.
-        # GH-116 (Phase 3 Step 2).
+        #
         ("samantha_server.queue.priority", "time"),
         # dispatcher.list_applicable_rules generates an HMAC nonce per
         # call (random.token_bytes via the secrets module) for the
@@ -160,51 +160,51 @@ _ALLOWED: frozenset[tuple[str, str]] = frozenset(
         # expires_at = time.time() + ttl_sec for the dispatch token TTL.
         # dispatcher.verify_dispatch uses time.time() to check expires_at.
         # Both are TTL-enforcement wall-clock reads — not used for rule
-        # selection, which remains fully deterministic. GH-119 (Phase 3 Step 5).
+        # selection, which remains fully deterministic. (Phase 3 Step 5).
         ("samantha_server.engine.dispatcher", "time"),
         # signing.py generates ULID timestamps via time.time() (ms
         # granularity for the monotonic 48-bit ULID timestamp component).
         # The ULID's random component (80 bits from os.urandom) is the
         # primary uniqueness guarantee; the timestamp is ordering metadata.
-        # GH-83 (Phase 2 Step 6): receipt signing is inherently a
+        # (Phase 2 Step 6): receipt signing is inherently a
         # wall-clock operation — each receipt carries a signed_at_utc.
         ("samantha_server.receipts.signing", "time"),
         # signing.py uses datetime.now(tz=timezone.utc) for signed_at_utc
         # on SignedReceipt. Receipt timestamps are intentional non-determinism
         # (each signing operation records when it happened).
-        # GH-83 (Phase 2 Step 6).
+        #
         ("samantha_server.receipts.signing", "datetime"),
         # audit.py uses datetime for UTC validation of query window parameters
         # (fetch_in_window) and for rehydrating stored ISO-8601 timestamps back
         # into tz-aware datetime objects. The UTC sentinel is imported for
         # comparison only; no new wall-clock reads occur in audit.
-        # GH-83 (Phase 2 Step 6).
+        #
         ("samantha_server.receipts.audit", "datetime"),
         # replay.py imports _build_llm_client from samantha_server.api.lifespan inside
         # _build_llm_client_for_replay() to build a real LLM client for the
         # production-CLI path. The import is lazy (inside a function body) so
-        # deterministic-only corpora never load MLX. GH-121 (Phase 3 Step 6 fix-review #1).
+        # deterministic-only corpora never load MLX. (Phase 3 Step 6 fix-review #1).
         ("samantha_server.scenarios.replay", "samantha_server.api.lifespan"),
         # replay.py imports ReceiptWriter from samantha_server.api.receipt_writer
         # inside _ReplayHarness.__aenter__() to build the in-memory or file-backed
-        # SQLite store for replay receipts. GH-121 (Phase 3 Step 6).
+        # SQLite store for replay receipts. (Phase 3 Step 6).
         ("samantha_server.scenarios.replay", "samantha_server.api.receipt_writer"),
         # replay.py imports CounterRegistry from samantha_server.observability.counters
         # inside _ReplayHarness.__aenter__() (for AppState) and inside
         # replay_with_langfuse_export() (for counting OTLP export failures).
-        # GH-121 (Phase 3 Step 6) / GH-338.
+        #
         ("samantha_server.scenarios.replay", "samantha_server.observability.counters"),
         # replay.py imports make_counting_exporter (and STAMP_PROMPT_ENV) from
         # samantha_server.observability.otel inside replay_with_langfuse_export()
         # and main() respectively (lazy function-body imports). The import is
         # deferred and confined to the Langfuse/CLI path; the deterministic engine
-        # core (engine/, rules/, primitives/) is unchanged. GH-338.
+        # core (engine/, rules/, primitives/) is unchanged.
         ("samantha_server.scenarios.replay", "samantha_server.observability.otel"),
         # replay.py's _make_stub_llm_client imports LLMClient and LLMResponse from
         # samantha_server.llm.client inside the function body (lazy import, not at module
         # scope) to build the no-op stub used for deterministic-only replay runs where
         # no real LLM is needed. The import is deferred and confined to that helper;
-        # the deterministic engine core is unchanged. GH-335.
+        # the deterministic engine core is unchanged.
         ("samantha_server.scenarios.replay", "samantha_server.llm.client"),
         # replay.py imports `time` inside _replay_all_async (lazy function-body
         # import) solely to measure elapsed seconds for the optional --progress
@@ -220,43 +220,43 @@ _ALLOWED: frozenset[tuple[str, str]] = frozenset(
         # to derive QueryTrace.parsed_answer_type's Literal from the single-source-of-truth
         # ANSWER_TYPES tuple. This is a pure type/constant import: ANSWER_TYPES is a Final
         # tuple of strings and AnswerType is a TypeAlias — no LLM inference is possible.
-        # The import was added in PR #223 fix-review Cluster B to eliminate Literal drift
-        # risk when GH-222 widens the answer_type set. GH-220 fix-review.
+        # The import was added in fix-review Cluster B to eliminate Literal drift
+        # risk when widens the answer_type set. fix-review.
         ("samantha_server.engine.decision", "samantha_server.llm.schemas"),
         # scenarios/loader.py imports ANSWER_TYPES and AnswerType from samantha_server.llm.schemas
-        # for the Scenario.expected_answer_type typed accessor (PR #223 fix-review Cluster D).
+        # for the Scenario.expected_answer_type typed accessor (fix-review Cluster D).
         # Same justification as the engine.decision entry above: purely declarative constants,
-        # no LLM inference path. GH-220 fix-review.
+        # no LLM inference path.
         ("samantha_server.scenarios.loader", "samantha_server.llm.schemas"),
         # scenarios/loader.py imports datetime to compute the default prompt_timestamp
-        # from max(orders.created_at) + 24h (GH-233). The arithmetic is purely
+        # from max(orders.created_at) + 24h. The arithmetic is purely
         # deterministic given fixed fixture inputs — no wall-clock reads occur;
         # fromisoformat() + timedelta is a pure function of the fixture JSON.
         # Same rationale as the receipts.audit allowlist entry.
         ("samantha_server.scenarios.loader", "datetime"),
         # replay.py's _ReplayHarness imports httpx inside __aenter__ (lazy function-body
         # import) to build an AsyncClient with ASGITransport for the in-process endpoint
-        # path. GH-324 Phase B Step 5: replay routes every step through the real /events
+        # path. Phase B Step 5: replay routes every step through the real /events
         # endpoint; httpx is the HTTP client layer. The import is deferred and confined
         # to _ReplayHarness; the deterministic engine core is unchanged.
         ("samantha_server.scenarios.replay", "httpx"),
         # replay.py's _ReplayHarness imports RequestIDMiddleware, _BodyCapMiddleware,
         # and _consume from samantha_server.api.app inside __aenter__ (lazy import) to
-        # wire the in-process FastAPI app used by the endpoint path. GH-324 Phase B Step 5.
+        # wire the in-process FastAPI app used by the endpoint path.
         ("samantha_server.scenarios.replay", "samantha_server.api.app"),
         # replay.py's _ReplayHarness imports register_events_routes from
         # samantha_server.api.events inside __aenter__ (lazy import) to mount the
-        # /events route on the in-process FastAPI app. GH-324 Phase B Step 5.
+        # /events route on the in-process FastAPI app.
         ("samantha_server.scenarios.replay", "samantha_server.api.events"),
         # replay.py's _ReplayHarness imports register_rbac_exception_handlers and
         # _sign_token from samantha_server.api.rbac inside __aenter__ and
         # make_auth_headers (lazy imports) to configure RBAC on the in-process app
-        # and to sign auth tokens for harness requests. GH-324 Phase B Step 5.
+        # and to sign auth tokens for harness requests.
         ("samantha_server.scenarios.replay", "samantha_server.api.rbac"),
         # replay.py's _ReplayHarness imports make_langfuse_stub_probe from
         # samantha_server.observability.cached_probe inside __aenter__ (lazy import)
         # to provide a no-op Langfuse probe for the AppState built by the harness.
-        # GH-324 Phase B Step 5.
+        # Phase B Step 5.
         ("samantha_server.scenarios.replay", "samantha_server.observability.cached_probe"),
     }
 )

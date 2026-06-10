@@ -1,4 +1,4 @@
-"""Chart 14 (GH-312): accuracy evolution across milestones."""
+"""Chart 14: accuracy evolution across milestones."""
 
 from __future__ import annotations
 

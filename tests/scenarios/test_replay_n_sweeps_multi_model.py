@@ -1,4 +1,4 @@
-"""Tests for multi-model × N-sweep aggregation (GH-262 review fix).
+"""Tests for multi-model × N-sweep aggregation.
 
 Verifies:
 - --models=A,B --n-sweeps=3 produces two per-model N-sweep summaries, each N=3 (not N=6)
@@ -398,7 +398,7 @@ class TestLangfuseNSweepsRouting:
     def test_n_sweeps_3_calls_langfuse_release_three_times(
         self, tmp_path: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """GH-338: With LANGFUSE_ENABLED + --n-sweeps=3, replay_with_langfuse_export is
+        """With LANGFUSE_ENABLED + --n-sweeps=3, replay_with_langfuse_export is
         called exactly 3 times (catches the routing-change blind spot from Medium #6)."""
         _write_deterministic_scenario(tmp_path)
 

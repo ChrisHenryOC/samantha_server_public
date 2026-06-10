@@ -1,6 +1,6 @@
-"""Tests for GH-338 Slice B: main() routes Langfuse-on runs through replay_with_langfuse_export.
+"""Tests for Slice B: main routes Langfuse-on runs through replay_with_langfuse_export.
 
-After the GH-338 reroute, main() always calls replay_with_langfuse_export (not
+After the reroute, main always calls replay_with_langfuse_export (not
 _replay_to_langfuse_with_release or replay_to_langfuse) when Langfuse is enabled.
 The release value must be '{hex}-{safe_model_id}'.
 """

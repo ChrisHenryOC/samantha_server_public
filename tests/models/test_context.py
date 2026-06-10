@@ -34,8 +34,8 @@ class TestConstants:
         assert isinstance(VALID_FLAGS, frozenset)
 
     def test_valid_flags_contains_expected_values(self) -> None:
-        """The full VALID_FLAGS set, including GH-169's FIXATION_WARNING
-        re-introduction (vocabulary-only — emitter rule tracked as GH-175;
+        """The full VALID_FLAGS set, including its FIXATION_WARNING
+        re-introduction (vocabulary-only — emitter rule deferred post-POC;
         until that lands, the flag is valid input but no engine path
         produces it)."""
         assert (
@@ -53,15 +53,15 @@ class TestConstants:
         )
 
     def test_pending_llm_review_in_valid_states(self) -> None:
-        """GH-34 Slice 1: PENDING_LLM_REVIEW must be a valid workflow state."""
+        """PENDING_LLM_REVIEW must be a valid workflow state."""
         assert "PENDING_LLM_REVIEW" in VALID_STATES
 
     def test_pending_human_review_in_valid_states(self) -> None:
-        """GH-34 Slice 1: PENDING_HUMAN_REVIEW must be a valid workflow state (terminal v1)."""
+        """PENDING_HUMAN_REVIEW must be a valid workflow state (terminal v1)."""
         assert "PENDING_HUMAN_REVIEW" in VALID_STATES
 
     def test_llm_review_requested_in_valid_flags(self) -> None:
-        """GH-34 Slice 1: LLM_REVIEW_REQUESTED flag must be in VALID_FLAGS."""
+        """LLM_REVIEW_REQUESTED flag must be in VALID_FLAGS."""
         assert "LLM_REVIEW_REQUESTED" in VALID_FLAGS
 
     def test_field_max_lengths_is_mapping(self) -> None:
@@ -151,7 +151,7 @@ class TestOrder:
         assert isinstance(order.age, int)
 
     def test_order_nullable_str_fields_accept_none(self) -> None:
-        """GH-105 Slice 2: specimen_type, anatomic_site, fixative, priority must accept None.
+        """specimen_type, anatomic_site, fixative, priority must accept None.
 
         SC-104 has all four as null (completely empty order). These fields must mirror
         the precedent set by patient_name/patient_sex (already str | None).
@@ -337,10 +337,10 @@ class TestSpecimenContext:
         assert ctx.flags == frozenset()
 
     def test_fixation_warning_flag_accepted(self) -> None:
-        """GH-169 re-introduces FIXATION_WARNING after its PR #61 retirement.
+        """ re-introduces FIXATION_WARNING after its retirement.
 
-        Round-trip: PR #61 dropped the flag because samantha_server had no
-        emit site for it. GH-169 (parity replay against the samantha POC's
+        Round-trip: dropped the flag because samantha_server had no
+        emit site for it. (parity replay against the samantha POC's
         accumulated_state corpus) showed SC-092 expects it as an
         informational signal that persists from accessioning through IHC.
         Vocabulary widened here; emitter rule design is tracked separately
@@ -355,9 +355,9 @@ class TestSpecimenContext:
         ["FIXATION_WARN", "FIXATION_WARNINGS", "fixation_warning", "FIXATION-WARNING"],
     )
     def test_fixation_warning_misspellings_rejected(self, typo: str) -> None:
-        """PR #176 M2: the inverted accept-test loses the spelling-typo guard
+        """The inverted accept-test loses the spelling-typo guard
         the original reject-test carried. Pin the validator boundary on
-        near-spellings so a future GH-175 emit site can't silently introduce
+        near-spellings so a future emit site can't silently introduce
         a typo'd flag name (which would silently mismatch_flags against the
         POC's corpus rather than surfacing as a vocab error).
         """

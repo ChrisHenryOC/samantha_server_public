@@ -1,4 +1,4 @@
-"""Tests for GH-321 S2.4: extract_finish_reasons() updated to support
+"""Tests for S2.4: extract_finish_reasons updated to support
 LLMResponse.finish_reason (singular) in addition to the existing plural
 finish_reasons duck-typed attribute.
 """
@@ -63,7 +63,7 @@ def test_extract_finish_reasons_passes_empty_list_through(  # noqa: E501
     Empty list is semantically distinct from None: it means the backend
     reported "no reasons" (deliberately empty), versus None which means
     the backend did not report. OTel callers can distinguish the two
-    via `is None` vs truthiness; this test pins the contract (PR #323
+    via `is None` vs truthiness; this test pins the contract (
     review #7).
     """
     from samantha_server.observability.otel import extract_finish_reasons

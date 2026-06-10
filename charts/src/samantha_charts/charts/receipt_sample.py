@@ -1,4 +1,4 @@
-"""Chart 11: single signed-receipt evidence card (GH-311).
+"""Chart 11: single signed-receipt evidence card.
 
 Renders a single signed receipt as a labeled card, showing every field plus
 a cryptographic-signature badge and a human-readable summary of the primitive

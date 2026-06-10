@@ -1,4 +1,4 @@
-"""Tests for the per-decision trace serializer (GH-125 Step 10).
+"""Tests for the per-decision trace serializer.
 
 The serializer is the durable contract behind dashboards (Step 11),
 the drift alarm (Step 12), and the post-market monitoring story
@@ -354,7 +354,7 @@ def test_to_trace_dict_canonicalization_path() -> None:
 def test_agreement_only_emits_deterministic_or_llm_only() -> None:
     """The serializer never emits ``both_*`` against any v0 input.
 
-    GH-34's three-way disposition is a deterministic→LLM handoff, not a
+    its three-way disposition is a deterministic→LLM handoff, not a
     concurrent dual-route. ``both_agree`` / ``both_disagree`` are reserved
     values; emitting them in v0 would corrupt downstream dashboards.
     """

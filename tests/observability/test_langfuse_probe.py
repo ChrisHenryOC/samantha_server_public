@@ -1,4 +1,4 @@
-"""Tests for the real Langfuse probe (GH-124 Step 9)."""
+"""Tests for the real Langfuse probe."""
 
 from __future__ import annotations
 

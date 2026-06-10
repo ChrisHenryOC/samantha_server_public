@@ -1,4 +1,4 @@
-"""Tests for GH-338 Slice A: replay_with_langfuse_export().
+"""Tests for Slice A: replay_with_langfuse_export.
 
 replay_with_langfuse_export() configures OTLP export and calls replay()
 on the ENDPOINT path (no tracer= kwarg), so spans flow through

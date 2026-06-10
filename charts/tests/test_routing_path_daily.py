@@ -1,4 +1,4 @@
-"""Chart 10 (GH-310): daily routing-path 100% stacked bar chart."""
+"""Chart 10: daily routing-path 100% stacked bar chart."""
 
 from __future__ import annotations
 

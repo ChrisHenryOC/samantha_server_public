@@ -1,4 +1,4 @@
-"""Tests for the --models <csv> flag in the replay CLI (GH-184 Slice 3).
+"""Tests for the --models <csv> flag in the replay CLI.
 
 Verifies:
 - main() with --models=stub1,stub2 runs replay once per model
@@ -378,7 +378,7 @@ class TestPerModelLangfuseReleaseDistinctness:
         _build_llm_client_for_replay.
 
         Default behavior (warm-up on) builds the client once per model to
-        issue a cold-load preflight (GH-283); --no-warm-up suppresses that.
+        issue a cold-load preflight; --no-warm-up suppresses that.
         The deterministic-skip optimization remains intact when warm-up is
         opted out — the per-model loop still runs but no LLM client is
         constructed.
@@ -408,7 +408,7 @@ class TestPerModelLangfuseReleaseDistinctness:
         )
 
     def test_warmup_invokes_llm_per_sweep_per_model(self, tmp_path: Path) -> None:
-        """GH-283: each (sweep, model) cell must receive its own warm-up LLM
+        """Each (sweep, model) cell must receive its own warm-up LLM
         call, not just once-per-invocation. Once-per-invocation defends only
         sweep 1 model 1; under LRU eviction on memory-constrained hosts,
         every subsequent (sweep, model) iteration needs its own warm-up.

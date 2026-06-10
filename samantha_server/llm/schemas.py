@@ -8,7 +8,7 @@ QUERY_RESPONSE_V1_JSON_SCHEMA: dict suitable for passing as the
 
 PHI boundary: the `reasoning` and `caveats` fields are LLM-generated
 (not PHI). Length caps enforce the schema contract: reasoning <= 800
-chars (GH-247; raised from 500 set by GH-225), caveats <= 200 chars.
+chars, caveats <= 200 chars.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from typing import Annotated, Any, Final, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Single source of truth for the answer_type enumeration (GH-220 review Cluster B).
+# Single source of truth for the answer_type enumeration (review Cluster B).
 # ANSWER_TYPES is the runtime tuple; AnswerType is the TypeAlias for annotations.
 # Both must stay in sync — the test_answer_type_literal_synced_with_answer_types_tuple
 # parity test enforces this. To add a new answer_type: append to both ANSWER_TYPES
@@ -38,7 +38,7 @@ class QueryResponseV1(BaseModel, frozen=True):
 
     Field declaration order is load-bearing: `reasoning` is declared before
     `order_ids` so JSON-mode left-to-right emission writes the rationale before
-    committing the ranked sequence (GH-254). See
+    committing the ranked sequence. See
     `test_query_response_v1_properties_order_reasoning_before_order_ids` for
     the pinned invariant.
 
@@ -52,7 +52,7 @@ class QueryResponseV1(BaseModel, frozen=True):
                              priority order"); order_ids is the ranked sequence (position
                              matters); first item is highest priority.
     reasoning:
-        LLM-generated; <= 800 chars (GH-247; raised from 500 to accommodate
+        LLM-generated; <= 800 chars (; raised from 500 to accommodate
         5-item prioritized_list rankings — observed high-water mark 526 chars
         on QR-020 against gemma-4-26B); cite scenario IDs here (e.g. ACC-001).
     order_ids:

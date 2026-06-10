@@ -1,9 +1,9 @@
-"""Model accuracy ranking horizontal bar chart (Chart 1, GH-307).
+"""Model accuracy ranking horizontal bar chart (Chart 1).
 
 Ranks the samantha_server candidate models by stable accuracy (a fixture
 passing all 5 sweeps) over the full 149-fixture corpus. Serves Slide 24a of
 the CONVEX deck. Each stable pass already requires content correctness (the
-GH-194 per-step gate applies regardless of category), so this single number
+ per-step gate applies regardless of category), so this single number
 is content-checked, not weaker. Values are the locked isolated single-model
 N=5 baseline; see charts/data/chart1-accuracy-ranking.json.
 """
@@ -145,7 +145,7 @@ def render_ranking(bars: list[ModelBar], output_path: Path) -> None:
     style.add_footnote(
         fig,
         "Stable accuracy = a fixture passing all 5 sweeps over the full 149-fixture "
-        "corpus; each pass already requires content correctness (the GH-194 per-step "
+        "corpus; each pass already requires content correctness (the per-step "
         f"gate). Counts, best to worst: {counts}. "
         "Source: charts/data/chart1-accuracy-ranking.json.",
     )

@@ -1,4 +1,4 @@
-"""Tests for GH-328 Fix B: non-empty clear_flags exercised through dispatch_event.
+"""Tests for Fix B: non-empty clear_flags exercised through dispatch_event.
 
 The existing RES-002 routing tests drive the post_flags line with EMPTY spec deltas
 (RES-002 has set_flags: [] / clear_flags: []). This test drives SP-007, which has
@@ -9,7 +9,7 @@ Coverage intent: crash-guard + coverage of `(ctx.flags - set(decision.flags_clea
 The expression's logic-inversion case is unobservable with the current rule catalog
 because the SP-007 transition (ADVANCE_SAMPLE_PREP) does not branch on flags — so
 clearing RECUT_REQUESTED does not change the resolved next_state. Full guard comes
-with GH-324 Phase B parity.
+with Phase B parity.
 """
 
 from __future__ import annotations
@@ -106,7 +106,7 @@ def _make_sp007_ctx(*, order_id: str = "GH328-SP007") -> SpecimenContext:
 
 
 def test_sp007_clear_flags_executes_through_dispatch_event() -> None:
-    """GH-328 Fix B: SP-007 has clear_flags=[RECUT_REQUESTED]; driving it through
+    """SP-007 has clear_flags=[RECUT_REQUESTED]; driving it through
     dispatch_event exercises the `ctx.flags - set(decision.flags_cleared)` branch
     with real non-empty content.
 
@@ -119,7 +119,7 @@ def test_sp007_clear_flags_executes_through_dispatch_event() -> None:
     Note: clearing RECUT_REQUESTED does not change the resolved state here because
     SP-007's ADVANCE_SAMPLE_PREP transition is not flag-dependent. This test's job is
     coverage + crash-guard; the logic-inversion case is unobservable with the current
-    rule catalog (full guard comes with GH-324 Phase B parity).
+    rule catalog (full guard comes with Phase B parity).
     """
     from samantha_server.api.routing import dispatch_event
 

@@ -20,7 +20,7 @@ class SpyReceiptWriter(ReceiptWriterProtocol):
     Replaces the three near-identical inline _SpyWriter classes that had been
     copy-pasted across tests/receipts/test_architectural.py,
     tests/scenarios/test_llm_review_replay.py, and tests/scenarios/test_query_replay.py
-    after the router-shim deletion (PR #138).
+    after the router-shim deletion.
     """
 
     def __init__(self, written: list[SignedReceipt]) -> None:

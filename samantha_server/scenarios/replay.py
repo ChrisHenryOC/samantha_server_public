@@ -1,11 +1,11 @@
 """Scenario replay harness — runs scenarios through the rule engine.
 
-GH-338: every step is routed through the production endpoint path (POST /events
+Every step is routed through the production endpoint path (POST /events
 → priority queue → _consume → dispatch_event → emit_receipt) via
 ``_ReplayHarness``. The legacy direct-dispatch path (deps/tracer) has been
 removed.
 
-Per-step routing (GH-171): routing (deterministic vs LLM-path) is decided inside
+Per-step routing: routing (deterministic vs LLM-path) is decided inside
 the endpoint consumer. The ``routing_path`` field on each StepVerdict reflects
 the per-step predicate:
   - ``"llm"`` when ``current_state == "PENDING_LLM_REVIEW"`` or
@@ -26,7 +26,7 @@ Public API:
 
 The included accuracy bucket (categories contributing to the 99.5% target):
     Deterministic: rule_coverage / multi_rule / accumulated_state
-    LLM-path (re-admitted per GH-90): hallucination / unknown_input / query
+    LLM-path: hallucination / unknown_input / query
 
 Out-of-bucket categories (not in included_accuracy or latency anchors):
     llm_review
@@ -105,12 +105,12 @@ _DETERMINISTIC_CATEGORIES: frozenset[str] = frozenset(
     {"rule_coverage", "multi_rule", "accumulated_state"}
 )
 
-# LLM-path categories re-admitted to the included_accuracy denominator per GH-90.
+# LLM-path categories re-admitted to the included_accuracy denominator.
 # These categories are in-bucket for accuracy counting but NOT in _DETERMINISTIC_CATEGORIES,
 # so exceptions in their scenarios are still logged-and-continued (not re-raised).
 _LLM_PATH_CATEGORIES: frozenset[str] = frozenset({"query", "unknown_input", "hallucination"})
 
-# GH-228: categories whose presence in a corpus requires up-front LLM-client
+# Categories whose presence in a corpus requires up-front LLM-client
 # construction. Strict superset of _LLM_PATH_CATEGORIES — adds `llm_review`,
 # which routes step 2 through dispatch_event() (PENDING_LLM_REVIEW handoff)
 # but remains OUT of _INCLUDED_CATEGORIES (out-of-bucket for accuracy). The
@@ -120,7 +120,7 @@ _LLM_PATH_CATEGORIES: frozenset[str] = frozenset({"query", "unknown_input", "hal
 # sweep silently bypassed LLM init and produced 0.0s vacuous-pass results.
 _LLM_CLIENT_CATEGORIES: frozenset[str] = _LLM_PATH_CATEGORIES | frozenset({"llm_review"})
 
-# GH-171 / PR #179 review L2: the per-step routing predicate's gates. Named
+# The per-step routing predicate's gates. Named
 # constants instead of inline literals so the routing contract is grep-able
 # and a refactor that retypes either gate updates one site, not multiple.
 _LLM_REVIEW_PENDING_STATE: Final[str] = "PENDING_LLM_REVIEW"
@@ -135,16 +135,16 @@ _INCLUDED_CATEGORIES: frozenset[str] = _DETERMINISTIC_CATEGORIES | _LLM_PATH_CAT
 # Tests that need a fresh index can pass rule_index= explicitly to replay().
 _DEFAULT_RULE_INDEX: RuleIndex | None = None
 
-# Hard CI gate constants for the LLM-path latency anchor (GH-121 / Phase 3 Step 6).
+# Hard CI gate constants for the LLM-path latency anchor.
 # The gate is active only when llm_latency_step_count >= _LLM_ANCHOR_MIN_STEP_COUNT.
 # Below the floor the gate is informational (not a hard failure).
-# 35 s — GH-273 re-tuned for Qwen3-Next-80B-A3B baseline (observed p99
+# 35 s — re-tuned for Qwen3-Next-80B-A3B baseline (observed p99
 # 28.7 s + ~20% headroom). Bumped from the 25 s Gemma-era anchor; see
 # docs/eval-anchors.md § 3.
 _LLM_LATENCY_ANCHOR_US: Final[int] = 35_000_000
 _LLM_ANCHOR_MIN_STEP_COUNT: Final[int] = 30
 
-# GH-194 Slice 5: SHA-256 hash of an empty byte string.
+# SHA-256 hash of an empty byte string.
 # Used to detect empty LLM responses in the query content gate:
 # a QueryTrace with response_text_hash == _SHA256_EMPTY indicates the
 # model returned an empty string (no content to parse). PR205 Low #9:
@@ -152,7 +152,7 @@ _LLM_ANCHOR_MIN_STEP_COUNT: Final[int] = 30
 # the hash function or canonical encoding can't drift this constant.
 _SHA256_EMPTY: Final[str] = hashlib.sha256(b"").hexdigest()
 
-# GH-209 / PR211 review #3: cap a list of identifiers (e.g., order_ids) to 5
+# cap a list of identifiers (e.g., order_ids) to 5
 # items for display in the CLI report's content_diagnostic, with a `...+N more`
 # suffix on overflow. Module-scoped (not a closure) so tests can import it
 # directly and pin the truncation contract — previously this was duplicated
@@ -231,14 +231,14 @@ def _model_scope(model_id: str) -> Iterator[None]:
 
 def _warm_up_model(model_id: str) -> None:
     """Issue one trivial completion against *model_id* so oMLX loads its
-    weights before any timed scenario runs (GH-283).
+    weights before any timed scenario runs.
 
     Without this, the first LLM-routed scenario per model pays a 60-120s
     cold-load tax — oMLX serializes model-load behind the request, so the
     request hits the wire fast (low ``pre_send_us``) but the server never
     responds within the read timeout (``server_elapsed_us=never``). Same
-    timing-log shape as GH-229's stale-keepalive hang, different cause; the
-    GH-282 keepalive fix doesn't address this because the bottleneck is on
+    timing-log shape as its stale-keepalive hang, different cause; the
+    The keepalive fix doesn't address this because the bottleneck is on
     the server side.
 
     ``MisconfiguredEnvironmentError`` propagates — `_build_llm_client_for_replay()`'s
@@ -286,7 +286,7 @@ def _collect_latencies(
     (StepVerdict.routing_path), not on scenario category. This ensures that:
     - Steps that errored before dispatch (routing_path=None) don't count.
     - Deterministic fallback timings never populate the LLM bucket.
-    - Category-keying is replaced by routing_path-keying (GH-121 Critical #2).
+    - Category-keying is replaced by routing_path-keying.
 
     Skiplisted scenarios and error steps (latency_us is None) are excluded.
     """
@@ -348,7 +348,7 @@ class PredictedOutput:
     flags: tuple[str, ...]
 
 
-# PR #286 finding #4: extracted shared alias prevents drift between
+# Extracted shared alias prevents drift between
 # StepVerdict.status and _status_for_step's return-type annotation (both
 # previously inlined the same Literal block).
 StepStatusValue = Literal[
@@ -359,7 +359,7 @@ StepStatusValue = Literal[
     "mismatch_routing_path",
     "dispatch_empty",
     "error",
-    # GH-194: content-gate statuses
+    # Content-gate statuses
     "mismatch_query_response",
     "mismatch_disposition",
     "invalid_json",
@@ -367,14 +367,14 @@ StepStatusValue = Literal[
     "hallucinated_rule",
     "hallucinated_flag",
     "hallucinated_state",
-    # GH-285: LLM-unavailable refusal on a content-annotated step
+    # LLM-unavailable refusal on a content-annotated step
     "llm_unavailable",
-    # GH-287: SKILL_UNAVAILABLE / PHI_BOUNDARY refusals on a content-annotated step
+    # SKILL_UNAVAILABLE / PHI_BOUNDARY refusals on a content-annotated step
     "skill_unavailable",
     "phi_boundary_violation",
 ]
 
-# GH-287: operational pre-LLM refusal reasons that should fail loudly through
+# Operational pre-LLM refusal reasons that should fail loudly through
 # the content gate, with each mapped to its StepStatusValue. The dict is the
 # source of truth; _OPERATIONAL_REFUSAL_REASONS is derived from it so the two
 # can't drift. Typed against _REFUSAL_REASONS so mypy catches typos against the
@@ -407,9 +407,9 @@ class StepVerdict:
     # The routing path actually taken for this step. Set to "deterministic" when evaluate()
     # was used, "llm" when dispatch_event() was used, and None when the step errored before
     # routing was determined. None steps are excluded from both p99 latency buckets.
-    # GH-121 Critical #2: bucket membership is path-keyed, not category-keyed.
+    # Bucket membership is path-keyed, not category-keyed.
     routing_path: Literal["deterministic", "llm"] | None = None
-    # GH-209: human-readable hint at what content disagreed when a content-gate
+    # Human-readable hint at what content disagreed when a content-gate
     # status fires. None on structural mismatches and on passing steps.
     content_diagnostic: str | None = None
 
@@ -438,10 +438,10 @@ class AccuracyReport:
     p99_latency_us: int | None
     # 99th-percentile per-decision latency in microseconds across LLM-path-category,
     # non-skiplisted scenarios. None when the LLM bucket has no latency samples.
-    # Sourced separately from `p99_latency_us` per the GH-90 do-not-merge invariant:
+    # Sourced separately from `p99_latency_us` (do-not-merge invariant):
     # the deterministic anchor stays clean as the engine-perf canary while this field
-    # captures the LLM-path budget (35 s p99 target at production-tier model — GH-273).
-    # Bucket membership is routing_path-keyed (not category-keyed) per GH-121 Critical #2.
+    # captures the LLM-path budget (35 s p99 target at production-tier model).
+    # Bucket membership is routing_path-keyed (not category-keyed).
     p99_latency_us_llm: int | None
     # Per-bucket sample counts (non-skiplisted, non-error step verdicts). These are
     # the *exact* populations that fed the corresponding p99 fields above; consumers
@@ -456,7 +456,7 @@ class AccuracyReport:
 class _ReplayHarness:
     """Long-lived harness that routes every replay step through the REAL /events endpoint.
 
-    GH-324 Phase B, Step 5 — replaces the direct dispatch_event() call with
+    Phase B Step 5 — replaces the direct dispatch_event() call with
     POST /events → priority queue → _consume consumer → dispatch_event → receipt.
     Built once per replay() run (analogous to _ReplayDeps), torn down via aclose().
 
@@ -693,7 +693,7 @@ def _verdict_for_step(
 ) -> StepVerdict:
     """Compare predicted outputs against expected outputs and return a StepVerdict.
 
-    GH-194: Precedence order for status assignment (highest to lowest):
+    Precedence order for status assignment (highest to lowest):
       hallucinated_state > hallucinated_rule > hallucinated_flag >
       invalid_json > mismatch_disposition / mismatch_query_response >
       mismatch_state > mismatch_rules > mismatch_flags >
@@ -717,7 +717,7 @@ def _verdict_for_step(
         flags=tuple(sorted(accumulated_flags)),
     )
 
-    # --- GH-194 Slice 3: hallucination checks (highest precedence) ----------
+    # --- Slice 3: hallucination checks (highest precedence) ----------
     # Check 1: engine returned a state that isn't in the vocabulary and isn't
     # a known symbolic token (ADVANCE_SAMPLE_PREP, RESOLVE_MISSING_INFO, etc.)
     # that resolve_transition will expand into a concrete state.
@@ -770,7 +770,7 @@ def _verdict_for_step(
                 content_diagnostic=f"predicted_flag={flag} (not in VALID_FLAGS)",
             )
 
-    # --- GH-194 Slice 4: LLM-review content gate (per-step) -----------------
+    # --- Slice 4: LLM-review content gate (per-step) -----------------
     # Applies when routing_path == 'llm' AND the step carries an expected
     # disposition (step.llm_disposition is not None).
     if routing_path == "llm" and step.llm_disposition is not None:
@@ -842,7 +842,7 @@ def _verdict_for_step(
                     # operators don't conflate the two when triaging.
                     content_diagnostic=f"refusal_reason={refusal_trace.refusal_reason}",
                 )
-            # GH-285/GH-287: operational refusal on an llm_disposition-annotated step.
+            # Operational refusal on an llm_disposition-annotated step.
             # The handler returns STAGE_PRE_LLM_UNAVAILABLE when LLMClient raises,
             # STAGE_PRE_SKILL_UNAVAILABLE when SkillLoaderError is caught, and
             # STAGE_PRE_PHI_BOUNDARY when PHIBoundaryError fires.
@@ -877,14 +877,14 @@ def _verdict_for_step(
     # routing_path. The routing-path comparison fires only when state, rules,
     # and flags ALL match — i.e., it isolates the case where observable
     # outcomes agree but the harness took a different engine path than the
-    # corpus annotation expected (PR #179 review M2 — catches the kind of
+    # corpus annotation expected (review M2 — catches the kind of
     # divergence M1's missing PreflightMissing arm could otherwise hide).
     # `expected_routing_path is None` means the fixture didn't annotate it;
     # treat as "don't compare" so older fixtures stay valid.
     if predicted.next_state != expected.next_state:
         status = "mismatch_state"
     elif (
-        # GH-231 F-13: winner-first comparison. position 0 is the winning rule
+        # Winner-first comparison. position 0 is the winning rule
         # (engine's applied_rule_id); positions 1+ are also_matched (order is
         # cosmetic so set-equality suffices there). An empty expected list must
         # still match an empty predicted list — the [:1] slice handles that.
@@ -919,12 +919,12 @@ async def _replay_scenario_async(
 ) -> ScenarioVerdict:
     """Run one scenario through the engine and return a ScenarioVerdict.
 
-    GH-324 Phase B Step 5 / GH-338: every step is submitted through the REAL
+    Phase B Step 5: every step is submitted through the REAL
     production transport: POST /events → priority queue → _consume →
     dispatch_event → emit_receipt.  Does not call dispatch_event() or
     evaluate() directly.
 
-    Per-step routing (GH-171): step routing (deterministic vs LLM-path) is
+    Per-step routing: step routing (deterministic vs LLM-path) is
     decided inside the endpoint consumer.  The *routing_path* field on each
     StepVerdict is set here based on the per-step predicate so verdicts carry
     the correct routing attribution.
@@ -953,7 +953,7 @@ async def _replay_scenario_async(
     flags: frozenset[str] = frozenset()
     step_verdicts: list[StepVerdict] = []
 
-    # GH-194 Slice 5 / PR205 review #1: a single paired tracker for the
+    # Slice 5 / PR205 review #1: a single paired tracker for the
     # post-loop query content gate. Set ONLY after the step's verdict has been
     # successfully appended AND a QueryTrace is present. Pairing the index
     # and decision in one tuple makes desync structurally impossible if a
@@ -968,7 +968,7 @@ async def _replay_scenario_async(
         # attribute deterministic vs LLM-path errors distinctly. Without this,
         # a deterministic exception softened by re_raise_on_deterministic_error=False
         # would bin into errored_pre_routing in the composer's
-        # step_routing_counts and trigger the GH-172 "model never called"
+        # step_routing_counts and trigger the "model never called"
         # banner — even though the model was never going to be called for a
         # deterministic-category scenario in the first place.
         routing_path: Literal["deterministic", "llm"] | None = None
@@ -978,7 +978,7 @@ async def _replay_scenario_async(
             if order is None:
                 order = _build_order(scenario.scenario_id, event_data)
 
-            # GH-227: inject scenario-level user_role into event_data when non-None.
+            # Inject scenario-level user_role into event_data when non-None.
             # Copy-on-write: do not mutate the ScenarioStep's event_data Mapping.
             # Scenario-level wins: if the step's event_data already carries user_role,
             # the scenario-level value overrides it (scenario annotation is authoritative).
@@ -998,7 +998,7 @@ async def _replay_scenario_async(
                 event=event,
             )
 
-            # GH-324 Phase B Step 5 / GH-338: endpoint path — the sole dispatch branch.
+            # Phase B Step 5: endpoint path — the sole dispatch branch.
             # Submit every step through POST /events → queue → _consume → dispatch_event.
             # routing_path is determined by the per-step predicate below; it cannot be
             # read from the EventResponse (routing_path lives in EventDispatchContext
@@ -1020,7 +1020,7 @@ async def _replay_scenario_async(
                 "ctx": ctx_dict,
                 "session_id": scenario.scenario_id,
                 "priority": "ROUTINE",
-                # GH-324 Phase B: always include the key so EventRequest's
+                # Always include the key so EventRequest's
                 # model_fields_set detects it as "explicitly provided".
                 # str → forwarded verbatim; None → null → no anchor block.
                 "prompt_timestamp": scenario.prompt_timestamp,
@@ -1042,7 +1042,7 @@ async def _replay_scenario_async(
                 )
 
             resp_data = response.json()
-            # GH-324/GH-333 PHI fix: the /events wire omits decision_traces and
+            # The /events wire omits decision_traces and
             # primitive_traces (they carry verbatim clinical strings).
             # Reconstruct the FULL EngineDecision from the persisted receipt's
             # payload_json via the same connection the harness's ReceiptWriter
@@ -1157,7 +1157,7 @@ async def _replay_scenario_async(
         )
         step_verdicts.append(verdict)
 
-        # GH-194 Slice 5 / PR205 review #1: pair the (index, decision) tracker
+        # Slice 5 / PR205 review #1: pair the (index, decision) tracker
         # so a later step's dispatch-success-but-post-dispatch-raise cannot
         # leave the index pointing at one step while the decision advances to
         # another. Set only AFTER step_verdicts.append above —
@@ -1174,7 +1174,7 @@ async def _replay_scenario_async(
         current_state = step.expected_next_state
         flags = frozenset(step.expected_flags)
 
-    # GH-194 Slice 5: post-loop query content gate.
+    # Post-loop query content gate.
     # For query scenarios, apply content correctness checks to the last
     # LLM-routed step that produced a QueryTrace. This is post-loop (not
     # per-step) because only the final answer step owns content accountability —
@@ -1196,7 +1196,7 @@ async def _replay_scenario_async(
         # mismatch_state AND mismatch_query_response over-counts in
         # failure_counts. Keep failures attributed to their most-specific cause.
         if last_verdict.status == "pass":
-            # GH-285/GH-287: check for operational refusals BEFORE the QueryTrace branch.
+            # Check for operational refusals BEFORE the QueryTrace branch.
             # When LLMClient raises, SkillLoaderError is caught, or PHIBoundaryError fires,
             # the handler returns a RefusalTrace with the corresponding reason and no QueryTrace.
             # The structural checks pass (state/rules/flags match) so without this
@@ -1251,7 +1251,7 @@ async def _replay_scenario_async(
                         ]
                         | None
                     ) = None
-                    # GH-209: human-readable diagnostic populated alongside content_status.
+                    # Human-readable diagnostic populated alongside content_status.
                     _query_content_diagnostic: str | None = None
                     if query_trace.parse_failure is not None:
                         content_status = "invalid_json"
@@ -1273,18 +1273,18 @@ async def _replay_scenario_async(
                         # Only apply the check when expected_query_content is present —
                         # None means the fixture doesn't annotate content, so pass.
                         #
-                        # PR205 review #5: this uses SET-EQUALITY (per GH-194 § Task 3).
+                        # PR205 review #5: this uses SET-EQUALITY (§ Task 3).
                         # Models returning correct IDs plus extras now fail —
                         # that's the truthfulness-fix design.
                         #
                         # PR205 review #6: step-level expected_output.order_ids
-                        # override (per GH-194 § Task 3 last sentence) is OUT OF
+                        # override (§ Task 3 last sentence) is OUT OF
                         # SCOPE for this PR — no corpus fixture uses it and
                         # ScenarioStep doesn't carry the field. Add an order_ids
                         # field to ScenarioStep + plumb it through to override the
                         # top-level value here when it lands.
                         #
-                        # GH-220: branch on answer_type from the fixture.
+                        # Branch on answer_type from the fixture.
                         # order_status fixtures carry a single subject_id in order_ids;
                         # the gate must verify (a) model used order_status answer_type
                         # and (b) model's order_ids matches the subject. This is
@@ -1292,7 +1292,7 @@ async def _replay_scenario_async(
                         _fixture_answer_type = scenario.expected_answer_type
                         expected_order_ids = scenario.expected_query_content
                         if _fixture_answer_type in {"no_orders", "uncertain"}:
-                            # GH-231 F-6: no_orders/uncertain branch — check (a) model used the
+                            # no_orders/uncertain branch — check (a) model used the
                             # correct answer_type AND (b) model returned empty order_ids. Both
                             # conditions must hold; if the model returns order_list with non-empty
                             # ids against a no_orders fixture the gate must fire. This branch fires
@@ -1315,7 +1315,7 @@ async def _replay_scenario_async(
                                 # parsed_order_ids=None record alongside the matched
                                 # answer_type — mirroring the bypass-rationale comments
                                 # on the order_status (L1226) and prioritized_list
-                                # (L1200) branches. PR #238 review M2.
+                                # (L1200) branches.
                                 query_trace.parsed_order_ids is not None
                                 and len(query_trace.parsed_order_ids) > 0
                             ):
@@ -1327,7 +1327,7 @@ async def _replay_scenario_async(
                                     f" parsed_order_ids={_parsed}"
                                 )
                         elif _fixture_answer_type == "prioritized_list":
-                            # GH-222: prioritized_list branch — sequence-equality
+                            # prioritized_list branch — sequence-equality
                             # (position-sensitive). The fixture's order_ids is an ordered
                             # list; the model must emit the same sequence in the same rank.
                             # Use expected_query_sequence (tuple) rather than
@@ -1355,7 +1355,7 @@ async def _replay_scenario_async(
                                     # both fields populated together). The explicit None-check
                                     # defends against future model_construct() bypass that
                                     # would skip the validator and silently skip the sequence
-                                    # comparison. PR224 Cluster D / GH-220 review #8 pattern.
+                                    # comparison. PR224 Cluster D / review #8 pattern.
                                     query_trace.parsed_order_ids is not None
                                     and tuple(query_trace.parsed_order_ids) != expected_sequence
                                 ):
@@ -1384,7 +1384,7 @@ async def _replay_scenario_async(
                                 # both fields populated together). The explicit None-check
                                 # defends against future model_construct() bypass that
                                 # would skip the validator and silently skip the subject
-                                # comparison. GH-220 fix-review #8.
+                                # comparison.
                                 query_trace.parsed_order_ids is not None
                                 and set(query_trace.parsed_order_ids) != expected_order_ids
                             ):
@@ -1399,7 +1399,7 @@ async def _replay_scenario_async(
                             # order_list branch (or no answer_type annotation — None from the
                             # typed accessor means either absent or unrecognized, both handled
                             # by Scenario.expected_answer_type which already warns on unrecognized).
-                            # GH-231 F-1: check answer_type before set-equality, mirroring the
+                            # Check answer_type before set-equality, mirroring the
                             # order_status branch above. An order_list fixture where the model
                             # returns order_status (correct IDs, wrong shape) must surface as
                             # mismatch_query_response rather than passing silently.
@@ -1432,11 +1432,11 @@ async def _replay_scenario_async(
                         # must also set _query_content_diagnostic — the two travel
                         # together. A future fourth branch that forgets to populate
                         # the diagnostic would silently emit content_diagnostic=None
-                        # for that gate's new status, recreating the GH-209 bug. Pin
+                        # for that gate's new status, recreating the bug. Pin
                         # the contract here so the failure surfaces at gate-fire
                         # time, not via an operator-experience regression.
                         assert _query_content_diagnostic is not None, (
-                            "GH-209 contract: content_status="
+                            "Contract: content_status="
                             f"{content_status!r} set without _query_content_diagnostic"
                         )
                         step_verdicts[_target_index] = dataclasses.replace(
@@ -1473,9 +1473,9 @@ async def _replay_all_async(
     the harness event loop is valid for the full corpus run. Multiple asyncio.run()
     calls (one per scenario) would create a new event loop per scenario; the
     asyncio.Lock in _ReplayHarness would be stale for subsequent scenarios
-    (GH-121 Critical #3).
+.
 
-    GH-338: The endpoint harness (POST /events → queue → _consume → dispatch_event)
+    The endpoint harness (POST /events → queue → _consume → dispatch_event)
     is the sole dispatch path. A ``_ReplayHarness`` is always built here and shared
     across all scenario runs.
 
@@ -1521,7 +1521,7 @@ def _load_skiplist(directory: Path, override_path: Path | None = None) -> dict[s
     """Load skiplist JSON; return scenario_id → issue URL.
 
     By default reads `<directory>/.skiplist.json`. When *override_path* is
-    set (GH-156 parity-replay), reads that file instead — pointing at a
+    set (parity-replay), reads that file instead — pointing at a
     nonexistent path effectively disables the skiplist for parity runs
     that need to score against the as-published corpus rather than
     samantha_server's curated subset.
@@ -1560,7 +1560,7 @@ def replay(
 ) -> AccuracyReport:
     """Replay all scenarios in *directory* through the rule engine.
 
-    GH-338: every step is routed through the production endpoint path (POST
+    Every step is routed through the production endpoint path (POST
     /events → queue → _consume → dispatch_event → emit_receipt). The legacy
     direct-dispatch path (deps/tracer) has been removed.
 
@@ -1599,7 +1599,7 @@ def replay(
     `status="fail"` so reports show the deferred work; each skiplist entry
     must point to a tracking issue.
 
-    Pass *receipts_db_path* (GH-156, GH-306) to persist receipts to a SQLite
+    Pass *receipts_db_path* to persist receipts to a SQLite
     file at that path instead of the default in-memory store. The path is
     forwarded to the ``_ReplayHarness`` which manages its own ``ReceiptWriter``.
     """
@@ -1608,17 +1608,17 @@ def replay(
 
     scenarios = load_scenarios(directory)
 
-    # GH-156: filter post-load + before fan-out so overall_total reflects
+    # Filter post-load + before fan-out so overall_total reflects
     # the filtered population. Required by the parity CLI to score the
     # 33-scenario screening subset without copying fixtures into a temp dir.
-    # TODO(GH-156): push include_scenario_ids into load_scenarios so that
+    # TODO: push include_scenario_ids into load_scenarios so that
     # non-matching JSON files are skipped before read_text() / json.loads().
     # Today the entire corpus is parsed for a 33-of-N filter; cost is
     # bounded while the corpus is small but grows linearly.
     if include_scenario_ids is not None:
         scenarios = [s for s in scenarios if s.scenario_id in include_scenario_ids]
 
-    # GH-184 Slice 5: filter by category when include_categories is set.
+    # Filter by category when include_categories is set.
     # When both include_scenario_ids and include_categories are set, BOTH
     # filters apply — the scenario must match both. Filter applied after
     # include_scenario_ids for consistency with the existing ordering.
@@ -1666,11 +1666,11 @@ def replay(
     overall_accuracy = overall_pass / overall_total if overall_total > 0 else 1.0
 
     # Per-bucket p99 latency. Bucket membership is routing_path-keyed (not
-    # category-keyed) per GH-121 Critical #2: only steps that actually called
+    # category-keyed): only steps that actually called
     # dispatch_event() contribute to the LLM bucket; error steps (routing_path=None)
     # are excluded from both buckets.
     #
-    # The two buckets are deliberately not merged (GH-90 do-not-merge invariant):
+    # The two buckets are deliberately not merged (do-not-merge invariant):
     # the deterministic anchor stays clean as the engine-perf canary.
     deterministic_latencies, llm_latencies = _collect_latencies(verdicts, skiplist)
     p99_latency_us = _p99(deterministic_latencies)
@@ -1708,7 +1708,7 @@ def replay_with_langfuse_export(
 ) -> tuple[AccuracyReport, list[str]]:
     """Replay corpus through the endpoint path with OTLP export to Langfuse.
 
-    GH-338: Unifies Langfuse export with the production endpoint path (POST
+    Unifies Langfuse export with the production endpoint path (POST
     /events → queue → _consume → dispatch_event). Replaces the legacy
     ``_replay_to_langfuse_core`` / ``replay_to_langfuse`` /
     ``_replay_to_langfuse_with_release`` chain for all new call sites.
@@ -1787,7 +1787,7 @@ def replay_with_langfuse_export(
     )
     provider.add_span_processor(SimpleSpanProcessor(id_exporter))
 
-    # GH-208 global-provider save/install/restore (same pattern as _replay_to_langfuse_core).
+    # global-provider save/install/restore (same pattern as _replay_to_langfuse_core).
     # Install as global so events.py's trace.get_tracer("samantha_server") picks up this provider.
     try:
         _prev_global_provider = _otel_trace_module._TRACER_PROVIDER
@@ -1849,7 +1849,7 @@ def _print_report_and_get_exit_code(
 ) -> int:
     """Print a scenario replay report and return the appropriate exit code.
 
-    GH-184 Slice 3: extracted from ``main()`` so the per-model loop and
+    Extracted from ``main()`` so the per-model loop and
     the single-model path share the same reporting logic.
 
     Returns 0 when all gates pass, 1 when any gate fails.
@@ -1907,7 +1907,7 @@ def _print_report_and_get_exit_code(
     # Evaluate both gates; accumulate failures so both are reported.
     exit_code = 0
 
-    # LLM-path latency hard gate (GH-121 / Phase 3 Step 6).
+    # LLM-path latency hard gate.
     if report.llm_latency_step_count >= _LLM_ANCHOR_MIN_STEP_COUNT:
         if (
             report.p99_latency_us_llm is not None
@@ -2078,7 +2078,7 @@ def _build_replay_parser() -> argparse.ArgumentParser:
     """Build and return the argument parser for the replay CLI.
 
     Extracted from ``main()`` so tests can construct the parser directly
-    without invoking the full main() body (GH-262 Slice 1).
+    without invoking the full main() body.
     """
     parser = argparse.ArgumentParser(
         description="Replay scenarios through the rule engine (deterministic + LLM-path)."
@@ -2119,9 +2119,9 @@ def _build_replay_parser() -> argparse.ArgumentParser:
         "--stamp-prompt",
         action="store_true",
         help=(
-            "GH-196 / GH-363: force gen_ai.prompt stamping ON for this run by "
+            "Force gen_ai.prompt stamping ON for this run by "
             "setting SAMANTHA_STAMP_PROMPT=1. Stamping is already default-on "
-            "(GH-363), so this flag only matters as an override when the "
+            ", so this flag only matters as an override when the "
             "environment has it explicitly disabled (0/false/no/off). Applies "
             "to all model iterations in a --models sweep. Requires a self-hosted "
             "Langfuse instance; do not use with cloud Langfuse outside the "
@@ -2137,7 +2137,7 @@ def _build_replay_parser() -> argparse.ArgumentParser:
         help=(
             "Number of full-corpus sweeps to run. Default 1. Recommended 5 for "
             "LLM-routed categories (model output at temperature=0.0 is not "
-            "bit-deterministic on MLX; see GH-262). Each sweep produces a fresh "
+            "bit-deterministic on MLX). Each sweep produces a fresh "
             "Langfuse release_id. When combined with --models, each model gets "
             "its own N-sweep summary. Exit code is non-zero if any fixture is "
             "flaky (passes < N across sweeps) even if each individual sweep "
@@ -2149,7 +2149,7 @@ def _build_replay_parser() -> argparse.ArgumentParser:
         dest="no_warm_up",
         action="store_true",
         help=(
-            "GH-283: skip the per-(sweep, model) warm-up call. See "
+            "Skip the per-(sweep, model) warm-up call. See "
             "_warm_up_model() docstring for the cold-load rationale."
         ),
     )
@@ -2162,7 +2162,7 @@ def _build_replay_parser() -> argparse.ArgumentParser:
         help=(
             "Persist replay receipts to this SQLite file instead of the "
             "default in-memory store. Required for the receipts-evidence "
-            "chart bundle (GH-311). Pointing at the configured production "
+            "chart bundle. Pointing at the configured production "
             "RECEIPTS_DB_PATH is refused (synthetic replay receipts must "
             "not pollute the prod audit trail). When combined with "
             "--models, each model's receipts go to a per-model file "
@@ -2184,7 +2184,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_replay_parser()
     args = parser.parse_args(argv)
 
-    # GH-196: --stamp-prompt sets SAMANTHA_STAMP_PROMPT before any LLM call so
+    # --stamp-prompt sets SAMANTHA_STAMP_PROMPT before any LLM call so
     # that llm_complete_with_span / llm_complete_json_with_span stamp the prompt
     # text on gen_ai child spans. Propagated to all model iterations in the loop.
     #
@@ -2224,7 +2224,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
 
-    # GH-184 Slice 3: resolve model list. When --models is set, split and
+    # Resolve model list. When --models is set, split and
     # strip. When absent, treat as a single-element list containing the
     # config-default model so the downstream loop logic stays uniform.
     model_ids: list[str] = []
@@ -2235,12 +2235,12 @@ def main(argv: list[str] | None = None) -> int:
 
     multi_model = len(model_ids) > 1
 
-    # GH-184 Slice 5: parse --include-category into a set. None means "all".
+    # Parse --include-category into a set. None means "all".
     include_categories: set[str] | None = None
     if args.include_category:
         include_categories = {c.strip() for c in args.include_category.split(",") if c.strip()}
 
-    # GH-262: AccuracyReports from every sweep, partitioned by model_id.
+    # AccuracyReports from every sweep, partitioned by model_id.
     # This replaces the old flat all_sweep_reports list that mixed reports
     # from multiple models, producing wrong N denominators in multi-model mode.
     model_to_reports: dict[str, list[AccuracyReport]] = {mid: [] for mid in model_ids}
@@ -2262,7 +2262,7 @@ def main(argv: list[str] | None = None) -> int:
             # is combined with --models. The replay code reuses the same
             # connection per replay() call but appends to the same file
             # across iterations of the multi-model loop, producing receipts
-            # with no model_id discriminator column. Charts (GH-311) would
+            # with no model_id discriminator column. Charts would
             # have to demux via Langfuse trace_id — only works when Langfuse
             # was enabled. Split foo.db → foo-<safe_model_id>.db so the
             # chart consumer can demux from the file path alone.
@@ -2275,7 +2275,7 @@ def main(argv: list[str] | None = None) -> int:
                     else args.receipts_db_path
                 )
 
-            # GH-283: warm up THIS (sweep, model) pair before the timed run.
+            # Warm up THIS (sweep, model) pair before the timed run.
             # Once-per-invocation placement would only defend sweep 1 model 1
             # — under LRU eviction on memory-constrained hosts, every later
             # (sweep, model) cell needs its own warm-up. Opt out with
@@ -2291,7 +2291,7 @@ def main(argv: list[str] | None = None) -> int:
 
                 try:
                     if cfg.LANGFUSE_ENABLED and cfg.LANGFUSE_PUBLIC_KEY and cfg.LANGFUSE_SECRET_KEY:
-                        # GH-338: always route through the production endpoint path with OTLP
+                        # Always route through the production endpoint path with OTLP
                         # export.  replay_with_langfuse_export installs the OTLP-exporting
                         # TracerProvider as global before calling replay() (no tracer= kwarg),
                         # so events.py's trace.get_tracer(...) picks it up transparently.
@@ -2323,7 +2323,7 @@ def main(argv: list[str] | None = None) -> int:
                             receipts_db_path=per_model_receipts_path,
                         )
                 except Exception:  # noqa: BLE001
-                    # GH-184 fix-review M7: catch per-model exceptions so that a failure
+                    # Catch per-model exceptions so that a failure
                     # in model B does not discard model A's results. Mark the failed model
                     # in the combined exit code and continue to the next model.
                     import traceback
@@ -2339,7 +2339,7 @@ def main(argv: list[str] | None = None) -> int:
             model_exit_code = _print_report_and_get_exit_code(report, skiplist, args.directory)
             combined_exit_code = max(combined_exit_code, model_exit_code)
 
-    # GH-262: N-sweep summary when more than one sweep was run.
+    # N-sweep summary when more than one sweep was run.
     # Iterate per model so each summary has the correct N denominator.
     if args.n_sweeps > 1:
         for mid, reports in model_to_reports.items():

@@ -19,9 +19,9 @@ import types
 def test_extract_finish_reasons_returns_none_for_production_llm_response() -> None:
     """LLMResponse with finish_reason unset (None default) → helper returns None.
 
-    Post-GH-321: LLMResponse declares `finish_reason` (singular) but defaults
+    After the finish_reason refactor: LLMResponse declares `finish_reason` (singular) but defaults
     to None when the backend doesn't emit a value. The helper still returns
-    None in that case — equivalent to the pre-GH-321 behavior when the
+    None in that case — equivalent to the legacy behavior when the
     plural field was entirely absent.
     """
     from samantha_server.llm.client import LLMResponse

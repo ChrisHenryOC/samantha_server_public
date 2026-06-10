@@ -1,4 +1,4 @@
-"""Chart 9: refusal-type distribution (GH-310).
+"""Chart 9: refusal-type distribution.
 
 Renders a horizontal bar chart showing how often each refusal type fires
 when samantha_server cannot proceed. Known refusal types are displayed in

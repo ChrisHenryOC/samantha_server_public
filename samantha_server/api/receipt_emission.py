@@ -42,7 +42,7 @@ async def emit_receipt(
 
     If *session_id* is provided and *decision* already carries a different
     non-None *session_id*, raises ``ValueError`` rather than silently
-    overwriting (per PR #131 H4 fix-review). The orchestrator's caller is
+    overwriting. The orchestrator's caller is
     expected to pass either ``None`` (engine produced no session_id) or
     the same value the decision already carries.
 

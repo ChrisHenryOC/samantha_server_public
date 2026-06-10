@@ -1,4 +1,4 @@
-"""Tests for GH-328 Slice 2: RES-002 billing-branch flag correction in dispatch_event.
+"""Tests for Slice 2: RES-002 billing-branch flag correction in dispatch_event.
 
 The production deterministic branch previously passed ctx.flags (incoming flags)
 to resolve_transition, causing RESOLVE_MISSING_INFO to resolve incorrectly when
@@ -107,12 +107,12 @@ def _make_deps(*, rule_index: Any) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# GH-328 Slice 2: billing branch resolves RESOLVE_MISSING_INFO → RESULTING
+# Billing branch resolves RESOLVE_MISSING_INFO → RESULTING
 # ---------------------------------------------------------------------------
 
 
 def test_res002_billing_info_resolves_to_resulting() -> None:
-    """GH-328 Slice 2: billing info_type clears MISSING_INFO_PROCEED → RESULTING.
+    """Billing info_type clears MISSING_INFO_PROCEED → RESULTING.
 
     Pre-fix: accumulated_flags=ctx.flags (still has MISSING_INFO_PROCEED) →
     resolve_transition returns RESULTING_HOLD (wrong).
@@ -151,7 +151,7 @@ def test_res002_billing_info_resolves_to_resulting() -> None:
 
 
 def test_res002_non_billing_info_resolves_to_resulting_hold() -> None:
-    """GH-328 Slice 2: non-billing info_type preserves MISSING_INFO_PROCEED → RESULTING_HOLD.
+    """Non-billing info_type preserves MISSING_INFO_PROCEED → RESULTING_HOLD.
 
     The action handler does NOT clear MISSING_INFO_PROCEED for clinical_notes,
     so resolve_transition returns RESULTING_HOLD (hold continues).

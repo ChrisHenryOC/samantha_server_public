@@ -98,7 +98,7 @@ VALID_FLAGS: frozenset[str] = frozenset(
         "FISH_SUGGESTED",
         # Set by ACC-010 when routing to LLM review
         "LLM_REVIEW_REQUESTED",
-        # GH-169 vocabulary fix: informational flag emitted by the samantha
+        # Informational flag emitted by the samantha
         # POC's accessioning skill when fixation_time_hours falls in the
         # borderline band ([6.0, 8.0] or [68.0, 72.0]) for HER2-bearing
         # orders that otherwise pass ACC-008. samantha_server does not yet

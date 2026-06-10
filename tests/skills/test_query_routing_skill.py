@@ -60,12 +60,12 @@ def test_load_query_routing_strips_frontmatter() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-192: JSON-output contract tests
+# JSON-output contract tests
 # ---------------------------------------------------------------------------
 
 
 def test_query_routing_body_instructs_json_only_output() -> None:
-    """GH-192: Skill body instructs LLM to output JSON only (no markdown fences)."""
+    """Skill body instructs LLM to output JSON only (no markdown fences)."""
     body = load("query-routing")
     lower = body.lower()
     # Must reference JSON output — the contract specifies JSON-only output
@@ -73,13 +73,13 @@ def test_query_routing_body_instructs_json_only_output() -> None:
 
 
 def test_query_routing_body_documents_answer_type_field() -> None:
-    """GH-192: Skill body documents the answer_type field."""
+    """Skill body documents the answer_type field."""
     body = load("query-routing")
     assert "answer_type" in body
 
 
 def test_query_routing_body_has_contamination_audit_marker() -> None:
-    """GH-192: Skill body retains the contamination-audit sentinel comment."""
+    """Skill body retains the contamination-audit sentinel comment."""
     from pathlib import Path
 
     skill_path = (
@@ -95,13 +95,13 @@ def test_query_routing_body_has_contamination_audit_marker() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-217: Domain-aware prompt structure — state reference, flag reference,
+# Domain-aware prompt structure — state reference, flag reference,
 # answer-type guidance, and query idioms.
 # ---------------------------------------------------------------------------
 
 
 def test_query_routing_body_contains_state_reference() -> None:
-    """GH-217 / PR-219 #11: Skill body contains ALL VALID_STATES.
+    """/ PR-219 #11: Skill body contains ALL VALID_STATES.
 
     Driven from samantha_server.models.context.VALID_STATES so future state additions
     automatically red this test.
@@ -115,7 +115,7 @@ def test_query_routing_body_contains_state_reference() -> None:
 
 
 def test_query_routing_body_contains_flag_reference() -> None:
-    """GH-217 / PR-219 #12: Skill body contains ALL VALID_FLAGS.
+    """/ PR-219 #12: Skill body contains ALL VALID_FLAGS.
 
     Driven from samantha_server.models.context.VALID_FLAGS so future flag additions
     automatically red this test.
@@ -129,28 +129,28 @@ def test_query_routing_body_contains_flag_reference() -> None:
 
 
 def test_query_routing_body_contains_answer_type_guidance() -> None:
-    """GH-217 / PR-219 #16+#20: Skill body has an Answer-type guidance section.
+    """/ PR-219 #16+#20: Skill body has an Answer-type guidance section.
 
     All five subsection headers must be present:
     ### order_list, ### order_status, ### no_orders, ### uncertain, ### prioritized_list.
     Anchored on section headers rather than sentence wording (PR-219 #20).
-    GH-222: prioritized_list subsection added.
+    prioritized_list subsection added.
     """
     body = load("query-routing")
     assert "## Answer-type guidance" in body
     # PR-219 #20: anchor on section header, not sentence wording
     assert "### order_list" in body
-    # GH-220: order_status subsection added
+    # order_status subsection added
     assert "### order_status" in body
     # PR-219 #16: all subsection headers must be present
     assert "### no_orders" in body
     assert "### uncertain" in body
-    # GH-222: prioritized_list subsection added
+    # prioritized_list subsection added
     assert "### prioritized_list" in body
 
 
 def test_query_routing_body_contains_order_status_guidance() -> None:
-    """GH-220 Slice 3: Skill body contains ### order_status guidance.
+    """Skill body contains ### order_status guidance.
 
     The section must direct the model to use this answer_type for queries
     about ONE specific order.
@@ -165,7 +165,7 @@ def test_query_routing_body_contains_order_status_guidance() -> None:
 
 
 def test_query_routing_body_contains_query_idioms() -> None:
-    """GH-217 / PR-219 #17: Skill body contains all 9 idiom rows in the Query Idioms section."""
+    """/ PR-219 #17: Skill body contains all 9 idiom rows in the Query Idioms section."""
     import re
 
     body = load("query-routing")
@@ -383,7 +383,7 @@ def test_query_routing_body_contains_prioritized_list_guidance() -> None:
 
 
 def test_query_routing_prioritized_list_documents_top_n_tier_inclusion() -> None:
-    """GH-258: ### prioritized_list section must document the top-N tier-inclusion rule.
+    """### prioritized_list section must document the top-N tier-inclusion rule.
 
     QR-022 regression: 2 of 3 sweeps emit [ORD-2202, ORD-2203, ORD-2201], dropping
     rush ORD-2204 and pulling in routine ORD-2201. Root cause: no explicit rule in
@@ -395,14 +395,14 @@ def test_query_routing_prioritized_list_documents_top_n_tier_inclusion() -> None
     must survive independently.
     """
     body = load("query-routing")
-    # GH-274: bumped window from 2000 → 3000 to accommodate the new
+    # Bumped window from 2000 → 3000 to accommodate the new
     # LIS-pre-sort invariant paragraph added between the section heading
     # and the Top-N tier-inclusion rule. The window must reach the
     # "Wrong answer" counter-example at the end of the section.
     section = _text_near("### prioritized_list", body, after=3000)
     lower = section.lower()
 
-    # Paragraph name (mirrors GH-248 "Field-not-in-prompt" anchor).
+    # Paragraph name (mirrors "Field-not-in-prompt" anchor).
     assert "Top-N tier-inclusion rule" in section, (
         "### prioritized_list section must name the 'Top-N tier-inclusion rule' paragraph"
     )
@@ -442,7 +442,7 @@ def test_query_routing_prioritized_list_documents_top_n_tier_inclusion() -> None
 
 
 def test_query_routing_prioritized_list_documents_pre_sort_lis_invariant() -> None:
-    """GH-274: ### prioritized_list section must document that the `<orders>` block
+    """### prioritized_list section must document that the `<orders>` block
     is pre-sorted in LIS-style priority/age order.
 
     Background: every non-Gemma candidate in the 2026-05-15 model retest
@@ -463,7 +463,7 @@ def test_query_routing_prioritized_list_documents_pre_sort_lis_invariant() -> No
     # Paragraph anchor — name the LIS pre-sort invariant explicitly.
     assert "LIS pre-sort" in section or "LIS-side pre-sort" in section, (
         "### prioritized_list section must name the LIS pre-sort invariant "
-        "(GH-274) so a future copy-edit can't silently drop the guidance"
+        " so a future copy-edit can't silently drop the guidance"
     )
 
     # Load-bearing clause: orders are already sorted.
@@ -496,18 +496,18 @@ def test_query_routing_body_documents_order_ids_emptiness_correctly() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-227 S6: User role section in skill body
+# User role section in skill body
 # ---------------------------------------------------------------------------
 
 
 def test_query_routing_body_contains_user_role_section() -> None:
-    """GH-227: Skill body contains a ## User role section."""
+    """Skill body contains a ## User role section."""
     body = load("query-routing")
     assert "## User role" in body
 
 
 def test_query_routing_body_user_role_section_mentions_all_four_roles() -> None:
-    """GH-227: User role section documents all four valid role names.
+    """User role section documents all four valid role names.
 
     after=1200 because the PR243 S12 clarification paragraph added ~300 chars
     before the role semantics list, pushing 'pathologist' past the old 800-char window.
@@ -520,7 +520,7 @@ def test_query_routing_body_user_role_section_mentions_all_four_roles() -> None:
 
 
 def test_query_routing_body_user_role_section_documents_absent_block() -> None:
-    """GH-227: User role section states behavior when the block is absent."""
+    """User role section states behavior when the block is absent."""
     body = load("query-routing")
     user_role_section = _text_near("## User role", body, after=1200)
     # Must mention what happens when the block is absent
@@ -530,7 +530,7 @@ def test_query_routing_body_user_role_section_documents_absent_block() -> None:
 
 
 def test_query_routing_uncertain_section_documents_field_not_in_prompt() -> None:
-    """GH-248: ### uncertain section must document the field-not-in-prompt pattern.
+    """### uncertain section must document the field-not-in-prompt pattern.
 
     QR-029 ("Is billing complete for ORD-291?") mis-routes to order_status because
     "is X complete" pattern-matches as state-of-the-order. The fix is skill-body
@@ -601,10 +601,10 @@ def test_query_routing_skill_contains_no_backtick_fences() -> None:
 
 
 def test_query_routing_prioritized_list_documents_state_filtered_top_n() -> None:
-    """GH-278: ### prioritized_list section must include a worked example showing
+    """### prioritized_list section must include a worked example showing
     state-filtered top-N selection over a mixed-state pre-sorted block.
 
-    Background: PR #277 (GH-274 Phase A) landed the pre-sort + "walk top-down"
+    Background: (Phase A) landed the pre-sort + "walk top-down"
     guidance. QR-020 + QR-021 flipped 0/5 → 5/5 cleanly. QR-022 newly fails
     0/5: model returns ORD-2205 (Jan 14) instead of ORD-2203 (Jan 12) in
     slot 3 — picks the *newer* of the routine-state-matching orders instead
@@ -622,8 +622,8 @@ def test_query_routing_prioritized_list_documents_state_filtered_top_n() -> None
     piece reds the test.
     """
     body = load("query-routing")
-    # PR #279 review #1: bumped after=4500 → 5500 to cover the full section
-    # with headroom. Section runs ~4730 chars after the GH-278 example
+    # Bumped after=4500 → 5500 to cover the full section
+    # with headroom. Section runs ~4730 chars after the example
     # addition; 4500 left the wrong-answer line right at the boundary, so
     # a modest upstream edit could push it past the cut. 5500 gives ~770
     # chars of slack for future additions.
@@ -632,16 +632,16 @@ def test_query_routing_prioritized_list_documents_state_filtered_top_n() -> None
     # Worked example must carry an identifying anchor name.
     assert "State-filtered top-N" in section or "state-filtered top-n" in section.lower(), (
         "### prioritized_list section must contain a 'State-filtered top-N' worked "
-        "example (GH-278) — the QR-022 failure shape"
+        "example — the QR-022 failure shape"
     )
 
-    # PR #279 review #2: pin the specific "Correct ranking" line of the new
+    # Pin the specific "Correct ranking" line of the new
     # example, not just the count. A rename like "Expected ranking" would
     # silently pass the count check via the other two examples (B/C/A/D and
     # E/F/G); the literal-string anchor catches that.
     assert "Correct ranking: K, L, N" in section, (
         "### prioritized_list state-filtered example must show the K/L/N "
-        "correct-ranking line (GH-278); a rename would silently pass the "
+        "correct-ranking line; a rename would silently pass the "
         "earlier count-based anchor via the other two examples"
     )
 
@@ -650,12 +650,12 @@ def test_query_routing_prioritized_list_documents_state_filtered_top_n() -> None
     # (existing two are B/C/A/D and E/F/G). Counts as a structural anchor.
     assert section.count("Correct ranking") >= 3, (
         "### prioritized_list section must contain at least 3 worked examples "
-        "with 'Correct ranking' markers; the GH-278 state-filtered example is the third"
+        "with 'Correct ranking' markers; the state-filtered example is the third"
     )
 
     # The example must include a Wrong-answer counter-example pointing at the
     # QR-022 failure mode (picking a NEWER routine over an OLDER one in the
-    # same tier). PR #279 review #3: tightened from bare "newer" / "older"
+    # same tier). review #3: tightened from bare "newer" / "older"
     # (could match elsewhere in the window) to the qualified phrases that are
     # unique to the QR-022 failure mode.
     lower = section.lower()

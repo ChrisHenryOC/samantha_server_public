@@ -1,4 +1,4 @@
-"""GH-194 Slice 6: parity-report mapping for new content-gate StepVerdict statuses."""
+"""Parity-report mapping for new content-gate StepVerdict statuses."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ def _report(verdicts: tuple[ScenarioVerdict, ...]) -> AccuracyReport:
 
 
 class TestContentGateParityMapping:
-    """GH-194 Slice 6: new status values produce expected failure_counts buckets."""
+    """New status values produce expected failure_counts buckets."""
 
     def test_mismatch_query_response_maps_to_bucket(self) -> None:
         """mismatch_query_response → 'mismatch_query_response' bucket."""

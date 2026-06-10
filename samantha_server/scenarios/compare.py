@@ -1,4 +1,4 @@
-"""Multi-model comparison reporter for the replay corpus (GH-141).
+"""Multi-model comparison reporter for the replay corpus.
 
 Reads multiple per-model receipt DBs (each populated by a single
 parametrization of the ``model_under_test`` sweep fixture in

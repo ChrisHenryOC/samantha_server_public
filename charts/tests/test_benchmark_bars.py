@@ -1,4 +1,4 @@
-"""Chart N2 (GH-309): benchmarks clustered bar chart (CONVEX Slide 24b)."""
+"""Chart N2: benchmarks clustered bar chart (CONVEX Slide 24b)."""
 
 from __future__ import annotations
 

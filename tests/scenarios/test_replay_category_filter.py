@@ -1,4 +1,4 @@
-"""Tests for the --include-category flag in the replay CLI (GH-184 Slice 5).
+"""Tests for the --include-category flag in the replay CLI.
 
 Verifies that --include-category=cat1,cat2 filters scenarios to only
 run those whose category is in the specified set.

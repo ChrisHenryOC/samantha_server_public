@@ -1,4 +1,4 @@
-"""Schema-drift CI gate for Langfuse dashboard specs (GH-126 Step 11).
+"""Schema-drift CI gate for Langfuse dashboard specs.
 
 Each ``infra/langfuse/dashboards/*.yaml`` declares the panel shape an
 operator replicates in the Langfuse v3 UI. Every field name a panel
@@ -47,7 +47,7 @@ def _load_dashboard_specs() -> list[tuple[Path, dict[str, object]]]:
     if not _DASHBOARDS_DIR.exists():
         raise FileNotFoundError(
             f"dashboards directory missing: {_DASHBOARDS_DIR}. "
-            "Step 11 (GH-126) requires this directory."
+            "Step 11 requires this directory."
         )
     specs: list[tuple[Path, dict[str, object]]] = []
     for path in sorted(_DASHBOARDS_DIR.glob("*.yaml")):

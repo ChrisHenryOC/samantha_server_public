@@ -2,7 +2,7 @@
   "scenario_id": "QR-023",
   "category": "query",
   "tier": 5,
-  "description": "Cross-order reasoning — enumerating orders rejected by ACC-006 for HER2 fixation time outside the clinical [6.0, 72.0]h tolerance. Reframed (2026-05-15) from prior 'approaching the 72-hour limit' phrasing, which implied a running clock; fixation is a fixed-duration historical event and the borderline-band concept (FIXATION_WARNING / GH-175) is deferred post-POC. The reframe makes the question deterministic against ACC-006 as written. ORD-2311 is a deliberate state/content-decoupling control: it sits in DO_NOT_PROCESS with in-range fixation, so a model that filters on state alone returns a superset and only narrows correctly by reading fixation_time_hours — the field GH-226 Slice B plumbed for this fixture.",
+  "description": "Cross-order reasoning — enumerating orders rejected by ACC-006 for HER2 fixation time outside the clinical [6.0, 72.0]h tolerance. Reframed (2026-05-15) from prior 'approaching the 72-hour limit' phrasing, which implied a running clock; fixation is a fixed-duration historical event and the borderline-band concept (FIXATION_WARNING) is deferred post-POC. The reframe makes the question deterministic against ACC-006 as written. ORD-2311 is a deliberate state/content-decoupling control: it sits in DO_NOT_PROCESS with in-range fixation, so a model that filters on state alone returns a superset and only narrows correctly by reading fixation_time_hours — the field Slice B plumbed for this fixture.",
   "database_state": {
     "orders": [
       {

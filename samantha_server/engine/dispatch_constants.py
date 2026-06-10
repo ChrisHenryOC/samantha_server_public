@@ -9,14 +9,14 @@ from types import MappingProxyType
 # Severity hierarchy for accessioning rules (highest severity first).
 # Index 0 = highest priority (REJECT wins all others).
 #
-# Tie-break within a severity tier (GH-231 F-16):
+# Tie-break within a severity tier:
 # For ACCESSIONING ties (two rules of equal severity, e.g., two REJECTs in SC-082),
 # the winner is filesystem-stable (alphabetic by rule_id). The mechanism: rules are
 # loaded via `sorted(directory.iterdir())` in `load_rule_specs` (loader.py:220), and
 # filenames match rule IDs — Python's stable sort then preserves alphabetic order
 # within a tier. The duplicate-priority guard at loader.py:_check_unique_priorities
 # is skipped for ACCESSIONING, so this is intentional behavior. The replay gate
-# (post GH-231) compares applied_rules[0] against the engine's applied_rule_id
+# (post) compares applied_rules[0] against the engine's applied_rule_id
 # (winner), so a tied alphabetically-earlier rule added later would surface as
 # mismatch_rules in the affected fixtures.
 SEVERITY_ORDER: MappingProxyType[str, int] = MappingProxyType(

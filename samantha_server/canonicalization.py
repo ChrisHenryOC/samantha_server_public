@@ -5,13 +5,13 @@ creating a circular dependency.
 
 Design (G10 — pick-list-only model):
 
-The original GH-35 spec described a synonym-map approach (e.g.,
+The original spec described a synonym-map approach (e.g.,
 ``lumpectomy with margins → lumpectomy``).  For POC scope that was
 intentionally simplified to a pick-list-only check — see the locked
 design note at
 https://github.com/ChrisHenryOC/samantha_server/issues/35#issuecomment-4407628775.
 
-Pick-list-only — see GH-35 design comment for the simplification rationale.
+Pick-list-only (see the linked design comment for the simplification rationale).
 
 Policy applied in order:
 

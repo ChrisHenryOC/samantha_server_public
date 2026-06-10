@@ -154,7 +154,7 @@ def test_web_concurrency_defaults_to_1(
 
 
 # ---------------------------------------------------------------------------
-# PR #131 test-cov L-05: env-override coverage for the 5 Phase 3 vars.
+# Env-override coverage for the 5 Phase 3 vars.
 # Defaults are tested above; these assert the env var actually drives the
 # config value (regression guard if a future edit breaks the read).
 # ---------------------------------------------------------------------------

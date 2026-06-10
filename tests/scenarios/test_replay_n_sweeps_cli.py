@@ -1,4 +1,4 @@
-"""Tests for the --n-sweeps CLI argument (GH-262 Slice 1).
+"""Tests for the --n-sweeps CLI argument.
 
 Verifies:
 - --n-sweeps=5 sets args.n_sweeps == 5

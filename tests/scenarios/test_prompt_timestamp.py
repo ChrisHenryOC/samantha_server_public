@@ -1,4 +1,4 @@
-"""GH-233: Scenario.prompt_timestamp field and default computation.
+"""Scenario.prompt_timestamp field and default computation.
 
 Slice 1 tests: loader reads explicit prompt_timestamp from JSON and
 computes the default from max(orders.created_at) + 24h when absent.
@@ -163,7 +163,7 @@ def test_scenario_default_none_when_orders_lack_created_at(tmp_path: Path) -> No
 
 
 def test_default_skips_orders_with_malformed_created_at(tmp_path: Path) -> None:
-    """PR #242 fix-review Low #7: malformed created_at is skipped (logged warning),
+    """Malformed created_at is skipped (logged warning),
     valid sibling orders are still considered for the max() anchor.
     """
     from samantha_server.scenarios.loader import _parse_scenario
@@ -178,7 +178,7 @@ def test_default_skips_orders_with_malformed_created_at(tmp_path: Path) -> None:
 
 
 def test_default_returns_none_when_only_malformed_created_at(tmp_path: Path) -> None:
-    """PR #242 fix-review Low #7: when ALL orders have malformed created_at,
+    """When ALL orders have malformed created_at,
     no usable timestamps exist and the result is None.
     """
     from samantha_server.scenarios.loader import _parse_scenario
@@ -192,7 +192,7 @@ def test_default_returns_none_when_only_malformed_created_at(tmp_path: Path) -> 
 
 
 def test_explicit_malformed_prompt_timestamp_raises(tmp_path: Path) -> None:
-    """PR #242 fix-review High: explicit prompt_timestamp not parseable as ISO-8601
+    """Explicit prompt_timestamp not parseable as ISO-8601
     raises ValueError (loader treats as malformed scenario).
     """
     import pytest

@@ -1,4 +1,4 @@
-"""Chart 7 (GH-309): model-selection radar (Option B: 3 axes)."""
+"""Chart 7: model-selection radar (Option B: 3 axes)."""
 
 from __future__ import annotations
 

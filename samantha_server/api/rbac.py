@@ -1,6 +1,6 @@
 """RBAC capability-token signing, verification, and FastAPI dependency factory.
 
-GH-119 Phase 3 Step 5.
+
 
 Wire format — ASCII string ``<b64url(payload)>.<b64url(hmac)>``:
 - ``payload`` (UTF-8): ``<capability>|<issued_at_unix>|<expires_at_unix>``

@@ -7,7 +7,7 @@ list_applicable_rules is the single entry point to evaluation.  It filters by:
 Returns a DispatchResult with the ordered tuple of rules and a cryptographic token
 that the evaluator uses to enforce the dispatch boundary.
 
-Threat model (GH-119 Phase 3 Step 5 — dispatch-token rebinding):
+Threat model (Phase 3 Step 5 — dispatch-token rebinding):
 - Token HMAC now binds rules, nonce, session_id, and expires_at.
 - Cross-session replay is rejected: token from session A fails session B because
   the session_id is part of the HMAC input.  NOTE: this guard is only live when
@@ -20,7 +20,7 @@ Threat model (GH-119 Phase 3 Step 5 — dispatch-token rebinding):
 Deterministic-path purity note:
 - `time` is imported for TTL computation (time.time() in list_applicable_rules
   and verify_dispatch). Allowlisted in tests/architectural/test_deterministic_purity.py
-  under ("samantha_server.engine.dispatcher", "time") per GH-119 rationale.
+  under ("samantha_server.engine.dispatcher", "time").
 - `secrets` is imported for nonce generation (unchanged from Phase 2).
 - No LLM imports. Rule selection is deterministic given (ctx, index).
 """
@@ -57,7 +57,7 @@ def _make_token(
 ) -> bytes:
     """Return HMAC-SHA256(key, rules_bytes || nonce || session_id || expires_at).
 
-    GH-119 Phase 3 Step 5: binds the token to session_id and expires_at.
+    Binds the token to session_id and expires_at.
     The Phase-2 format (rules_bytes + b":" + nonce) is replaced by:
         rules_bytes + b"|" + nonce + b"|" + session_id.encode() + b"|" + str(expires_at).encode()
     """
@@ -76,7 +76,7 @@ def _make_token(
 def verify_dispatch(dispatch: DispatchResult, *, session_id: str) -> bool:
     """Return True iff *dispatch* was produced by list_applicable_rules in this process.
 
-    GH-119 Phase 3 Step 5 additions:
+     Phase 3 Step 5 additions:
     - session_id must match dispatch.session_id (cross-session replay rejected).
     - dispatch.expires_at must be >= time.time() (TTL enforcement).
     - HMAC is recomputed over (rules, nonce, session_id, expires_at).
@@ -103,8 +103,8 @@ class DispatchResult(BaseModel, frozen=True):
     rules:      ordered tuple of RuleSpecs eligible to fire.
     token:      opaque bytes = HMAC(key, rules || nonce || session_id || expires_at) || nonce.
                 Callers must not construct this directly; use list_applicable_rules.
-    session_id: session identifier bound into the HMAC (GH-119 Step 5).
-    expires_at: unix timestamp; token is invalid after this time (GH-119 Step 5).
+    session_id: session identifier bound into the HMAC.
+    expires_at: unix timestamp; token is invalid after this time.
     """
 
     rules: tuple[RuleSpec, ...]

@@ -1,4 +1,4 @@
-"""Chart 9 (GH-310): refusal-type distribution horizontal bar chart."""
+"""Chart 9: refusal-type distribution horizontal bar chart."""
 
 from __future__ import annotations
 

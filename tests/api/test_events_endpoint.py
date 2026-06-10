@@ -18,7 +18,7 @@ from samantha_server.llm.client import LLMResponse
 from samantha_server.queue.priority import EventPriority
 from samantha_server.receipts.signing import SignedReceipt
 
-# GH-119: test RBAC key for POST /events tests.
+# Test RBAC key for POST /events tests.
 _EVENTS_TEST_KEY = bytes.fromhex("cafebabe" + "deadbeef" * 6 + "cafebabe")
 
 
@@ -74,7 +74,7 @@ def _make_fake_dispatch_ctx(session_id: str = "test-session") -> EventDispatchCo
 def _make_test_app(queue_bound: int = 256) -> tuple[FastAPI, Any]:
     """Build a minimal FastAPI app for testing POST /events.
 
-    GH-119: registers RBAC exception handlers so 401/403 render correctly.
+    Registers RBAC exception handlers so 401/403 render correctly.
     All POST /events calls in tests must supply a valid events:submit Bearer token.
     Use _make_events_submit_token() + patch("...._get_rbac_hmac_key", ...).
     """
@@ -560,7 +560,7 @@ def test_post_events_queue_consumer_error_propagates_to_500() -> None:
     exception, and the uncaught exception handler returns 500 with a PHI-scrubbed body.
 
     This validates the wire-protocol error path, not a specific event_type behavior.
-    GH-325: renamed from test_post_events_not_implemented_event_type_returns_500 because
+    Renamed from test_post_events_not_implemented_event_type_returns_500 because
     order_received now routes deterministically (→ 200) and the NotImplementedError premise
     was false.
     """
@@ -602,9 +602,9 @@ def test_post_events_queue_consumer_error_propagates_to_500() -> None:
 
 
 def test_post_events_order_received_returns_200_with_receipt() -> None:
-    """GH-325: order_received through the endpoint returns 200 with a receipt_id.
+    """order_received through the endpoint returns 200 with a receipt_id.
 
-    Post-GH-324, order_received routes via the deterministic branch (not NotImplementedError).
+    After the dispatch refactor, order_received routes via the deterministic branch (not NotImplementedError).
     This E2E test confirms the full wire-protocol path: enqueue → consumer resolves →
     endpoint returns 200 with a dispatch_empty or rule-fired decision + receipt_id.
     """
@@ -656,7 +656,7 @@ def test_post_events_503_body_has_no_rejected_payload() -> None:
 
 
 # ---------------------------------------------------------------------------
-# session_id input validation (GH-119 fix #6 + #8)
+# session_id input validation (fix #6 + #8)
 # ---------------------------------------------------------------------------
 
 
@@ -691,7 +691,7 @@ def test_session_id_with_pipe_returns_422() -> None:
 
 
 def test_post_events_payload_carries_iso8601_prompt_timestamp() -> None:
-    """GH-233 / PR #242 fix-review: live POST /events stamps a UTC ISO-8601
+    """Live POST /events stamps a UTC ISO-8601
     prompt_timestamp on the queued payload so the consumer can forward it
     into dispatch_event. Regression guard for the SKILL.md / production-path
     divergence the consolidated review flagged as Critical.
@@ -727,7 +727,7 @@ def test_post_events_payload_carries_iso8601_prompt_timestamp() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-227 S10: API ingress accepts user_role
+# API ingress accepts user_role
 # ---------------------------------------------------------------------------
 
 
@@ -835,12 +835,12 @@ def test_post_events_with_explicit_null_user_role_returns_200() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-324 Phase B: prompt_timestamp forwarding (production vs replay)
+# prompt_timestamp forwarding (production vs replay)
 # ---------------------------------------------------------------------------
 
 
 def test_post_events_without_prompt_timestamp_uses_now() -> None:
-    """GH-324 Phase B: POST /events without prompt_timestamp uses a now() stamp.
+    """POST /events without prompt_timestamp uses a now() stamp.
 
     Production callers omit prompt_timestamp. The endpoint must still stamp
     a now()-derived ISO-8601 UTC value on the queued payload — unchanged from
@@ -880,7 +880,7 @@ def test_post_events_without_prompt_timestamp_uses_now() -> None:
 
 
 def test_post_events_with_explicit_prompt_timestamp_honored() -> None:
-    """GH-324 Phase B: POST /events with explicit prompt_timestamp forwards it verbatim.
+    """POST /events with explicit prompt_timestamp forwards it verbatim.
 
     Replay callers always send prompt_timestamp (string or null). When a string
     is provided, that exact value must reach the queued payload — not now().
@@ -914,7 +914,7 @@ def test_post_events_with_explicit_prompt_timestamp_honored() -> None:
 
 
 def test_post_events_with_explicit_null_prompt_timestamp_honored() -> None:
-    """GH-324 Phase B: POST /events with prompt_timestamp=null forwards None.
+    """POST /events with prompt_timestamp=null forwards None.
 
     Replay callers send null to suppress the timestamp anchor for scenarios
     where prompt_timestamp is not set (e.g. QR-023). The endpoint must

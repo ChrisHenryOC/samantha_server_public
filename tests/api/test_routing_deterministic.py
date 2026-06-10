@@ -1,4 +1,4 @@
-"""Tests for GH-324: deterministic dispatch chokepoint in dispatch_event.
+"""Tests for deterministic dispatch chokepoint in dispatch_event.
 
 Slices 1-3 drive the new deterministic branch; Slice 4 converts the two
 existing NotImplementedError-contract tests in test_routing.py to the new
@@ -124,7 +124,7 @@ def _make_order_received_ctx(
 
 
 def test_deterministic_event_returns_rule_decision() -> None:
-    """GH-324 Slice 1: order_received with real rules → EngineDecision with applied_rule_id.
+    """order_received with real rules → EngineDecision with applied_rule_id.
 
     Pre-fix: dispatch_event raises NotImplementedError for order_received.
     Post-fix: the deterministic branch runs, ACC-001 fires (patient_name=None → HOLD).
@@ -157,7 +157,7 @@ def test_deterministic_event_returns_rule_decision() -> None:
 
 
 def test_deterministic_event_emits_signed_receipt() -> None:
-    """GH-324 Slice 2: dispatch_event emits exactly one SignedReceipt for a deterministic event.
+    """dispatch_event emits exactly one SignedReceipt for a deterministic event.
 
     The spy receipt_writer must receive one SignedReceipt whose decision carries
     ACC-001 as the applied_rule_id and a non-empty primitive_traces dict.
@@ -205,7 +205,7 @@ def test_deterministic_event_emits_signed_receipt() -> None:
 
 
 def test_no_rule_match_returns_dispatch_empty_and_receipt() -> None:
-    """GH-324 Slice 3: empty RuleIndex → dispatch_empty decision + receipt; no raise.
+    """Empty RuleIndex → dispatch_empty decision + receipt; no raise.
 
     Pre-fix: any order_received dispatched to the else-arm raised NotImplementedError.
     Post-fix: empty dispatch → outcome='dispatch_empty', applied_rule_id=None, receipt emitted.
@@ -250,7 +250,7 @@ def test_no_rule_match_returns_dispatch_empty_and_receipt() -> None:
 
 
 # ---------------------------------------------------------------------------
-# FIX 1 (GH-325): Symbolic transition resolution in the deterministic branch
+# FIX 1: Symbolic transition resolution in the deterministic branch
 # ---------------------------------------------------------------------------
 
 
@@ -318,7 +318,7 @@ def _make_he_staining_ctx(
 
 
 def test_symbolic_advance_sample_prep_resolves_to_concrete_state() -> None:
-    """GH-325 FIX 1: SP-001 fires ADVANCE_SAMPLE_PREP; deterministic branch must resolve
+    """SP-001 fires ADVANCE_SAMPLE_PREP; deterministic branch must resolve
     to a concrete next_state before signing the receipt.
 
     Pre-fix: decision.next_state='ADVANCE_SAMPLE_PREP' (raw symbolic token) is stamped on
@@ -367,7 +367,7 @@ def test_symbolic_advance_sample_prep_resolves_to_concrete_state() -> None:
 
 
 def test_passthrough_he_staining_resolves_to_he_qc() -> None:
-    """GH-325 FIX 1: dispatch_empty for HE_STAINING+he_staining_complete resolves via
+    """dispatch_empty for HE_STAINING+he_staining_complete resolves via
     passthrough table to HE_QC on both the decision and the signed receipt.
     """
     from samantha_server.api.routing import dispatch_event
@@ -411,12 +411,12 @@ def test_passthrough_he_staining_resolves_to_he_qc() -> None:
 
 
 # ---------------------------------------------------------------------------
-# FIX 5 (GH-325): UndispatchedRuleError propagates through dispatch_event
+# FIX 5: UndispatchedRuleError propagates through dispatch_event
 # ---------------------------------------------------------------------------
 
 
 def test_undispatched_rule_error_propagates_from_deterministic_branch() -> None:
-    """GH-325 FIX 5: UndispatchedRuleError from evaluate() propagates out of dispatch_event.
+    """UndispatchedRuleError from evaluate() propagates out of dispatch_event.
 
     A cross-session session_id mismatch causes evaluate() to raise UndispatchedRuleError.
     The deterministic branch must not swallow it — it must propagate to the caller.
@@ -468,7 +468,7 @@ def test_undispatched_rule_error_propagates_from_deterministic_branch() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-326 Slice 3: dispatch_empty unknown-event observability
+# dispatch_empty unknown-event observability
 # ---------------------------------------------------------------------------
 
 
@@ -502,7 +502,7 @@ def _make_unknown_event_ctx(
 def test_dispatch_empty_unknown_event_type_increments_counter_and_warns(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """GH-326 Slice 3: dispatch_empty with an unknown event_type bumps dispatch_unknown_event_type
+    """dispatch_empty with an unknown event_type bumps dispatch_unknown_event_type
     counter and emits a WARNING log.
 
     We use an ACCESSIONING state (so it's in STATE_TO_STEP) but a completely fabricated
@@ -548,7 +548,7 @@ def test_dispatch_empty_unknown_event_type_increments_counter_and_warns(
 def test_dispatch_empty_known_event_no_rule_match_does_not_warn(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """GH-326 Slice 3: dispatch_empty with a known event_type that matches no rule must NOT
+    """dispatch_empty with a known event_type that matches no rule must NOT
     increment the counter and must NOT emit a WARNING.
 
     'order_received' is a known event_type (real ACC rules cover it in the loaded index).

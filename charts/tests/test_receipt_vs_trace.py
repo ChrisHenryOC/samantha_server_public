@@ -1,4 +1,4 @@
-"""Chart 12 (GH-311): receipt vs Langfuse trace dual-column card."""
+"""Chart 12: receipt vs Langfuse trace dual-column card."""
 
 from __future__ import annotations
 

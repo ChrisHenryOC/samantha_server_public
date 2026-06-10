@@ -1,4 +1,4 @@
-"""Probe oMLX server structured-output capabilities for Phase B (GH-191).
+"""Probe oMLX server structured-output capabilities for Phase B.
 
 Reproduces the experiments documented in `docs/llm/omlx-capabilities.md`.
 Run with the project's `.env` sourced so `LLM_OMLX_BASE_URL`,

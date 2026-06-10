@@ -9,8 +9,8 @@ Two-part guard for the PHI boundary on the new span exit:
 2. Property negative case — randomly-generated non-allowlisted names
    raise on ``set_span_attribute``.
 
-GH-196: ``gen_ai.completion`` is unconditionally allowlisted (lab-host
-topology). GH-363: ``gen_ai.prompt`` is allowlisted and stamped by default;
+``gen_ai.completion`` is unconditionally allowlisted (lab-host
+topology). ``gen_ai.prompt`` is allowlisted and stamped by default;
 suppressed only by explicit falsy ``SAMANTHA_STAMP_PROMPT``. The old G8 ban
 tests have been updated to reflect this policy change.
 """
@@ -25,9 +25,9 @@ from hypothesis import strategies as st
 
 
 def test_allowlist_has_every_documented_name() -> None:
-    """Every attribute in the GH-183 canonical schema is on the allowlist.
+    """Every attribute in the canonical schema is on the allowlist.
 
-    GH-183: samantha.* is engine-internal only (no metadata duplicates).
+    samantha.* is engine-internal only (no metadata duplicates).
     Dropped samantha.* keys (samantha.routing_path, samantha.next_state,
     samantha.outcome, samantha.scenario_id, samantha.scenario_category,
     samantha.sweep_run_id, samantha.environment) must NOT be on the allowlist —
@@ -36,14 +36,14 @@ def test_allowlist_has_every_documented_name() -> None:
     from samantha_server.observability.otel import _ALLOWED_ATTRIBUTES
 
     documented = {
-        # samantha.* engine-internal parent-span attributes (GH-183 schema)
+        # samantha.* engine-internal parent-span attributes
         "samantha.event_input_hash",
         "samantha.session_id",
         "samantha.priority",
         "samantha.applied_rule_id",
         "samantha.latency_us",
         "samantha.receipt_id",
-        # gen_ai.* child-span attributes (GH-196 completion unconditional; GH-363 prompt default-on)
+        # gen_ai.* child-span attributes
         "gen_ai.system",
         "gen_ai.request.model",
         "gen_ai.response.model",
@@ -57,7 +57,7 @@ def test_allowlist_has_every_documented_name() -> None:
     }
     assert documented <= _ALLOWED_ATTRIBUTES
 
-    # GH-183: dropped samantha.* keys must NOT be on the allowlist
+    # Dropped samantha.* keys must NOT be on the allowlist
     dropped = {
         "samantha.routing_path",
         "samantha.next_state",
@@ -69,18 +69,18 @@ def test_allowlist_has_every_documented_name() -> None:
     }
     present_dropped = dropped & _ALLOWED_ATTRIBUTES
     assert not present_dropped, (
-        f"GH-183: these samantha.* keys must be removed from the allowlist "
+        f"These samantha.* keys must be removed from the allowlist "
         f"(they have langfuse.trace.metadata.* duplicates): {present_dropped!r}"
     )
 
 
 def test_environment_parity_constant_exposed() -> None:
-    """GH-156: ENVIRONMENT_PARITY constant exists alongside ENVIRONMENT_REPLAY
+    """ENVIRONMENT_PARITY constant exists alongside ENVIRONMENT_REPLAY
     and ENVIRONMENT_PRODUCTION; value is `"parity"`."""
     from samantha_server.observability import otel
 
     assert hasattr(otel, "ENVIRONMENT_PARITY"), (
-        "GH-156: ENVIRONMENT_PARITY missing — parity-replay traces need a "
+        "ENVIRONMENT_PARITY missing — parity-replay traces need a "
         "discriminator value alongside ENVIRONMENT_PRODUCTION / "
         "ENVIRONMENT_REPLAY."
     )
@@ -89,10 +89,10 @@ def test_environment_parity_constant_exposed() -> None:
 
 
 def test_g5_sweep_attributes_use_canonical_langfuse_surface() -> None:
-    """GH-183: sweep attributes surface via langfuse.trace.metadata.*, not samantha.*.
+    """Sweep attributes surface via langfuse.trace.metadata.*, not samantha.*.
 
-    GH-153 originally allowlisted samantha.scenario_id, samantha.scenario_category,
-    samantha.sweep_run_id. GH-183 drops those keys (they have metadata duplicates);
+     originally allowlisted samantha.scenario_id, samantha.scenario_category
+    samantha.sweep_run_id. drops those keys (they have metadata duplicates);
     the canonical surface is now langfuse.trace.metadata.*.
 
     This test ensures:
@@ -116,13 +116,13 @@ def test_g5_sweep_attributes_use_canonical_langfuse_surface() -> None:
     }
     present_dropped = dropped & _ALLOWED_ATTRIBUTES
     assert not present_dropped, (
-        f"GH-183: these samantha.* sweep keys must not be on the allowlist: {present_dropped!r}"
+        f"These samantha.* sweep keys must not be on the allowlist: {present_dropped!r}"
     )
 
 
-# PR207 Low #11: deleted two duplicate GH-196 membership tests — coverage of
+# PR207 Low #11: deleted two duplicate membership tests — coverage of
 # gen_ai.prompt and gen_ai.completion allowlist membership is owned by
-# tests/observability/test_gh196_completion_on_spans.py
+# tests/observability/test_completion_on_spans.py
 # (test_slice1_gen_ai_completion_is_on_allowlist and the matching prompt
 # test). Retaining them here added no signal and produced redundant CI noise.
 
@@ -173,8 +173,8 @@ def test_set_span_attribute_rejects_non_allowlisted_names(name: str) -> None:
         set_span_attribute(span, name, "x")
 
 
-def test_gh196_set_span_attribute_accepts_gen_ai_prompt() -> None:
-    """GH-196: gen_ai.prompt is now allowlisted; set_span_attribute must not raise."""
+def test_set_span_attribute_accepts_gen_ai_prompt() -> None:
+    """gen_ai.prompt is now allowlisted; set_span_attribute must not raise."""
     from opentelemetry.sdk.trace import TracerProvider
 
     from samantha_server.observability.otel import set_span_attribute
@@ -186,8 +186,8 @@ def test_gh196_set_span_attribute_accepts_gen_ai_prompt() -> None:
         set_span_attribute(span, "gen_ai.prompt", "verbatim prompt text")
 
 
-def test_gh196_set_span_attribute_accepts_gen_ai_completion() -> None:
-    """GH-196: gen_ai.completion is unconditionally allowlisted; must not raise."""
+def test_set_span_attribute_accepts_gen_ai_completion() -> None:
+    """gen_ai.completion is unconditionally allowlisted; must not raise."""
     from opentelemetry.sdk.trace import TracerProvider
 
     from samantha_server.observability.otel import set_span_attribute

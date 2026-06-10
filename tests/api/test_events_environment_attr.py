@@ -1,4 +1,4 @@
-"""Tests for GH-128 Slice 2: POST /events stamps samantha.environment="production".
+"""Tests for Slice 2: POST /events stamps samantha.environment="production".
 
 The production parent span opened by events.py must carry
 samantha.environment="production" so dashboard filters
@@ -190,7 +190,7 @@ def test_post_events_parent_span_carries_production_environment(
 ) -> None:
     """POST /events parent span stamps environment='production' on the canonical surface.
 
-    GH-183: samantha.environment is dropped (has langfuse.trace.metadata.* duplicate).
+    samantha.environment is dropped (has langfuse.trace.metadata.* duplicate).
     Canonical surface is langfuse.environment and langfuse.trace.metadata.environment.
 
     The events.py handler calls ``trace.get_tracer("samantha_server")``,
@@ -229,7 +229,7 @@ def test_post_events_parent_span_carries_production_environment(
     )
     attrs = dict(parent_spans[0].attributes or {})
 
-    # GH-183: canonical surface is langfuse.environment and langfuse.trace.metadata.environment
+    # Canonical surface is langfuse.environment and langfuse.trace.metadata.environment
     assert attrs.get("langfuse.environment") == "production", (
         f"Expected langfuse.environment='production', got {attrs.get('langfuse.environment')!r}"
     )
@@ -237,7 +237,7 @@ def test_post_events_parent_span_carries_production_environment(
         "Expected langfuse.trace.metadata.environment='production', "
         f"got {attrs.get('langfuse.trace.metadata.environment')!r}"
     )
-    # GH-183: samantha.environment must be absent
+    # samantha.environment must be absent
     assert "samantha.environment" not in attrs, (
-        "GH-183: samantha.environment must not be emitted — use langfuse.trace.metadata.* instead"
+        "samantha.environment must not be emitted — use langfuse.trace.metadata.* instead"
     )

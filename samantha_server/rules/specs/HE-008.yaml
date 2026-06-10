@@ -10,7 +10,7 @@ priority: 4
 # non-trivial flag list.  CANCEL_IHC_BENIGN does not construct an IHC panel.
 # Flag cleanup on terminal-ish transitions (e.g. clearing RECUT_REQUESTED
 # carried in from a prior HE-009 firing on the recut→benign workflow) is
-# the kernel's responsibility, not the rule's — see GH-15.
+# the kernel's responsibility, not the rule's.
 when:
   equals:
     field: event.diagnosis

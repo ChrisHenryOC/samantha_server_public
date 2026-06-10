@@ -95,15 +95,15 @@ class TestAcc008Resolution:
 
         children[0] = ACC-001: IsNull(field='patient_name')
         children[1] = ACC-002: IsNull(field='patient_sex')
-        children[2] = ACC-003: InEnum — anatomic_site blacklist (GH-234 rewrite)
+        children[2] = ACC-003: InEnum — anatomic_site blacklist
         children[3] = ACC-004: InEnum — specimen_type blacklist
         children[4] = ACC-005: BooleanAnd — HER2 + Not(Equals fixative)
         children[5] = ACC-006: BooleanAnd — HER2 + BooleanOr of time range
         children[6] = ACC-007: Equals(field='billing_info_present', value=False)
         children[7] = ACC-009: BooleanAnd — HER2 + IsNull(fixation_time_hours)
         children[8] = ACC-010: BooleanAnd — specimen_type LLM-review band
-        children[9] = ACC-011: BooleanAnd — anatomic_site LLM-review band (GH-234)
-        children[10] = ACC-012: IsNull(field='anatomic_site') (GH-234)
+        children[9] = ACC-011: BooleanAnd — anatomic_site LLM-review band
+        children[10] = ACC-012: IsNull(field='anatomic_site')
         """
         acc008 = next(s for s in acc_specs if s.rule_id == "ACC-008")
         or_node = acc008.when.child  # type: ignore[union-attr]
@@ -120,7 +120,7 @@ class TestAcc008Resolution:
         assert isinstance(c1, IsNull)
         assert c1.field == "patient_sex"
 
-        # children[2]: ACC-003 — InEnum on anatomic_site blacklist (GH-234 rewrite)
+        # children[2]: ACC-003 — InEnum on anatomic_site blacklist
         c2 = children[2]
         assert isinstance(c2, InEnum)
         assert c2.field == "anatomic_site"
@@ -170,11 +170,11 @@ class TestAcc008Resolution:
         c8 = children[8]
         assert isinstance(c8, BooleanAnd)
 
-        # children[9]: ACC-011 — BooleanAnd (anatomic_site LLM-review band, GH-234)
+        # children[9]: ACC-011 — BooleanAnd (anatomic_site LLM-review band)
         c9 = children[9]
         assert isinstance(c9, BooleanAnd)
 
-        # children[10]: ACC-012 — IsNull(field='anatomic_site') (GH-234)
+        # children[10]: ACC-012 — IsNull(field='anatomic_site')
         c10 = children[10]
         assert isinstance(c10, IsNull)
         assert c10.field == "anatomic_site"
@@ -324,7 +324,7 @@ class TestAcc008EvaluateBehavior:
 
         Unrecognized specimen types (typo, new procedure, vendor-specific
         name) are not on the cytology blacklist, so ACC-004 evaluates False.
-        GH-34's ACC-010 rule now catches these via the fall-through predicate
+        its ACC-010 rule now catches these via the fall-through predicate
         and routes them to PENDING_LLM_REVIEW instead of ACCEPTING via ACC-008.
         """
         acc004 = next(s for s in acc_specs if s.rule_id == "ACC-004")
@@ -335,7 +335,7 @@ class TestAcc008EvaluateBehavior:
     def test_acc008_does_not_accept_unrecognized_specimen_type(
         self, acc_specs: list[RuleSpec]
     ) -> None:
-        """GH-34: unrecognized specimen types now route to ACC-010 (PENDING_LLM_REVIEW),
+        """Unrecognized specimen types now route to ACC-010 (PENDING_LLM_REVIEW),
         not ACC-008 (ACCEPTED). ACC-010 is in ACC-008's exclusion set, so ACC-008
         must evaluate False when specimen_type is not in either whitelist or blacklist.
         """
@@ -347,7 +347,7 @@ class TestAcc008EvaluateBehavior:
     def test_acc008_rejects_cytology_class_specimen(self, acc_specs: list[RuleSpec]) -> None:
         """ACC-004 firing must propagate through ACC-008's Not(BooleanOr) to False.
 
-        This is the entire load-bearing change of PR #33: a cytology
+        This is the entire load-bearing change of a cytology
         specimen flows through ACC-004 → True, BooleanOr → True,
         Not(BooleanOr) → False, ACC-008 does not ACCEPT.  Without this
         test, a wrong-slot inlining of ACC-004 in ACC-008's BooleanOr
@@ -392,7 +392,7 @@ class TestAcc008EvaluateBehavior:
     ) -> None:
         """ACC-005 must NOT fire when fixative is None on a HER2 order.
 
-        GH-105 follow-up (PR #112 review): same bug shape as the ACC-006
+         follow-up (review): same bug shape as the ACC-006
         fix in this PR. `Not(Equals(fixative, "formalin"))` evaluates True
         when fixative is None (Equals returns False because the actual is
         None and the expected is non-None), producing a false-positive
@@ -456,9 +456,9 @@ class TestAcc008EvaluateBehavior:
     def test_acc003_does_not_fire_when_anatomic_site_is_null(
         self, acc_specs: list[RuleSpec]
     ) -> None:
-        """GH-234: ACC-003 does NOT fire when anatomic_site is None.
+        """ACC-003 does NOT fire when anatomic_site is None.
 
-        After the GH-234 rewrite, ACC-003 uses bare in_enum (blacklist of out-of-scope
+        After the rewrite, ACC-003 uses bare in_enum (blacklist of out-of-scope
         organs). in_enum returns False on null (fail-safe semantics), so null anatomic_site
         does NOT trigger ACC-003 (REJECT). Null now routes via ACC-012 (HOLD).
         """
@@ -604,7 +604,7 @@ class TestAcc008EvaluateBehavior:
     ) -> None:
         """ACC-006 must NOT fire when fixation_time_hours is None on a HER2 order.
 
-        GH-105 Slice 1: null fixation is missing data (ACC-009 territory), not
+        Null fixation is missing data (ACC-009 territory), not
         an out-of-range value.  ACC-006's Not(threshold_gte) and Not(threshold_lte)
         both evaluate to True on None (fail-closed), so Not(False)=True produces a
         false-positive DO_NOT_PROCESS unless a Not(IsNull) guard is added.
@@ -653,7 +653,7 @@ class TestAcc008EvaluateBehavior:
 
 
 # ---------------------------------------------------------------------------
-# GH-34 Slice 2: ACC-010 behavioral tests
+# ACC-010 behavioral tests
 # ---------------------------------------------------------------------------
 
 # ACC-004 blacklist and ACC-010 whitelist are loaded from the parsed rule specs
@@ -745,7 +745,7 @@ def _make_acc010_ctx(specimen_type: str) -> SpecimenContext:
 
 
 class TestAcc010:
-    """GH-34 Slice 2 — ACC-010 (PROCEED → PENDING_LLM_REVIEW) behavioral tests."""
+    """Slice 2 — ACC-010 (PROCEED → PENDING_LLM_REVIEW) behavioral tests."""
 
     def test_acc010_fires_on_unrecognized_specimen_type(self, acc_specs: list[RuleSpec]) -> None:
         """ACC-010 must fire on a specimen_type not in either list."""
@@ -885,7 +885,7 @@ class TestAcc008WithAcc010:
 
 
 # ---------------------------------------------------------------------------
-# GH-234 S1: ACC-003 rewrite (whitelist → blacklist) behavioral tests
+# ACC-003 rewrite (whitelist → blacklist) behavioral tests
 # ---------------------------------------------------------------------------
 
 
@@ -912,7 +912,7 @@ def _make_acc003_ctx(anatomic_site: str | None) -> SpecimenContext:
 
 
 class TestAcc003Blacklist:
-    """GH-234 S1 — ACC-003 rewritten from whitelist to explicit blacklist.
+    """S1 — ACC-003 rewritten from whitelist to explicit blacklist.
 
     After the rewrite:
     - Blacklist values (lung, liver, colon, brain, prostate) → ACC-003 fires (REJECT).
@@ -952,7 +952,7 @@ class TestAcc003Blacklist:
         assert acc003.when.evaluate(ctx) is False
 
     def test_acc003_does_not_fire_on_null_anatomic_site(self, acc_specs: list[RuleSpec]) -> None:
-        """GH-234: null anatomic_site routes via ACC-012 (HOLD), NOT ACC-003 (REJECT).
+        """Null anatomic_site routes via ACC-012 (HOLD), NOT ACC-003 (REJECT).
 
         After the rewrite, ACC-003 uses bare in_enum (not Not(in_enum)).
         in_enum returns False on null (fail-safe semantics), so ACC-003 does not fire.
@@ -965,7 +965,7 @@ class TestAcc003Blacklist:
         """Structural: ACC-003.when must be bare InEnum (blacklist), not Not(InEnum)."""
         acc003 = next(s for s in acc_specs if s.rule_id == "ACC-003")
         assert isinstance(acc003.when, InEnum), (
-            "ACC-003.when must be bare InEnum after GH-234 rewrite (not Not(InEnum))"
+            "ACC-003.when must be bare InEnum after rewrite (not Not(InEnum))"
         )
         assert acc003.when.field == "anatomic_site"
 
@@ -988,12 +988,12 @@ class TestAcc003Blacklist:
 
 
 # ---------------------------------------------------------------------------
-# GH-234 S2: ACC-012 (null anatomic_site → MISSING_INFO_HOLD) tests
+# ACC-012 (null anatomic_site → MISSING_INFO_HOLD) tests
 # ---------------------------------------------------------------------------
 
 
 class TestAcc012NullAnatomicSite:
-    """GH-234 S2 — ACC-012: null anatomic_site routes to MISSING_INFO_HOLD.
+    """S2 — ACC-012: null anatomic_site routes to MISSING_INFO_HOLD.
 
     Mirrors ACC-001 (null patient_name) and ACC-002 (null patient_sex).
     """
@@ -1039,7 +1039,7 @@ class TestAcc012NullAnatomicSite:
 
 
 # ---------------------------------------------------------------------------
-# GH-234 S3: ACC-011 (LLM-review band → PENDING_LLM_REVIEW) tests
+# ACC-011 (LLM-review band → PENDING_LLM_REVIEW) tests
 # ---------------------------------------------------------------------------
 
 # ACC-003 blacklist and ACC-011 whitelist literal sets — used at collection time
@@ -1077,7 +1077,7 @@ def _make_acc011_ctx(anatomic_site: str | None) -> SpecimenContext:
 
 
 class TestAcc011LlmReviewBand:
-    """GH-234 S3 — ACC-011: LLM-review band routes to PENDING_LLM_REVIEW.
+    """S3 — ACC-011: LLM-review band routes to PENDING_LLM_REVIEW.
 
     Fires when anatomic_site is non-null, not on ACC-003's blacklist,
     and not on the whitelist (bypasses LLM review for known-good sites).
@@ -1165,7 +1165,7 @@ class TestAcc011LlmReviewBand:
 
 
 # ---------------------------------------------------------------------------
-# GH-234 / PR245 M3: Exactly-one-fires disjointness test (end-to-end)
+# / PR245 M3: Exactly-one-fires disjointness test (end-to-end)
 # ---------------------------------------------------------------------------
 
 

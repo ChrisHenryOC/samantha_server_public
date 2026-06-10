@@ -1,4 +1,4 @@
-"""Tests for samantha_server.llm.phi — PHI strip/hash pipeline (GH-85)."""
+"""Tests for samantha_server.llm.phi — PHI strip/hash pipeline."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def test_order_pass_through_is_frozenset() -> None:
 def test_order_pass_through_covers_exactly_non_phi_fields() -> None:
     """_ORDER_PASS_THROUGH must match the documented allowlist exactly.
 
-    GH-367: order_id is now a pass-through (synthetic LIS id, not Safe Harbor,
+    order_id is now a pass-through (synthetic LIS id, not Safe Harbor,
     local oMLX inside trust boundary).
 
     If a future Order field is added without updating this set, this test
@@ -292,7 +292,7 @@ def test_phi_safe_propagates_none_for_relaxed_str_fields() -> None:
 
 
 def test_phi_safe_order_id_passes_through_verbatim() -> None:
-    """GH-367: order_id is now a pass-through (synthetic LIS id, not Safe Harbor).
+    """order_id is now a pass-through (synthetic LIS id, not Safe Harbor).
 
     phi_safe(ctx).order.order_id must equal ctx.order.order_id verbatim.
     SafeOrder no longer has order_id_hash.
@@ -348,7 +348,7 @@ def test_phi_safe_patient_sex_not_in_json() -> None:
 
 
 def test_phi_safe_order_id_is_in_json() -> None:
-    """GH-367: order_id is a pass-through; it must appear verbatim in SafeContext JSON."""
+    """order_id is a pass-through; it must appear verbatim in SafeContext JSON."""
     from samantha_server.llm.phi import phi_safe
 
     ctx = _make_ctx(order_id="UNIQUE-ORDER-XYZ-789")

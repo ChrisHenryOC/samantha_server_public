@@ -1,4 +1,4 @@
-"""Tests for handle_pending_llm_review JSON branch (GH-193).
+"""Tests for handle_pending_llm_review JSON branch.
 
 Tests:
 - SpecimenReviewResponseV1 schema model (Slice 1).
@@ -194,7 +194,7 @@ def _base_review_trace_kwargs() -> dict:  # type: ignore[type-arg]
 
 
 def test_llm_review_trace_old_json_deserializes_with_new_fields_none() -> None:
-    """Pre-GH-193 LLMReviewTrace JSON deserializes; new fields are None."""
+    """Legacy LLMReviewTrace JSON deserializes; new fields are None."""
     from samantha_server.engine.decision import LLMReviewTrace
 
     old_json = json.dumps(
@@ -449,7 +449,7 @@ def test_json_handler_llm_client_error_returns_llm_unavailable() -> None:
     trace = decision.decision_traces[0]
     assert isinstance(trace, RefusalTrace)
     assert trace.refusal_reason == "STAGE_PRE_LLM_UNAVAILABLE"
-    # PR #286 review #8: pin underlying_error_type at the handler level
+    # Pin underlying_error_type at the handler level
     # so a regression in the threading wouldn't survive to slower integration
     # tests.
     assert trace.underlying_error_type == "LLMInferenceError"
@@ -598,7 +598,7 @@ def test_build_specimen_review_messages_renders_unknown_for_null_specimen() -> N
 
 
 # ---------------------------------------------------------------------------
-# GH-234 S6: trigger_rule_id threading — anatomic_site prompt block
+# trigger_rule_id threading — anatomic_site prompt block
 # ---------------------------------------------------------------------------
 
 

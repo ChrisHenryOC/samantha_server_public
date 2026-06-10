@@ -29,7 +29,7 @@ Output a single JSON object with these fields:
 - `answer_type = "uncertain"` when context is insufficient. Put the missing-info statement in `reasoning`.
 - `answer_type = "prioritized_list"` when the question asks for orders sorted/ranked by priority. See the prioritized_list subsection in Answer-type guidance below.
 - DO cite specific order IDs from the provided orders block inside
-  `reasoning` to support your answer. (Note: per GH-225 the
+  `reasoning` to support your answer. (Note:
   `<similar_scenarios>` exemplar block was removed because the
   production index is empty; historical scenario IDs are not available
   to cite until the Phase 3 exemplar-corpus rollout reattaches them.)

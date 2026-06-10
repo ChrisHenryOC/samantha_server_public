@@ -447,7 +447,7 @@ def test_get_write_conn_returns_same_connection(
 
 
 # ---------------------------------------------------------------------------
-# fetch_by_receipt_id — read helper for replay harness (GH-333 PHI fix)
+# fetch_by_receipt_id — read helper for replay harness (PHI fix)
 # ---------------------------------------------------------------------------
 
 
@@ -589,7 +589,7 @@ def test_fetch_by_receipt_id_preserves_decision_traces(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-367: order_id column on receipts table
+# order_id column on receipts table
 # ---------------------------------------------------------------------------
 
 
@@ -674,7 +674,7 @@ def test_init_schema_idempotent_alter_is_safe_to_run_twice(db_path: Path) -> Non
 
 
 def test_init_schema_migrates_legacy_db_missing_order_id_column(db_path: Path) -> None:
-    """GH-367: init_schema() on a pre-existing DB lacking order_id must add the column.
+    """init_schema() on a pre-existing DB lacking order_id must add the column.
 
     Mirrors test_init_store_migrates_legacy_db_missing_order_id_column but drives
     init_schema(conn) instead of init_store(path). The replay harness and parity CLI
@@ -786,7 +786,7 @@ def test_migrate_add_order_id_column_reraises_non_duplicate_error(tmp_path: Path
 
 
 def test_init_store_migrates_legacy_db_missing_order_id_column(db_path: Path) -> None:
-    """GH-367: init_store() on a pre-existing DB lacking order_id must add the column.
+    """init_store() on a pre-existing DB lacking order_id must add the column.
 
     Simulates the convex-incumbent DB scenario: a receipts DB created before the
     order_id column was added to schema.sql. The production write path goes through

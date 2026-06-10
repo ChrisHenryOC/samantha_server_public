@@ -1,4 +1,4 @@
-"""GH-156: parity-replay CLI.
+"""Parity-replay CLI.
 
 Replays a samantha POC subset (screening or accumulated_state) through
 `samantha_server`'s `replay()` engine and emits a comparison report
@@ -154,7 +154,7 @@ def main(argv: list[str] | None = None) -> int:
         # dashboards can discriminate "comparing-to-published-numbers" runs
         # from regular replay sweeps. When no TracerProvider is configured this
         # resolves to a no-op tracer; the with-block remains correct.
-        # GH-183: emits via the canonical langfuse.* / metadata.* surface (the
+        # Emits via the canonical langfuse.* / metadata.* surface (the
         # legacy samantha.environment key was dropped in the schema dedupe).
         tracer = trace.get_tracer("samantha_server.eval.parity_replay")
         with tracer.start_as_current_span(PARENT_SPAN_NAME) as span:
@@ -164,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
                 include_scenario_ids=include_ids,
                 receipts_db_path=receipts_db,
                 # Parity replay must surface every gap in one pass: a single
-                # unmodelled flag (e.g. SC-092's FIXATION_WARNING / GH-169)
+                # unmodelled flag (e.g. SC-092's FIXATION_WARNING /)
                 # would otherwise halt the sweep at the first deterministic
                 # exception and hide the rest of the diff. Errored steps
                 # land as status="error" StepVerdicts in the report.

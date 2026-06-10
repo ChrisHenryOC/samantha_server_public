@@ -283,7 +283,7 @@ def test_dispatch_event_pending_llm_review_takes_priority_over_event_type() -> N
     asserts the clinical branch is NOT called when the state-first guard fires.
 
     Regression for the deleted test_route_pending_llm_review_takes_priority_over_event_type
-    from PR #138's removed router-shim suite.
+    's removed router-shim suite.
     """
     from unittest.mock import MagicMock, patch
 
@@ -393,7 +393,7 @@ def test_dispatch_event_forwards_preflight_result_to_handle_clarification() -> N
 
 
 def test_dispatch_event_deterministic_order_received_emits_receipt() -> None:
-    """GH-324: order_received routes deterministically; emit_receipt is called exactly once.
+    """order_received routes deterministically; emit_receipt is called exactly once.
 
     Previously: dispatch_event raised NotImplementedError for order_received.
     Now: the deterministic branch runs (empty RuleIndex → dispatch_empty) and
@@ -435,7 +435,7 @@ def test_dispatch_event_deterministic_order_received_emits_receipt() -> None:
 
 
 def test_dispatch_event_deterministic_order_received_returns_dispatch_context() -> None:
-    """GH-324: order_received returns a complete (decision, EventDispatchContext, receipt) tuple.
+    """order_received returns a complete (decision, EventDispatchContext, receipt) tuple.
 
     Previously: dispatch_event raised before constructing EventDispatchContext.
     Now: the deterministic branch returns normally with routing_path='deterministic'.

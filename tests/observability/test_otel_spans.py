@@ -65,7 +65,7 @@ def _drive_one_event(state: Any) -> None:
 
             # Caller stamps span attrs after dispatch resolves —
             # mirrors the events.py post-dispatch path via stamp_trace_attributes.
-            # GH-183: canonical surface is langfuse.trace.metadata.*; samantha.*
+            # Canonical surface is langfuse.trace.metadata.*; samantha.*
             # is engine-internal only (no metadata duplicate).
             from samantha_server.observability.otel import stamp_trace_attributes
             from samantha_server.observability.trace_context import TraceContext
@@ -94,7 +94,7 @@ def test_gen_ai_child_span_carries_required_attributes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The gen_ai.* child span carries every attribute Phase 3 commits to."""
-    # GH-363: explicit env isolation — unset means default-on, so gen_ai.prompt
+    # Explicit env isolation — unset means default-on, so gen_ai.prompt
     # IS expected on the span. delenv keeps the test deterministic regardless of
     # any inherited SAMANTHA_STAMP_PROMPT value from the parent process.
     monkeypatch.delenv("SAMANTHA_STAMP_PROMPT", raising=False)
@@ -133,7 +133,7 @@ def test_gen_ai_child_span_carries_required_attributes(
     assert attrs["gen_ai.usage.output_tokens"] == 7
     assert "gen_ai.request.temperature" in attrs
     assert "gen_ai.request.max_tokens" in attrs
-    # GH-196 / GH-363: completion is unconditional; prompt is present by default
+    # Completion is unconditional; prompt is present by default
     # (SAMANTHA_STAMP_PROMPT unset → default-on; disable with explicit falsy value).
     assert "gen_ai.completion" in attrs
     assert "gen_ai.prompt" in attrs
@@ -218,9 +218,9 @@ def test_gen_ai_finish_reasons_present_when_response_has_field(
 def test_parent_span_carries_required_samantha_attributes(
     otel_exporter: InMemorySpanExporter,
 ) -> None:
-    """Parent samantha_server.event span carries the GH-183 canonical attribute set.
+    """Parent samantha_server.event span carries the canonical attribute set.
 
-    GH-183: routing_path, next_state, outcome, environment are no longer on
+    routing_path, next_state, outcome, environment are no longer on
     samantha.* (they have langfuse.trace.metadata.* duplicates). The canonical
     surface for those fields is langfuse.trace.metadata.*.
     Engine-internal samantha.* keys (session_id, priority, event_input_hash,
@@ -255,18 +255,18 @@ def test_parent_span_carries_required_samantha_attributes(
 
     attrs = dict(parent.attributes or {})
 
-    # Engine-internal samantha.* keys kept by GH-183
+    # Engine-internal samantha.* keys retained by the schema migration
     assert attrs["samantha.session_id"] == "span-test"
     assert attrs["samantha.priority"] == "ROUTINE"
     assert "samantha.event_input_hash" in attrs
     assert "samantha.latency_us" in attrs
     assert "samantha.receipt_id" in attrs
 
-    # GH-183: dropped samantha.* keys must be absent
-    assert "samantha.routing_path" not in attrs, "GH-183: samantha.routing_path must be absent"
-    assert "samantha.next_state" not in attrs, "GH-183: samantha.next_state must be absent"
-    assert "samantha.outcome" not in attrs, "GH-183: samantha.outcome must be absent"
-    assert "samantha.environment" not in attrs, "GH-183: samantha.environment must be absent"
+    # Dropped samantha.* keys must be absent
+    assert "samantha.routing_path" not in attrs, "samantha.routing_path must be absent"
+    assert "samantha.next_state" not in attrs, "samantha.next_state must be absent"
+    assert "samantha.outcome" not in attrs, "samantha.outcome must be absent"
+    assert "samantha.environment" not in attrs, "samantha.environment must be absent"
 
     # Canonical dashboard surface: langfuse.trace.metadata.*
     assert attrs.get("langfuse.trace.metadata.routing_path") == "llm"

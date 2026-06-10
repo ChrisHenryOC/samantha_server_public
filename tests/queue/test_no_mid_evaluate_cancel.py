@@ -4,7 +4,7 @@ Phase 3 Step 2 plan, Decision G3: STAT goes to the head of the queue;
 in-flight evaluations are NOT cancelled. The queue module and the
 consumer body must contain no ``task.cancel()`` calls.
 
-PR #132 M5: previously this invariant was satisfied only by code
+ M5: previously this invariant was satisfied only by code
 comments and reviewer attention. This AST-walker enforces it
 mechanically — adding a ``task.cancel()`` (or any ``.cancel()`` method
 call) inside ``samantha_server/queue/priority.py`` or the ``_consume``

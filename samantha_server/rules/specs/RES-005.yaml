@@ -7,7 +7,7 @@ priority: 5
 # Final state transition: a successful report-generated event drives the
 # order to ORDER_COMPLETE.  Failure outcomes leave the order in
 # REPORT_GENERATION with applied_rules=[] (current behavior; revisited if
-# GH-15 lands a catch-all for retry/abort).
+# lands a catch-all for retry/abort).
 when:
   equals:
     field: event.outcome

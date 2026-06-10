@@ -78,7 +78,7 @@ def _required_float(var_name: str, *, default: float) -> float:
 
     Mirrors `_required_hex`'s typed-error contract for numeric env vars
     so a caller `except MisconfiguredEnvironmentError` catches every
-    config-load failure mode (PR #97 review H-01).
+    config-load failure mode.
     """
     raw = os.environ.get(var_name)
     if raw is None:
@@ -185,7 +185,7 @@ def _required_int(var_name: str, *, default: int) -> int:
     """Read an int from env; raise MisconfiguredEnvironmentError on bad input.
 
     Mirrors `_required_hex`'s typed-error contract for numeric env vars
-    (PR #97 review H-01).
+.
     """
     raw = os.environ.get(var_name)
     if raw is None:
@@ -203,7 +203,7 @@ def _required_int(var_name: str, *, default: int) -> int:
 # These are obviously-fake patterns that no production deployment should ever use.
 # A bypass via `PYTEST_CURRENT_TEST=fake` exported in the shell exists by
 # design — the guard is a developer ergonomic, not a security control.
-# (PR #97 review L-02.)
+# (review L-02.)
 _TEST_KEY_PREFIXES: tuple[bytes, ...] = (b"\xde\xad\xbe\xef\xde\xad\xbe\xef",)
 _TEST_SALT_PREFIXES: tuple[bytes, ...] = (b"\xba\xdc\x0f\xfe\xe0",)
 
@@ -220,7 +220,7 @@ def _reject_test_sentinel(
     The error message describes the matched prefix in hex form (computed
     from the actual bytes that matched) rather than hardcoding any
     sentinel name. This keeps the message accurate regardless of which
-    variable's sentinel matched (PR #97 review M-04).
+    variable's sentinel matched.
     """
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return
@@ -251,7 +251,7 @@ LLM_TEMPERATURE: float = _required_float("LLM_TEMPERATURE", default=0.0)
 LLM_MAX_TOKENS: int = _required_int("LLM_MAX_TOKENS", default=2048)
 LLM_JUDGE_MODEL_PATH: str | None = os.environ.get("LLM_JUDGE_MODEL_PATH")
 
-# --- oMLX client config (GH-139) ---
+# --- oMLX client config ---
 # LLM_OMLX_BASE_URL: loopback HTTP base URL for the oMLX server.
 # Validated at import: must be a loopback host (G18 no-leak on errors).
 _LLM_OMLX_BASE_URL_RAW: str = os.environ.get("LLM_OMLX_BASE_URL", "http://127.0.0.1:8000")
@@ -362,7 +362,7 @@ WEB_CONCURRENCY: int = _required_int("WEB_CONCURRENCY", default=1)
 # crash that leaves the future unresolved indefinitely. Returns 504 on timeout.
 EVENT_DISPATCH_TIMEOUT_SEC: int = _required_int("EVENT_DISPATCH_TIMEOUT_SEC", default=60)
 
-# --- Step 5 RBAC + dispatch-token config (GH-119) ---
+# --- Step 5 RBAC + dispatch-token config ---
 
 # Test-sentinel prefixes for RBAC_HMAC_KEY. Mirrors _TEST_KEY_PREFIXES pattern.
 # Production deployments must generate fresh keys; the sentinels are recognizable
@@ -405,7 +405,7 @@ if DISPATCH_TOKEN_TTL_SEC <= 0:
     )
 
 
-# --- Step 9 Langfuse config (GH-124) ---
+# --- Step 9 Langfuse config ---
 
 _TRUE_BOOL_LITERALS: frozenset[str] = frozenset({"true", "1", "yes", "on"})
 _FALSE_BOOL_LITERALS: frozenset[str] = frozenset({"false", "0", "no", "off", ""})
@@ -418,7 +418,7 @@ def _parse_strict_bool(var_name: str, *, default: bool) -> bool:
     ``on`` / ``off`` (case-insensitive, whitespace-trimmed). Anything
     else is a hard error — the previous ``.lower() == "true"`` form
     silently fell to ``False`` for ``"1"`` / ``"yes"`` / ``"on"``,
-    common in docker-compose env files (PR #145 review H1).
+    common in docker-compose env files.
     """
     raw = os.environ.get(var_name)
     if raw is None:
@@ -441,7 +441,7 @@ def _parse_strict_bool(var_name: str, *, default: bool) -> bool:
 # SDK convention; G10 documents the docker-side bind interface
 # (127.0.0.1) which differs from the client URL by design.
 #
-# PR #145 review M4: validated as a loopback URL via the same helper
+# Validated as a loopback URL via the same helper
 # used for LLM_OMLX_BASE_URL. The plan's G10 ("Docker bind interface
 # is 127.0.0.1") implies loopback; the validator catches a non-loopback
 # misconfiguration at import time rather than letting it become an
@@ -465,7 +465,7 @@ LANGFUSE_SECRET_KEY: str = os.environ.get("LANGFUSE_SECRET_KEY", "")
 LANGFUSE_ENABLED: bool = _parse_strict_bool("LANGFUSE_ENABLED", default=True)
 
 # READYZ_LANGFUSE_PROBE_TIMEOUT_SEC: per-call timeout for the Langfuse
-# probe (PR #145 review M5). On loopback, 0.5 s is more than enough;
+# probe. On loopback, 0.5 s is more than enough;
 # operators on slower lab links can raise the knob without code change.
 # httpx.Timeout takes float seconds, so we read float-typed.
 READYZ_LANGFUSE_PROBE_TIMEOUT_SEC: float = _required_float(
@@ -485,7 +485,7 @@ if LANGFUSE_ENABLED:
             "Provision keys via the Langfuse console; commented placeholders "
             "live in .env.example."
         )
-    # PR #145 review M6: trace_url deeplinks point at traces that the
+    # trace_url deeplinks point at traces that the
     # OTel exporter never sent unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
     # Refusing the dead-deeplink configuration at startup beats the
     # silent disagreement.
@@ -516,7 +516,7 @@ if LLM_PROVIDER == "mlx" and SAMANTHA_LLM_OUTPUT_MODE == "json":
     )
 
 
-# --- Step 12 Drift-alarm config (GH-127) ---
+# --- Step 12 Drift-alarm config ---
 
 
 def _validate_http_url_scheme(var_name: str, raw: str) -> None:

@@ -1,4 +1,4 @@
-"""Tests for Chart 8: per-category accuracy heatmap (GH-307)."""
+"""Tests for Chart 8: per-category accuracy heatmap."""
 
 from __future__ import annotations
 

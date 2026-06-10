@@ -41,9 +41,9 @@ def test_create_app_disables_redoc() -> None:
 
 
 def test_create_app_disables_openapi_url() -> None:
-    """create_app() ships with openapi_url=None (PR #131 H5 spike-fallback floor).
+    """create_app ships with openapi_url=None (H5 spike-fallback floor).
 
-    Step 5 / GH-119 will swap to ``/openapi.json`` once the health:read
+    Step 5 will swap to ``/openapi.json`` once the health:read
     RBAC gate exists. Until then, leaving the schema unauthenticated is
     a reconnaissance surface (endpoint paths, future PHI-shaped pydantic
     field names), so the floor is "no schema at all".
@@ -92,7 +92,7 @@ def test_app_version_route_registered() -> None:
 def test_request_id_middleware_assigns_uuid() -> None:
     """The request_id middleware assigns a valid UUID4 to every request.
 
-    PR #131 test-cov L4: assert UUID4 *shape* (not just non-empty length)
+     test-cov L4: assert UUID4 *shape* (not just non-empty length)
     so the test fails if the middleware ever emits e.g. a sequence
     counter or empty string.
     """
@@ -116,7 +116,7 @@ def test_request_id_middleware_ignores_inbound_header() -> None:
     """The request_id middleware ignores inbound X-Request-ID headers.
 
     The replacement is a fresh UUID4 — not just "not equal to inbound";
-    PR #131 test-cov L4 strengthens this assertion.
+     test-cov L4 strengthens this assertion.
     """
     import uuid as uuid_module
 

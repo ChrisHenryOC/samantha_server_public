@@ -28,7 +28,7 @@ from tests.api.helpers import make_clinical_query_ctx_dict, make_consume_app_sta
 
 
 def test_dispatch_span_nests_under_sweep_span(otel_exporter: InMemorySpanExporter) -> None:
-    """PR #164 review M-3: when a live_llm test wraps dispatch_event in
+    """When a live_llm test wraps dispatch_event in
     ``sweep_span_context``, the orchestrator's ``samantha_server.event``
     parent span must nest as a child of the outer
     ``samantha_server.scenario_sweep`` span. A future context-propagation

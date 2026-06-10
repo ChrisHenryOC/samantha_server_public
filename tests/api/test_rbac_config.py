@@ -1,4 +1,4 @@
-"""Tests for RBAC + dispatch-token config additions (GH-119 slice 1).
+"""Tests for RBAC + dispatch-token config additions.
 
 Validates eager-load behaviour of RBAC_HMAC_KEY, RBAC_TOKEN_TTL_SEC, and
 DISPATCH_TOKEN_TTL_SEC in samantha_server.config.

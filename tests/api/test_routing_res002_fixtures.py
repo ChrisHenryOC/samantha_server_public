@@ -1,10 +1,10 @@
-"""GH-235: revalidate the four RES-002 billing fixtures through production dispatch_event.
+"""Revalidate the four RES-002 billing fixtures through production dispatch_event.
 
-Close criterion #2 of GH-235. The four fixtures below assert, at their step-14
+Closes the parent criterion #2. The four fixtures below assert, at their step-14
 ``missing_info_received`` event with ``info_type: "billing"``, that the order
 resolves to ``next_state: RESULTING`` with ``flags: []`` (MISSING_INFO_PROCEED
 cleared by the action handler). Historically that clearing lived in a replay-only
-stub (``scenarios/action_handlers.py``); GH-328 moved it into the production engine
+stub (``scenarios/action_handlers.py``); moved it into the production engine
 (``engine/action_handlers.py``) and wired it into ``dispatch_event``.
 
 These tests prove the four named fixtures resolve correctly end-to-end via the
@@ -30,7 +30,7 @@ from tests.api.test_routing_res002 import _make_deps, _make_rule_index
 
 _FIXTURES_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "scenarios"
 
-# The four RES-002 billing fixtures named in GH-235 (and the 2026-05-13 audit, F-15).
+# The four RES-002 billing fixtures from the audit (2026-05-13 audit, F-15).
 _RES002_BILLING_FIXTURES = [
     _FIXTURES_ROOT / "rule_coverage" / "sc-072.json",
     _FIXTURES_ROOT / "rule_coverage" / "sc-079.json",

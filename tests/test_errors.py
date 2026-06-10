@@ -208,7 +208,7 @@ def test_llm_model_load_error_is_llm_client_error_subclass() -> None:
 
 
 def test_llm_model_load_error_is_samantha_error_subclass() -> None:
-    """G19: every typed error is SamanthaError-rooted (PR #97 review H-02)."""
+    """G19: every typed error is SamanthaError-rooted."""
     from samantha_server.errors import LLMModelLoadError, SamanthaError
 
     assert issubclass(LLMModelLoadError, SamanthaError)
@@ -265,7 +265,7 @@ def test_llm_inference_error_is_llm_client_error_subclass() -> None:
 
 
 def test_llm_inference_error_is_samantha_error_subclass() -> None:
-    """G19: every typed error is SamanthaError-rooted (PR #97 review H-02)."""
+    """G19: every typed error is SamanthaError-rooted."""
     from samantha_server.errors import LLMInferenceError, SamanthaError
 
     assert issubclass(LLMInferenceError, SamanthaError)
@@ -307,7 +307,7 @@ def test_llm_inference_error_str_includes_cause() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PHIBoundaryError (Phase 2 Step 5; PR #98)
+# PHIBoundaryError (Phase 2 Step 5;)
 # ---------------------------------------------------------------------------
 
 
@@ -336,7 +336,7 @@ def test_phi_boundary_error_positional_construction_raises_type_error() -> None:
 
 
 def test_phi_boundary_error_str_does_not_leak_offending_age() -> None:
-    """H-01 from PR #98 review: the age integer is PHI under HIPAA Safe
+    """H-01 review: the age integer is PHI under HIPAA Safe
     Harbor 45 CFR 164.514(b)(2)(i)(C). Forwarding ``str(exc)`` to log
     aggregators would leak the value, so the integer is deliberately
     omitted from the message — only the .age attribute carries it."""

@@ -1,4 +1,4 @@
-"""Tests for GH-321 review #2: WARNING log when MLXClient hits max_tokens.
+"""Tests for review #2: WARNING log when MLXClient hits max_tokens.
 
 The numeric guard (`output_tokens >= max_tok`) is protocol-agnostic and
 applies to MLXClient symmetrically with OMLXClient. `finish_reason` is

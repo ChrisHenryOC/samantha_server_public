@@ -64,7 +64,7 @@ _ALLOWED_FILES: frozenset[str] = frozenset(
         # scan by accident today — but the file's purpose IS per-model
         # config, so making the allowlist entry explicit documents the
         # design intent and protects against future regex tightening.
-        # PR #272 review #2.
+        # review #2.
         "samantha_server/llm/chat_template_config.py",
     }
 )

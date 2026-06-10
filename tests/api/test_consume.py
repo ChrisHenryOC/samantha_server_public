@@ -268,7 +268,7 @@ def test_consume_detaches_otel_context_when_dispatch_raises() -> None:
 
 
 def test_consume_forwards_prompt_timestamp_to_dispatch_event() -> None:
-    """GH-233 / PR #242 fix-review: _consume forwards _QueuePayload.prompt_timestamp
+    """_consume forwards _QueuePayload.prompt_timestamp
     into dispatch_event as a kwarg. Regression guard for the production-path
     omission flagged as Critical.
     """

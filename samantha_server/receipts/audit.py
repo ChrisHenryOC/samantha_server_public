@@ -47,7 +47,7 @@ def _row_to_receipt(row: tuple[Any, ...]) -> SignedReceipt:
     """Rehydrate a receipts table row into a SignedReceipt.
 
     These ordinals reflect the explicit 9-column projection every audit.py
-    SELECT uses, NOT the physical schema.sql column order. The GH-367
+    SELECT uses, NOT the physical schema.sql column order. The
     ``order_id`` column (physically at schema position 3) is intentionally
     omitted from those SELECTs: ``decision.order_id`` is rehydrated from
     ``payload_json``, so the column is a write-only search index here. A new

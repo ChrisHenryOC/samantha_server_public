@@ -1,6 +1,6 @@
 """Tests for new audit query functions: fetch_by_id, fetch_paginated, count_total.
 
-Phase 3 Step 5.5 — GH-120.
+Phase 3 Step 5.5.
 """
 
 from __future__ import annotations
@@ -350,7 +350,7 @@ def test_fetch_paginated_skips_corrupt_row_and_logs_warning(
 ) -> None:
     """fetch_paginated skips a corrupt middle row and logs a WARNING.
 
-    Regression for GH-120 review finding #3: the list comprehension in the
+    Regression for review finding #3: the list comprehension in the
     original implementation would raise on a single bad row and abort the
     entire page. The fixed version matches the skip-and-log pattern in
     fetch_by_outcome / fetch_by_query_text_hash.

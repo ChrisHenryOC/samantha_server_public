@@ -9,7 +9,7 @@ priority: 2
 # carries an `info_type`, and the action handler picks `cleared` (proceed)
 # or `still_held` (remain on hold) at runtime by re-evaluating the order's
 # flags.  `action.branch` records the two-branch *family* (pipe-separated
-# legal values) the action handler may emit; the kernel (GH-15) records
+# legal values) the action handler may emit; the kernel records
 # the chosen branch as the receipt sub-outcome.  RESOLVE_MISSING_INFO is a
 # symbolic transition resolved by the kernel from the chosen branch.
 #

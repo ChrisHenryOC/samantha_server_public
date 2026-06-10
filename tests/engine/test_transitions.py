@@ -1,6 +1,6 @@
 """Tests for samantha_server.engine.transitions.
 
-Migrated from tests/scenarios/test_transitions.py as part of GH-325:
+Migrated from tests/scenarios/test_transitions.py (resolve_transition moved):
 resolve_transition moved from samantha_server.scenarios.transitions to
 samantha_server.engine.transitions.
 """

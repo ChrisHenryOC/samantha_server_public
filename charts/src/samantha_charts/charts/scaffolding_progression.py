@@ -1,4 +1,4 @@
-"""Chart N3: accuracy-evolution line chart (GH-307, CONVEX Slide 17).
+"""Chart N3: accuracy-evolution line chart (CONVEX Slide 17).
 
 Reproduces the original gtan-samantha "Accuracy Evolution" connected-scatter
 aesthetic: a dashed connector through each optimization stage, a bold

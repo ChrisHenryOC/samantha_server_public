@@ -78,7 +78,7 @@ def _collect_canonicalization_traces(
                         )
                     )
         else:
-            # GH-105 relaxed specimen_type/anatomic_site/fixative/priority to
+            # relaxed specimen_type/anatomic_site/fixative/priority to
             # str | None on Order, so this branch can return None — the guard
             # below is load-bearing.
             raw_str: str | None = getattr(order, field)

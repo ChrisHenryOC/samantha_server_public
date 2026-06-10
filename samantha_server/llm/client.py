@@ -12,7 +12,7 @@ from typing import Any, Final, Literal, Protocol, TypedDict
 from pydantic import BaseModel, Field, field_validator
 
 # OpenAI-compatible finish_reason vocabulary. Backends that emit a value
-# outside this set are coerced to None by LLMResponse's validator (PR #323
+# outside this set are coerced to None by LLMResponse's validator (
 # review #4 — wire robustness while keeping the type narrow for callers).
 _KNOWN_FINISH_REASONS: Final[frozenset[str]] = frozenset(
     {"stop", "length", "content_filter", "tool_calls"}
@@ -49,14 +49,14 @@ class LLMResponse(BaseModel, frozen=True):
     output_tokens: int = Field(ge=0)
     model_id: str
     latency_us: int = Field(ge=0)
-    # GH-321: populated from choices[0].finish_reason on the wire; None when
+    # Populated from choices[0].finish_reason on the wire; None when
     # the backend does not emit the field (legacy oMLX, MLXClient).
     finish_reason: FinishReason | None = None
 
     @field_validator("finish_reason", mode="before")
     @classmethod
     def _coerce_unknown_finish_reason(cls, v: object) -> object:
-        """Coerce unknown wire values to ``None`` (PR #323 review #4).
+        """Coerce unknown wire values to ``None``.
 
         Pydantic's ``Literal`` validation rejects unknown strings; without
         this coercion, a future backend emitting (e.g.) ``"function_call"``

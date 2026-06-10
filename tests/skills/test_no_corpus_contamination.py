@@ -1,4 +1,4 @@
-"""Skill prompts must not contain live-corpus IDs (GH-190).
+"""Skill prompts must not contain live-corpus IDs.
 
 Background: a 2026-05-11 live run against `Qwen2.5-Coder-32B-Instruct-MLX-4bit`
 produced responses regurgitating the skill prompt's example block byte-for-byte

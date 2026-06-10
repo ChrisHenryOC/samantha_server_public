@@ -1,4 +1,4 @@
-"""Tests for GH-183 Slice 3: prod-path span uses canonical langfuse.trace.metadata.* surface.
+"""Tests for Slice 3: prod-path span uses canonical langfuse.trace.metadata.* surface.
 
 After migration, events.py stamps the parent span via stamp_trace_attributes(TraceContext(...))
 using ENVIRONMENT_PRODUCTION. The canonical dashboard surface is langfuse.trace.metadata.*;
@@ -179,7 +179,7 @@ def test_prod_path_span_carries_canonical_langfuse_metadata_surface(
 ) -> None:
     """POST /events prod-path parent span carries langfuse.trace.metadata.* attrs.
 
-    GH-183 Slice 3: events.py migrates from direct set_span_attribute calls to
+    events.py migrates from direct set_span_attribute calls to
     stamp_trace_attributes(TraceContext(environment=ENVIRONMENT_PRODUCTION)).
     Canonical dashboard surface = langfuse.trace.metadata.*.
     """
@@ -258,7 +258,7 @@ def test_prod_path_span_carries_canonical_langfuse_metadata_surface(
     }
     present_dropped = dropped & set(attrs.keys())
     assert not present_dropped, (
-        f"GH-183: dropped samantha.* keys must be absent from prod-path span: {present_dropped!r}"
+        f"Dropped samantha.* keys must be absent from prod-path span: {present_dropped!r}"
     )
 
 
@@ -270,7 +270,7 @@ def test_prod_path_backpressure_rejection_span_carries_pre_dispatch_environment(
     pins that the rejection-path span is still labelled environment=production
     and does not silently re-introduce any dropped samantha.* key.
 
-    PR #188 review (#5): the happy-path test alone wouldn't catch a regression
+     review (#5): the happy-path test alone wouldn't catch a regression
     that re-introduces a dropped samantha.* key in the pre-dispatch TraceContext.
     """
     from samantha_server.api.backpressure import BackpressureRejection
@@ -322,7 +322,7 @@ def test_prod_path_backpressure_rejection_span_carries_pre_dispatch_environment(
     }
     present_dropped = dropped & set(attrs.keys())
     assert not present_dropped, (
-        f"GH-183: dropped samantha.* keys must be absent on backpressure-rejection "
+        f"Dropped samantha.* keys must be absent on backpressure-rejection "
         f"span too: {present_dropped!r}"
     )
 
@@ -330,7 +330,7 @@ def test_prod_path_backpressure_rejection_span_carries_pre_dispatch_environment(
 def test_prod_path_span_carries_order_id_attribute(
     _local_exporter: InMemorySpanExporter,
 ) -> None:
-    """GH-367: post-dispatch parent span carries samantha.order_id from decision.order_id."""
+    """Post-dispatch parent span carries samantha.order_id from decision.order_id."""
     app, _state = _make_test_app()
     token = _make_events_submit_token()
     body = _make_event_request_body()
@@ -379,7 +379,7 @@ def test_prod_path_span_carries_order_id_attribute(
 def test_prod_path_span_omits_order_id_attribute_when_none(
     _local_exporter: InMemorySpanExporter,
 ) -> None:
-    """GH-367: post-dispatch span must NOT carry samantha.order_id when decision.order_id is None.
+    """Post-dispatch span must NOT carry samantha.order_id when decision.order_id is None.
 
     OTel attributes do not accept None values; absence is the correct signal
     when no order_id was stamped on the decision. Verifies that the conditional

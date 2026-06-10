@@ -1,4 +1,4 @@
-"""Tests for SAMANTHA_LLM_OUTPUT_MODE config var (GH-192 Slice 1).
+"""Tests for SAMANTHA_LLM_OUTPUT_MODE config var.
 
 Tests:
 - Default value is "json".

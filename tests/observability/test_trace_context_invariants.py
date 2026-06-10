@@ -1,11 +1,11 @@
 """Tests for TraceContext __post_init__ mutual-exclusivity invariant.
 
-GH-183 Slice 4: session_id and scenario_id are mutually exclusive.
+session_id and scenario_id are mutually exclusive.
 No real call site ever needs both; conflating them produces inconsistent
 spans (both scenario_id and session_id would write langfuse.trace.name /
 langfuse.trace.metadata.scenario_id with different precedence semantics).
 
-Flagged as L3 in PR #186 workflow-logic-reviewer review.
+Flagged as L3 in workflow-logic-reviewer review.
 """
 
 from __future__ import annotations

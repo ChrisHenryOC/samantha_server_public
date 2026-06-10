@@ -190,7 +190,7 @@ def test_preflight_does_not_flag_off_vocab_anatomic_site() -> None:
     Parallel to specimen_type/ACC-010: an off-vocab anatomic_site must reach the
     deterministic rules so ACC-011 can route it to PENDING_LLM_REVIEW, rather than
     being short-circuited into needs_clarification by preflight. Regression guard
-    for GH-324 (SC-115 / LR-006).
+    for (SC-115 / LR-006).
     """
     from samantha_server.llm.preflight import PreflightOk, preflight
 

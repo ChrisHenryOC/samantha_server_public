@@ -1,6 +1,6 @@
 """Tests for the ``model_under_test`` fixture and ``--models`` CLI flag.
 
-GH-141 sweep-harness behaviour: a single fixture parametrizes the
+ sweep-harness behaviour: a single fixture parametrizes the
 scenario corpus over a list of model names. Source order:
 
 1. CLI flag (``--models=A,B,C``)

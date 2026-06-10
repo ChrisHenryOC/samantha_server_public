@@ -1,4 +1,4 @@
-"""GH-156: parity-replay composer.
+"""Parity-replay composer.
 
 Walks one or more `AccuracyReport` instances (multi-model sweep) and
 emits the published-shape JSON + markdown rollup that the parity CLI
@@ -6,20 +6,20 @@ ships against the upstream POC's `results/model_selection_phase1/
 summary.json`.
 
 Failure-mode mapping follows the parity-discovery memo's table
-(PR #167, updated GH-194):
+(updated):
 
 - `mismatch_state` → `wrong_state`
 - `mismatch_rules` → `wrong_rules`
 - `mismatch_flags` → `wrong_flags`
 - `dispatch_empty` → `empty_response`
 - `error` → not bucketed (caller may add finer attribution)
-- `mismatch_query_response` → `mismatch_query_response` (GH-194)
-- `mismatch_disposition` → `mismatch_disposition` (GH-194)
-- `invalid_json` → `invalid_json` (GH-194)
-- `empty_response` → `empty_response` (GH-194; same bucket as dispatch_empty)
-- `hallucinated_state` → `hallucinated_state` (GH-194; real counts)
-- `hallucinated_rule` → `hallucinated_rule` (GH-194; real counts)
-- `hallucinated_flag` → `hallucinated_flag` (GH-194; real counts)
+- `mismatch_query_response` → `mismatch_query_response`
+- `mismatch_disposition` → `mismatch_disposition`
+- `invalid_json` → `invalid_json`
+- `empty_response` → `empty_response`
+- `hallucinated_state` → `hallucinated_state`
+- `hallucinated_rule` → `hallucinated_rule`
+- `hallucinated_flag` → `hallucinated_flag`
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ _STATUS_TO_FAILURE_TYPE: Final[dict[str, str]] = {
     "mismatch_flags": "wrong_flags",
     "mismatch_routing_path": "wrong_routing_path",
     "dispatch_empty": "empty_response",
-    # GH-194: content-gate statuses — samantha vocabulary passthrough.
+    # Content-gate statuses — samantha vocabulary passthrough.
     # mismatch_query_response: LLM returned different order_ids than expected.
     "mismatch_query_response": "mismatch_query_response",
     # mismatch_disposition: LLM returned wrong review verdict (accept/reject/escalate).
@@ -59,7 +59,7 @@ _STATUS_TO_FAILURE_TYPE: Final[dict[str, str]] = {
     # samantha-public FailureType vocabulary entry.
     "empty_response": "empty_response",
     # Hallucination buckets: samantha's FailureType has dedicated entries.
-    # GH-194: these now populate from real StepVerdict counts; the old
+    # These now populate from real StepVerdict counts; the old
     # _HALLUCINATION_KEYS zero-fill block is no longer needed.
     "hallucinated_state": "hallucinated_state",
     "hallucinated_rule": "hallucinated_rule",
@@ -81,7 +81,7 @@ _NON_BUCKETED_STATUSES: Final[frozenset[str]] = frozenset({"pass", "error"})
 # already attributed via `failure_counts`.
 _EXCLUDED_FROM_MATCH_RATE: Final[frozenset[str]] = frozenset({"error", "dispatch_empty"})
 
-# GH-170: rule-decomposition equivalence classes (composer-only).
+# Rule-decomposition equivalence classes (composer-only).
 # samantha_server's deterministic engine fires SP-007 (priority 0) on the
 # recut-clear path where the samantha POC emits SP-001. Both rules produce
 # the same semantic outcome; the equivalence is intentional and documented
@@ -124,7 +124,7 @@ class StepRoutingCounts(TypedDict):
     in exactly one bucket. The composer pre-seeds all five keys so dashboard
     schemas stay stable across runs.
 
-    Buckets (PR #173 review H1):
+    Buckets:
       - `deterministic`: evaluate() ran and returned a non-error verdict.
       - `llm`: dispatch_event reached an LLM-invoking handler and returned
         a non-error verdict.
@@ -162,7 +162,7 @@ class ParityModelMetrics:
     latency_p50_ms: float
     latency_p95_ms: float
     failure_counts: dict[str, int] = field(default_factory=dict)
-    # GH-172: model_calls makes "did the model actually run?" inspectable.
+    # model_calls makes "did the model actually run?" inspectable.
     # `model_id` is `cfg.LLM_MODEL_NAME` echoed from config and tells you
     # *which* model was configured, not whether any completion call fired.
     # `model_calls` counts non-errored step_verdicts whose
@@ -213,7 +213,7 @@ def _scenario_parity_passed(v: ScenarioVerdict) -> bool:
     A step is a parity pass when:
     - Its status is ``"pass"`` (the engine agreed exactly), or
     - Its status is ``"mismatch_rules"`` AND the literal rule sets differ but
-      canonicalize to the same equivalence-class representative (GH-170:
+      canonicalize to the same equivalence-class representative (
       SP-001 vs SP-007 on the recut-clear path).
 
     All other statuses (``"mismatch_state"``, ``"mismatch_flags"``,
@@ -221,7 +221,7 @@ def _scenario_parity_passed(v: ScenarioVerdict) -> bool:
 
     A scenario with no step_verdicts (empty / malformed) is NOT a parity
     pass — vacuous truth would silently inflate `accuracy` for any scenario
-    the loader produced with an empty steps list (PR #174 review H1).
+    the loader produced with an empty steps list.
     """
     if not v.step_verdicts:
         return False
@@ -345,7 +345,7 @@ def _step_rule_match(sv: StepVerdict) -> bool | None:
     dropped from the denominator because no comparable rule attribution
     exists (the engine never produced an `applied_rules` to compare).
 
-    GH-170: use equivalence-class canonicalization so SP-001 and SP-007
+    Use equivalence-class canonicalization so SP-001 and SP-007
     (same semantic outcome, different rule ids) score as a match in the
     composer. The engine layer (_verdict_for_step in replay.py) remains
     strict — this canonicalization is composer-only.
@@ -398,7 +398,7 @@ def _step_routing_counts(verdicts: tuple[ScenarioVerdict, ...]) -> StepRoutingCo
     The routing_path × status cross-product distinguishes:
       - "engine ran fine" (deterministic / llm),
       - "engine ran but errored after routing was decided"
-        (errored_deterministic / errored_llm — surfaces the GH-156
+        (errored_deterministic / errored_llm — surfaces the
         re_raise=False path's deterministic gaps without conflating them
         with orchestration refusals),
       - "errored before routing was decided" (errored_pre_routing — the
@@ -439,13 +439,13 @@ def _failure_counts(verdicts: tuple[ScenarioVerdict, ...]) -> dict[str, int]:
     # Pre-seed every expected key so the JSON shape is stable regardless of
     # which failure modes appeared. All failure types (including hallucination
     # buckets) now live in _STATUS_TO_FAILURE_TYPE — no separate zero-fill
-    # needed. GH-194 removed _HALLUCINATION_KEYS because real counts populate.
+    # needed.
     counts: dict[str, int] = dict.fromkeys(_STATUS_TO_FAILURE_TYPE.values(), 0)
     for v in verdicts:
         for sv in v.step_verdicts:
             mapped = _STATUS_TO_FAILURE_TYPE.get(sv.status)
             if mapped is not None:
-                # GH-170: a mismatch_rules step that is rescued by
+                # A mismatch_rules step that is rescued by
                 # equivalence-class canonicalization does not increment
                 # wrong_rules — it is a parity pass for scoring purposes.
                 if sv.status == "mismatch_rules" and _step_is_parity_equivalent_mismatch_rules(sv):
@@ -480,11 +480,11 @@ def _render_markdown(run_id: str, metrics: list[ParityModelMetrics]) -> str:
         f"# Parity replay {run_id}",
         "",
         "Comparison shape mirrors the POC's `results/model_selection_phase1/summary.json`.",
-        "Token columns intentionally omitted (per GH-156 discovery memo).",
+        "Token columns intentionally omitted.",
         "",
     ]
 
-    # GH-172 / PR #173 H1: emit a banner only when model_calls == 0 due to an
+    # Emit a banner only when model_calls == 0 due to an
     # error condition; suppress the banner for deterministic-only runs (expected).
     for m in metrics:
         if m.model_calls != 0:

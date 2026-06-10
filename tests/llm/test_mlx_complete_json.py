@@ -1,7 +1,7 @@
-"""Tests for MLXClient.complete_json stub (GH-192 Slice 6).
+"""Tests for MLXClient.complete_json stub.
 
 MLXClient raises NotImplementedError because JSON mode requires oMLX
-(per GH-191 capability probe decision).
+.
 
 This test works whether or not mlx-lm is installed:
 - When mlx-lm IS installed: constructs a real client via a mock model path.
@@ -54,7 +54,7 @@ def test_mlx_complete_json_raises_not_implemented_error() -> None:
                 schema={"type": "object"},
                 schema_name="test",
             )
-        # Error message should point at oMLX / GH-191 decision.
+        # Error message should point at oMLX / decision.
         assert "omlx" in str(exc_info.value).lower() or "json" in str(exc_info.value).lower()
     finally:
         if original is None:

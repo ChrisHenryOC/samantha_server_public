@@ -11,7 +11,7 @@ when:
   # accept) or is unrecognized — see issue #34 follow-up for the planned
   # three-way disposition that routes unrecognized types to LLM review.
   #
-  # GH-35: uppercase variants (e.g. "FNA") are intentionally absent.
+  # Uppercase variants (e.g. "FNA") are intentionally absent.
   # Equals/InEnum casefold at comparison time (canonicalization), so
   # only the lowercase canonical form is needed in the values list.
   in_enum:

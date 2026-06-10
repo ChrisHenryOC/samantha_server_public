@@ -1,4 +1,4 @@
-"""Tests for OMLXClient.complete_json via /v1/chat/completions (GH-192 Slice 5).
+"""Tests for OMLXClient.complete_json via /v1/chat/completions.
 
 All tests use httpx.MockTransport — no live server required.
 """
@@ -274,7 +274,7 @@ def test_complete_json_null_message_content_raises_llm_inference_error() -> None
 
 
 # ---------------------------------------------------------------------------
-# GH-229 — Request-timing instrumentation (S3: complete_json() both paths)
+# — Request-timing instrumentation (S3: complete_json both paths)
 # ---------------------------------------------------------------------------
 
 
@@ -359,7 +359,7 @@ def test_complete_json_timeout_emits_warning_timing_log(
 
 
 # ---------------------------------------------------------------------------
-# GH-271: chat_template_kwargs plumbing through complete_json
+# chat_template_kwargs plumbing through complete_json
 # ---------------------------------------------------------------------------
 
 
@@ -379,7 +379,7 @@ def _captured_body_transport() -> tuple[list[dict], httpx.MockTransport]:
 def test_complete_json_omits_chat_template_kwargs_when_client_has_none() -> None:
     """Default-off: a client with no chat_template_kwargs sends no field in the body.
 
-    Preserves the pre-GH-271 request shape for the in-flight Gemma baseline
+    Preserves the legacy request shape for the in-flight Gemma baseline
     and any model not explicitly mapped in chat_template_config.
     """
     from samantha_server.llm.omlx_client import OMLXClient
@@ -397,7 +397,7 @@ def test_complete_json_omits_chat_template_kwargs_when_client_has_none() -> None
 def test_complete_json_includes_chat_template_kwargs_when_client_has_them() -> None:
     """When the client carries chat_template_kwargs, they're included verbatim in the body.
 
-    GH-271: Qwen3.5/3.6 need `enable_thinking=False` here to suppress the
+    Qwen3.5/3.6 need `enable_thinking=False` here to suppress the
     `<think>` reasoning tokens that would otherwise bleed into the JSON
     output. This test verifies the field reaches the wire.
     """
@@ -473,7 +473,7 @@ def test_complete_includes_chat_template_kwargs_when_client_has_them() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-271: auto-lookup from chat_template_config based on configured model
+# Auto-lookup from chat_template_config based on configured model
 #
 # These tests exercise OMLXClient constructor behavior (the auto-lookup path
 # at __init__) AND its wire-format effect (whether the resulting kwargs show
@@ -481,7 +481,7 @@ def test_complete_includes_chat_template_kwargs_when_client_has_them() -> None:
 # constructor-only test file because the wire-format assertion via
 # `_captured_body_transport` is the load-bearing check — without it the
 # auto-lookup might run but silently drop kwargs at body construction.
-# PR #272 review #4 considered moving them; co-location with wire-format
+# review #4 considered moving them; co-location with wire-format
 # assertions kept them here.
 # ---------------------------------------------------------------------------
 
@@ -565,7 +565,7 @@ def test_explicit_chat_template_kwargs_override_auto_lookup(
 def test_explicit_empty_dict_is_treated_as_no_override(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """PR #272 review #1: `chat_template_kwargs={}` must NOT stamp the field on the wire.
+    """`chat_template_kwargs={}` must NOT stamp the field on the wire.
 
     Pre-fix, the `is not None` guard accepted `{}` as a non-default value
     and emitted `"chat_template_kwargs": {}` in every request body. That

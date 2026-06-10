@@ -1,4 +1,4 @@
-"""Tests for ReceiptWriter.fetch_payload_json (GH-324 review finding).
+"""Tests for ReceiptWriter.fetch_payload_json.
 
 Coverage:
 - fetch_payload_json returns stored payload_json for a known receipt_id

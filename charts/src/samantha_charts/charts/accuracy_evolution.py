@@ -1,4 +1,4 @@
-"""Chart 14: accuracy evolution across milestones (GH-312).
+"""Chart 14: accuracy evolution across milestones.
 
 Renders a line chart showing how stable accuracy (N=5, 149-fixture corpus)
 changed across real sweep milestones. Points are plotted left-to-right in

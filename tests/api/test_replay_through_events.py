@@ -1,4 +1,4 @@
-"""GH-324 Phase B, Step 4 — integration characterization test.
+"""Phase B, Step 4 — integration characterization test.
 
 Proves that a fully deterministic scenario (SC-001) driven step-by-step through
 the REAL production transport — POST /events → priority queue → _consume consumer

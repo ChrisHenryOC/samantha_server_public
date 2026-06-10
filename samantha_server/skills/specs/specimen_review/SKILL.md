@@ -26,8 +26,8 @@ Output a single JSON object with these fields:
 - `reasoning`: string, at most 200 characters; brief clinical rationale (required)
 
 > **Note** — the 200-char cap here is an intentional divergence from the
-> `query_routing` skill's 800-char cap (GH-247; raised from 500 set by
-> GH-225 to fit `order_status` / `prioritized_list` answers).
+> `query_routing` skill's 800-char cap (raised from 500 set by
+> to fit `order_status` / `prioritized_list` answers).
 > Specimen-review responses are a single-disposition rationale tied to
 > SOP §3.2 criteria and stay tight; the cap is right-sized for that scope.
 

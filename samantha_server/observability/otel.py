@@ -21,17 +21,17 @@ PHI boundary (G18 + Step 8)
 require an allowlist update *plus* an explicit no-PHI assessment in
 the same PR.
 
-``gen_ai.completion`` is unconditionally allowed (GH-196). The
+``gen_ai.completion`` is unconditionally allowed. The
 lab-host deployment topology (local LLM + self-hosted Langfuse)
 permits LLM completions on spans for operator diagnostics. Production
 deployments outside the lab-host topology must revisit before
 allowing cloud LLM or cloud Langfuse.
 
-``gen_ai.prompt`` is stamped by default (GH-363). The prompt,
+``gen_ai.prompt`` is stamped by default. The prompt,
 including verbatim clinical query text, reaches Langfuse unless
 ``SAMANTHA_STAMP_PROMPT`` is explicitly set to a falsy value
 (``"0"``, ``"false"``, ``"no"``, or ``"off"``). The trust guard is
-the self-hosted Langfuse topology (precondition #2 in GH-225), not
+the self-hosted Langfuse topology (precondition #2), not
 the env var default. Hashes of each live in the signed receipt
 regardless of whether the full text appears on the span.
 
@@ -41,7 +41,7 @@ This module lives under ``observability/`` and is consumed by
 ``api/`` and ``llm/handlers.py``. ``engine/``, ``rules/``, and
 ``primitives/`` must not import from here.
 
-GH-183 attribute schema
+attribute schema
 =======================
 Canonical dashboard surface = ``langfuse.trace.metadata.*``.
 ``samantha.*`` is reserved for engine-internal fields that don't
@@ -54,17 +54,17 @@ Source field          | samantha.*              | langfuse.trace.metadata.*
 session_id            | samantha.session_id     | langfuse.trace.metadata.scenario_id
                       |                         | + langfuse.trace.name
                       |                         | (only when scenario_id is None)
-scenario_id           | (dropped GH-183)        | langfuse.trace.metadata.scenario_id
+scenario_id | (dropped) | langfuse.trace.metadata.scenario_id
                       |                         | + langfuse.trace.name
-scenario_category     | (dropped GH-183)        | langfuse.trace.metadata.scenario_category
+scenario_category | (dropped) | langfuse.trace.metadata.scenario_category
                       |                         | + langfuse.trace.tags
-sweep_run_id          | (dropped GH-183)        | langfuse.trace.metadata.sweep_run_id
+sweep_run_id | (dropped) | langfuse.trace.metadata.sweep_run_id
                       |                         | + langfuse.release (fallback)
-environment           | (dropped GH-183)        | langfuse.trace.metadata.environment
+environment | (dropped) | langfuse.trace.metadata.environment
                       |                         | + langfuse.environment
-routing_path          | (dropped GH-183)        | langfuse.trace.metadata.routing_path
-next_state            | (dropped GH-183)        | langfuse.trace.metadata.next_state
-outcome               | (dropped GH-183)        | langfuse.trace.metadata.outcome
+routing_path | (dropped) | langfuse.trace.metadata.routing_path
+next_state | (dropped) | langfuse.trace.metadata.next_state
+outcome | (dropped) | langfuse.trace.metadata.outcome
 priority              | samantha.priority       | (none)
 event_input_hash      | samantha.event_input_hash | (none)
 latency_us            | samantha.latency_us     | (none)
@@ -113,9 +113,9 @@ _log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Parent-span ``samantha.*`` attributes — engine-internal fields only.
-# GH-183: canonical dashboard surface is ``langfuse.trace.metadata.*``.
+# Canonical dashboard surface is ``langfuse.trace.metadata.*``.
 # Only fields WITHOUT a ``langfuse.trace.metadata.*`` duplicate belong here.
-# Dropped (GH-183): samantha.scenario_id, samantha.scenario_category,
+# Dropped: samantha.scenario_id, samantha.scenario_category,
 # samantha.sweep_run_id, samantha.environment, samantha.routing_path,
 # samantha.next_state, samantha.outcome — all have metadata duplicates.
 _SAMANTHA_ATTRS: Final[frozenset[str]] = frozenset(
@@ -126,15 +126,15 @@ _SAMANTHA_ATTRS: Final[frozenset[str]] = frozenset(
         "samantha.applied_rule_id",
         "samantha.latency_us",
         "samantha.receipt_id",
-        # GH-367: synthetic LIS order_id (not PHI, not Safe Harbor); pass-through.
+        # Synthetic LIS order_id (not PHI, not Safe Harbor); pass-through.
         "samantha.order_id",
     }
 )
 
 # Child-span ``gen_ai.*`` attributes — populated around each
 # ``LLMClient.complete()`` call.
-# GH-196: ``gen_ai.completion`` is unconditionally allowed (lab-host topology).
-# GH-363: ``gen_ai.prompt`` is stamped by default; suppress with
+# ``gen_ai.completion`` is unconditionally allowed (lab-host topology).
+# ``gen_ai.prompt`` is stamped by default; suppress with
 # SAMANTHA_STAMP_PROMPT=0/false/no/off.
 _GEN_AI_ATTRS: Final[frozenset[str]] = frozenset(
     {
@@ -146,7 +146,7 @@ _GEN_AI_ATTRS: Final[frozenset[str]] = frozenset(
         "gen_ai.request.temperature",
         "gen_ai.request.max_tokens",
         "gen_ai.response.finish_reasons",
-        # GH-321: boolean flag; True iff finish_reason=="length" (token-budget hit).
+        # Boolean flag; True iff finish_reason=="length" (token-budget hit).
         # No PHI surface — it is a boolean derived from a wire protocol enum value.
         # Name pattern `<predicate>_is_<value>` reads as a boolean predicate
         # ("did finish_reason equal 'length'?") rather than a string-length field.
@@ -200,7 +200,7 @@ _ALLOWED_ATTRIBUTES: Final[frozenset[str]] = (
 PARENT_SPAN_NAME: Final[str] = "samantha_server.event"
 LLM_CHILD_SPAN_NAME: Final[str] = "samantha_server.llm_call"
 
-# GH-196 / PR207 review #1+#2 / GH-363: env-var that controls `gen_ai.prompt`
+# Env-var that controls `gen_ai.prompt`
 # stamping on LLM child spans. Default is ON (Langfuse is inside the trust
 # boundary); stamping is suppressed only when explicitly set to a falsy value.
 # Values are normalized via strip + lower so operator typos (`"NO "`, `" 0"`,
@@ -255,7 +255,7 @@ def _warn_if_stamp_prompt_misconfigured() -> None:
 
 # Canonical values for ``samantha.environment``. Dashboards and the drift
 # alarm filter on these literals; production callers stamp ENVIRONMENT_PRODUCTION,
-# the in-process replay harness stamps ENVIRONMENT_REPLAY, and the GH-156 parity-
+# the in-process replay harness stamps ENVIRONMENT_REPLAY, and the parity-
 # replay CLI stamps ENVIRONMENT_PARITY (separate value so dashboards can
 # discriminate "comparing-to-published-numbers" runs from regular replay sweeps).
 ENVIRONMENT_PRODUCTION: Final[str] = "production"
@@ -298,7 +298,7 @@ def set_span_attribute(span: Span, name: str, value: AttributeValue) -> None:
 def extract_finish_reasons(response: object) -> list[str] | None:
     """Return finish reasons from *response* as a list, or ``None`` if not reported.
 
-    Read order (GH-321):
+    Read order:
     1. ``finish_reasons`` (plural, duck-typed) — preferred; returned as-is as a
        list. Preserves duck-typed callers that set the plural attribute directly.
        An explicit empty list (``[]``) is passed through unchanged, semantically
@@ -339,7 +339,7 @@ def _stamp_finish_reason_attrs(span: Span, response: object) -> None:
     """Stamp ``gen_ai.response.finish_reasons`` + ``finish_reason_is_length`` on *span*.
 
     Consolidates the block that ``llm_complete_with_span`` and
-    ``llm_complete_json_with_span`` would otherwise duplicate (GH-321 review #1).
+    ``llm_complete_json_with_span`` would otherwise duplicate.
     Set-only behavior: each attribute is omitted when the source value is
     ``None`` / not ``"length"``, preserving OTel's "absent = not reported"
     convention so dashboard filters like ``IS SET`` give clean signals.
@@ -462,7 +462,7 @@ def _configure_tracer_provider(
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
         # PR207 review #4: warn when the OTLP endpoint is off-localhost.
-        # GH-196 dropped the G8 PHI ban on `gen_ai.completion` for the
+        # The G8 PHI ban on `gen_ai.completion` was lifted for the
         # lab-host topology (local LLM + self-hosted Langfuse on the same
         # host). Exporting to a remote endpoint sends LLM completion text
         # (potentially derived from PHI-bearing context) over the network.
@@ -471,7 +471,7 @@ def _configure_tracer_provider(
         # not hold.
         if not _endpoint_is_localhost(endpoint):
             _log.warning(
-                "OTEL_EXPORTER_OTLP_ENDPOINT=%r is not localhost. GH-196 "
+                "OTEL_EXPORTER_OTLP_ENDPOINT=%r is not localhost; "
                 "allows gen_ai.completion on spans under the lab-host "
                 "topology (local LLM + self-hosted Langfuse). Sending "
                 "completions to a remote endpoint exports text derived "
@@ -493,7 +493,7 @@ def _endpoint_is_localhost(endpoint: str) -> bool:
     Conservative scheme/host parse — flags only the trivially-local set
     (localhost, 127.0.0.0/8, ::1, unix sockets) as safe. Any other host
     (IP literal in a non-loopback range, DNS name, etc.) is treated as
-    remote so the GH-196 carve-out warning fires.
+    remote so the PHI-export warning fires.
 
     PR207 review #4. Operator-facing diagnostic only — not a security
     boundary.
@@ -586,13 +586,13 @@ def llm_complete_with_span(
     child; without that context, the span is a root, which is the
     correct fallback shape (no orphan-vs-root ambiguity to resolve).
 
-    GH-196: ``gen_ai.completion`` is stamped unconditionally on the success
-    path. GH-363: ``gen_ai.prompt`` is stamped by default; suppressed only
+    ``gen_ai.completion`` is stamped unconditionally on the success
+    path. ``gen_ai.prompt`` is stamped by default; suppressed only
     when ``SAMANTHA_STAMP_PROMPT`` is explicitly ``"0"``, ``"false"``,
     ``"no"``, or ``"off"``. The prompt stamp happens BEFORE
     ``llm_client.complete()`` so error /
     timeout paths still carry input in the span — without this, a hung
-    pre-send call (GH-229 shape) leaves Langfuse with no input recorded
+    pre-send call leaves Langfuse with no input recorded
     and the diagnosis stays ambiguous.
 
     Error contract: when ``llm_client.complete()`` raises, the span is
@@ -625,7 +625,7 @@ def llm_complete_with_span(
         set_span_attribute(span, "gen_ai.request.max_tokens", effective_max)
 
         # Stamp prompt BEFORE the try-block so error / timeout paths still
-        # capture input. See docstring for the GH-229 diagnostic rationale.
+        # capture input. See docstring for the diagnostic rationale.
         # Ordering note: if a future allowlist edit ever removed
         # "gen_ai.prompt" from _ALLOWED_ATTRIBUTES, this call would raise
         # ValueError BEFORE llm_client.complete() runs — silently skipping
@@ -669,9 +669,9 @@ def llm_complete_json_with_span(
 
     Mirrors ``llm_complete_with_span`` for the JSON output path.
     The span shape is identical — same attribute set, same error handling.
-    GH-196: ``gen_ai.completion`` is stamped on the success path only (the
+    ``gen_ai.completion`` is stamped on the success path only (the
     stamp call sits after the ``try/except``; a raised call propagates
-    without setting it). GH-363: ``gen_ai.prompt`` is stamped as
+    without setting it). ``gen_ai.prompt`` is stamped as
     ``json.dumps(messages)`` BEFORE the ``try/except`` by default, so
     error / timeout paths still carry input on the span. Suppress with
     ``SAMANTHA_STAMP_PROMPT=0/false/no/off``.
@@ -721,7 +721,7 @@ def stamp_trace_attributes(
     span: Span,
     ctx: TraceContext,
 ) -> None:
-    """Stamp span attributes from *ctx* per the GH-182 union-mapping table.
+    """Stamp span attributes from *ctx* per the union-mapping table.
 
     Emits only the attributes whose source field is non-None. Precedence
     rules mirror the union table:
@@ -742,12 +742,12 @@ def stamp_trace_attributes(
                 set_span_attribute(span, "langfuse.trace.metadata.scenario_id", ctx.session_id)
 
         if ctx.scenario_id is not None:
-            # GH-183: samantha.scenario_id dropped; canonical surface is metadata.*
+            # samantha.scenario_id dropped; canonical surface is metadata.*
             set_span_attribute(span, "langfuse.trace.name", ctx.scenario_id)
             set_span_attribute(span, "langfuse.trace.metadata.scenario_id", ctx.scenario_id)
 
         if ctx.scenario_category is not None:
-            # GH-183: samantha.scenario_category dropped; canonical surface is metadata.*
+            # samantha.scenario_category dropped; canonical surface is metadata.*
             set_span_attribute(span, "langfuse.trace.tags", [ctx.scenario_category])
             set_span_attribute(
                 span,
@@ -756,7 +756,7 @@ def stamp_trace_attributes(
             )
 
         if ctx.sweep_run_id is not None:
-            # GH-183: samantha.sweep_run_id dropped; canonical surface is metadata.*
+            # samantha.sweep_run_id dropped; canonical surface is metadata.*
             set_span_attribute(span, "langfuse.trace.metadata.sweep_run_id", ctx.sweep_run_id)
             if ctx.run_id is None:
                 set_span_attribute(span, "langfuse.release", ctx.sweep_run_id)
@@ -765,7 +765,7 @@ def stamp_trace_attributes(
             set_span_attribute(span, "langfuse.release", ctx.run_id)
 
         if ctx.environment is not None:
-            # GH-183: samantha.environment dropped; canonical surface is metadata.*
+            # samantha.environment dropped; canonical surface is metadata.*
             set_span_attribute(span, "langfuse.environment", ctx.environment)
             set_span_attribute(span, "langfuse.trace.metadata.environment", ctx.environment)
 
@@ -776,15 +776,15 @@ def stamp_trace_attributes(
             set_span_attribute(span, "samantha.event_input_hash", ctx.event_input_hash)
 
         if ctx.routing_path is not None:
-            # GH-183: samantha.routing_path dropped; canonical surface is metadata.*
+            # samantha.routing_path dropped; canonical surface is metadata.*
             set_span_attribute(span, "langfuse.trace.metadata.routing_path", ctx.routing_path)
 
         if ctx.next_state is not None:
-            # GH-183: samantha.next_state dropped; canonical surface is metadata.*
+            # samantha.next_state dropped; canonical surface is metadata.*
             set_span_attribute(span, "langfuse.trace.metadata.next_state", ctx.next_state)
 
         if ctx.outcome is not None:
-            # GH-183: samantha.outcome dropped; canonical surface is metadata.*
+            # samantha.outcome dropped; canonical surface is metadata.*
             set_span_attribute(span, "langfuse.trace.metadata.outcome", ctx.outcome)
 
         if ctx.latency_us is not None:

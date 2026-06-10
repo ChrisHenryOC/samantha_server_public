@@ -1,26 +1,26 @@
-"""GH-155 + PR #180: query/ fixtures admitted as LLM-path scenarios.
+""" + query/ fixtures admitted as LLM-path scenarios.
 
-GH-155 wired the original 8 ``answer_type == "order_list"`` fixtures.
-PR #180 extended the wireup to the remaining 19 fixtures (covering
+ wired the original 8 ``answer_type == "order_list"`` fixtures.
+ extended the wireup to the remaining 19 fixtures (covering
 ``order_status``, ``prioritized_list``, and the 5 remaining
 ``order_list`` fixtures). The full set of 27 carries an ``events`` key
 so the corpus loader returns them as full Scenario objects.
 
-GH-155 acceptance set (8 fixtures): the original ``answer_type ==
-"order_list"`` subset used by the GH-152 per-id assertion path on the
+ acceptance set (8 fixtures): the original ``answer_type ==
+"order_list"`` subset used by the per-id assertion path on the
 live_llm sweep — QR-001/002/003/005/006/007/008/023.
 
-PR #180 extension set (11 fixtures): the remaining wired fixtures —
+ extension set (11 fixtures): the remaining wired fixtures —
 QR-004 was already in the override list pre-PR; the actual 11 newly
 admitted are QR-009/010/011/013/014/015/018/020/022/026/027.
 
 Test gate semantics:
-- ``_LOCKED_QUERY_PICKS`` — the 8 GH-155-locked picks. The
+- ``_LOCKED_QUERY_PICKS`` — the 8 -locked picks. The
   ``database_state.orders`` ↔ ``events[0].event_data.orders`` invariant
-  test applies to this subset only because the GH-152 prompt-injection
+  test applies to this subset only because the prompt-injection
   path was designed around them.
 - ``_FULL_QUERY_PICKS`` — the union of 29 admitted picks (QR-001..QR-029;
-  QR-028 + QR-029 added by GH-231 for the no_orders/uncertain gate
+  QR-028 + QR-029 added by for the no_orders/uncertain gate
   branches). Used by the presence test that guards against accidental
   removal of any wired fixture from the loader's output.
 """
@@ -34,14 +34,14 @@ _LOCKED_QUERY_PICKS: frozenset[str] = frozenset(
 )
 
 # Full set of 29 query fixtures wired into the replay harness. QR-001..QR-027
-# came in via PR #180; QR-028 + QR-029 were added by GH-231 / PR #238 to cover
+# came in; QR-028 + QR-029 were added by / to cover
 # the no_orders / uncertain answer_type gate branches. All carry an ``events``
 # key. Adding a new query fixture without an ``events`` key (or removing one's
 # events block) will fail ``test_full_query_picks_load_with_events_key`` below.
 _FULL_QUERY_PICKS: frozenset[str] = frozenset(f"QR-{n:03d}" for n in range(1, 30))
 
 
-# PR #165 H-2: each picked fixture's events[0].expected_output.next_state is
+# Each picked fixture's events[0].expected_output.next_state is
 # "ACCESSIONING". This is correct but coupled to two implementation details:
 #   1. ``handle_clinical_query`` returns ``next_state=ctx.current_state``
 #      (queries don't transition). See ``samantha_server/llm/handlers.py``.
@@ -56,7 +56,7 @@ _QUERY_EXPECTED_NEXT_STATE: str = "ACCESSIONING"
 def test_locked_query_picks_load_with_events_key() -> None:
     """All 8 picked query fixtures must round-trip through the scenario loader.
 
-    Pre-GH-155 the loader silently skipped event-less query fixtures
+    Previously the loader silently skipped event-less query fixtures
     (loader.py: ``_is_recognized_non_workflow``). This test fails until
     each picked fixture grows a top-level ``events`` key.
     """
@@ -68,14 +68,14 @@ def test_locked_query_picks_load_with_events_key() -> None:
 
     missing = _LOCKED_QUERY_PICKS - loaded_ids
     assert not missing, (
-        f"GH-155: query fixtures {sorted(missing)} have no `events` key; "
+        f"Query fixtures {sorted(missing)} have no `events` key; "
         f"loader silently skips them and they don't contribute to the "
         f"LLM-path latency bucket."
     )
 
 
 def test_full_query_picks_load_with_events_key() -> None:
-    """PR #180: all 27 query fixtures (the GH-155 set plus the 19 PR #180
+    """all 27 query fixtures (the set plus the 19
     additions) must round-trip through the scenario loader.
 
     A regression that drops an ``events`` key from any fixture (e.g. an
@@ -91,7 +91,7 @@ def test_full_query_picks_load_with_events_key() -> None:
 
     missing = _FULL_QUERY_PICKS - loaded_ids
     assert not missing, (
-        f"PR #180: query fixtures {sorted(missing)} have no `events` key; "
+        f"query fixtures {sorted(missing)} have no `events` key; "
         f"loader silently skips them and they drop out of the corpus."
     )
 
@@ -105,7 +105,7 @@ def test_locked_query_picks_have_clinical_query_event_type() -> None:
 
     for picked in sorted(_LOCKED_QUERY_PICKS):
         scenario = scenarios.get(picked)
-        # PR #165 review M-2: assert presence rather than silent-skip — keeps
+        # Assert presence rather than silent-skip — keeps
         # this test independently correct under reordered/isolated execution.
         assert scenario is not None, f"{picked}: scenario not loaded"
         assert scenario.steps, f"{picked}: must have at least one step"
@@ -119,7 +119,7 @@ def test_locked_query_picks_have_clinical_query_event_type() -> None:
 
 def test_locked_query_picks_event_data_carries_query_and_orders() -> None:
     """Each step's event_data must carry the query string + orders list so
-    the GH-152 prompt-injection path produces a meaningful LLM round-trip."""
+    the prompt-injection path produces a meaningful LLM round-trip."""
     from samantha_server.scenarios.loader import load_scenarios
 
     fixture_dir = Path(__file__).parent.parent / "fixtures" / "scenarios" / "query"
@@ -127,7 +127,7 @@ def test_locked_query_picks_event_data_carries_query_and_orders() -> None:
 
     for picked in sorted(_LOCKED_QUERY_PICKS):
         scenario = scenarios.get(picked)
-        # PR #165 review M-2: assert presence rather than silent-skip.
+        # Assert presence rather than silent-skip.
         assert scenario is not None, f"{picked}: scenario not loaded"
         first = scenario.steps[0]
         assert "query" in first.event_data, (
@@ -135,7 +135,7 @@ def test_locked_query_picks_event_data_carries_query_and_orders() -> None:
             f"hashes the right text"
         )
         assert "orders" in first.event_data, (
-            f"{picked}: event_data must include 'orders' (per GH-152) so the "
+            f"{picked}: event_data must include 'orders' so the "
             f"prompt builder injects the database state"
         )
         orders = first.event_data["orders"]
@@ -145,7 +145,7 @@ def test_locked_query_picks_event_data_carries_query_and_orders() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-155 anchor activation: replay() over the picked fixtures populates the
+# replay() over the picked fixtures populates the
 # LLM-path latency bucket so ``p99_latency_us_llm`` is no longer None.
 # ---------------------------------------------------------------------------
 
@@ -182,7 +182,7 @@ def test_replay_query_picks_populate_llm_latency_bucket(tmp_path: Path) -> None:
     # _collect_latencies categorises the step into the LLM bucket. The mock LLM
     # client is required to build deps but never actually called.
     #
-    # PR #165 review M-3: capture the SpecimenContext per call so we can
+    # Capture the SpecimenContext per call so we can
     # assert each dispatched step actually carried event_data.orders. A
     # regression where the loader fails to plumb orders through would
     # otherwise pass this test (the mock would still record the bucket count).
@@ -194,37 +194,37 @@ def test_replay_query_picks_populate_llm_latency_bucket(tmp_path: Path) -> None:
         captured_ctxs.append(ctx)
         return await _fake_dispatch_with_receipt(session_id, latency_us=12_345_000, **kwargs)
 
-    # GH-324 Step 5: endpoint path calls routing.dispatch_event from _consume;
+    # Endpoint path calls routing.dispatch_event from _consume;
     # patch there so the fake intercepts all 8 clinical_query steps.
     with patch("samantha_server.api.routing.dispatch_event", side_effect=_fake_dispatch):
         report = replay(tmp_path, _llm_client_override=_make_mock_llm_client())
 
-    # PR #165 review L-2: tightened to ``== 8`` for the known 8-fixture corpus.
+    # Tightened to ``== 8`` for the known 8-fixture corpus.
     assert report.llm_latency_step_count == 8, (
-        f"GH-155: expected exactly 8 LLM-path latency samples for the 8-fixture "
+        f"Expected exactly 8 LLM-path latency samples for the 8-fixture "
         f"temp corpus; got {report.llm_latency_step_count}"
     )
     assert report.p99_latency_us_llm is not None, (
-        "GH-155: p99_latency_us_llm must be non-None once the LLM-path "
+        "p99_latency_us_llm must be non-None once the LLM-path "
         "bucket has at least one sample"
     )
     assert len(captured_ctxs) == 8, (
-        f"PR #165 M-3: dispatch_event must be called once per fixture; "
+        f" M-3: dispatch_event must be called once per fixture; "
         f"got {len(captured_ctxs)} calls"
     )
     for ctx in captured_ctxs:
-        # ctx is a SpecimenContext; event_data carries the GH-152 orders payload.
+        # ctx is a SpecimenContext; event_data carries the orders payload.
         ed = ctx.event.event_data  # type: ignore[attr-defined]
         ed_orders = ed.get("orders") if hasattr(ed, "get") else None
         assert ed_orders, (
-            "PR #165 M-3: dispatched ctx.event.event_data must carry a "
-            "non-empty 'orders' list — a regression that drops the GH-152 "
+            " M-3: dispatched ctx.event.event_data must carry a "
+            "non-empty 'orders' list — a regression that drops the "
             "plumb-through would otherwise pass undetected here"
         )
 
 
 # ---------------------------------------------------------------------------
-# PR #165 review fixes: stronger assertions per consolidated review.
+# Stronger assertions per consolidated review.
 # ---------------------------------------------------------------------------
 
 
@@ -264,9 +264,9 @@ def test_query_corpus_meets_sample_floor() -> None:
 
 
 def test_event_data_orders_matches_database_state_orders() -> None:
-    """PR #165 review M-1: drift guard for the duplicated orders array.
+    """Drift guard for the duplicated orders array.
 
-    The ``events[0].event_data.orders`` payload is the live path the GH-152
+    The ``events[0].event_data.orders`` payload is the live path the
     prompt builder reads; the legacy ``database_state.orders`` is the
     human-readable copy retained for fixture authoring. They are byte-equal
     at merge time. This test asserts that invariant per fixture so a future
@@ -291,7 +291,7 @@ def test_event_data_orders_matches_database_state_orders() -> None:
 
 
 def test_vendor_overrides_contains_all_locked_picks() -> None:
-    """PR #165 review M-4: the `.vendor-overrides.json` file must list every
+    """The `.vendor-overrides.json` file must list every
     fixture this PR diverged from upstream samantha-public. A missing entry
     would let `vendor_scenarios.py` silently re-overwrite the fixture and
     strip its `events` key."""
@@ -303,20 +303,20 @@ def test_vendor_overrides_contains_all_locked_picks() -> None:
     overrides = json.loads(overrides_path.read_text())["overrides"]
     missing = _LOCKED_QUERY_PICKS - set(overrides.keys())
     assert not missing, (
-        f"GH-155: locked query picks {sorted(missing)} must appear in "
+        f"Locked query picks {sorted(missing)} must appear in "
         f".vendor-overrides.json with PR provenance"
     )
 
 
 def test_every_query_fixture_step_has_llm_routing_path() -> None:
-    """PR #241 review H2: every query-fixture step's `expected_routing_path`
+    """Every query-fixture step's `expected_routing_path`
     must be `"llm"`.
 
-    GH-232/PR #241 annotated all 29 fixtures' step-1 `expected_output` with
+    / annotated all 29 fixtures' step-1 `expected_output` with
     `routing_path: "llm"` to close the verdict-comparator silent-gate window
     (`replay.py` skips routing comparison when `expected_routing_path is None`,
     so an un-annotated step lets a router regression mis-routing a clinical
-    query to the deterministic path pass silently). The existing GH-228 parity
+    query to the deterministic path pass silently). The existing parity
     guard at `test_replay.py` is category-level — it passes as long as ANY
     fixture is annotated. This fixture-level guard catches the case where a
     new query fixture is added without the annotation.
@@ -336,19 +336,19 @@ def test_every_query_fixture_step_has_llm_routing_path() -> None:
                 )
 
     assert not missing, (
-        "PR #241 / GH-232 invariant: every query fixture step must annotate "
+        " / invariant: every query fixture step must annotate "
         '`routing_path: "llm"` so the replay verdict comparator can catch '
         f"router regressions. Steps missing the annotation: {missing}"
     )
 
 
 # ---------------------------------------------------------------------------
-# GH-227 S9: fixture completeness — all 29 query fixtures carry user_role
+# Fixture completeness — all 29 query fixtures carry user_role
 # ---------------------------------------------------------------------------
 
 
 def test_all_query_fixtures_carry_valid_user_role() -> None:
-    """GH-227 S9: every query fixture has a valid user_role field.
+    """Every query fixture has a valid user_role field.
 
     All 29 query fixtures must carry a top-level user_role string that is
     one of the four valid roles. This ensures the LLM sees role context on
@@ -374,13 +374,13 @@ def test_all_query_fixtures_carry_valid_user_role() -> None:
             missing_role.append(f"{scenario.scenario_id} (invalid: {scenario.user_role!r})")
 
     assert not missing_role, (
-        f"GH-227: query fixtures missing a valid user_role: {missing_role}. "
+        f"Query fixtures missing a valid user_role: {missing_role}. "
         f"Add top-level user_role to each fixture JSON."
     )
 
 
 def test_qr028_qr029_pin_top_level_expected_answer_type() -> None:
-    """GH-248 PR252 review: pin QR-028's and QR-029's top-level
+    """Pin QR-028's and QR-029's top-level
     expected_output.answer_type.
 
     These two fixtures are the unit-suite anchors for the `no_orders` and

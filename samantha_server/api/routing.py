@@ -19,7 +19,7 @@ Architectural invariants:
   violate deterministic-path purity (engine/, rules/, primitives/ must not
   import from api/).
 - emit_receipt is the sole call to sign_decision in the orchestrator layer.
-- The deterministic branch (GH-324) must not reference llm_client.
+- The deterministic branch must not reference llm_client.
 """
 
 from __future__ import annotations
@@ -113,7 +113,7 @@ async def dispatch_event(
     -----
     This function never raises for unrecognized event_types. Deterministic
     events that match no rule produce a dispatch_empty EngineDecision with
-    a receipt, instead of raising NotImplementedError (GH-324).
+    a receipt, instead of raising NotImplementedError.
     """
     return await _dispatch_event_core(
         ctx,
@@ -196,7 +196,7 @@ async def _dispatch_event_core(
             # branch needs this step.
             # Mirror the replay harness sequence (scenarios/replay.py ~L1158-1169):
             # 1. Apply spec-level flag changes from the decision.
-            # 2. Apply runtime action-handler flag clearing (GH-328).
+            # 2. Apply runtime action-handler flag clearing.
             # 3. Resolve symbolic transitions against the post-handler flag set.
             post_flags = (ctx.flags - set(decision.flags_cleared)) | set(decision.flags_added)
             post_flags = apply_runtime_flag_clearing(decision, ctx.event.event_data, post_flags)
@@ -208,7 +208,7 @@ async def _dispatch_event_core(
             )
             decision = decision.model_copy(update={"next_state": resolved_state})
 
-            # Unknown-event observability (GH-326): when dispatch_empty produced no
+            # Unknown-event observability: when dispatch_empty produced no
             # state change AND the event_type is not in the known set, this is a
             # signal that an unrecognised event leaked into the engine — not a
             # legitimate no-rule-match on a known event.

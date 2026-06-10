@@ -14,7 +14,7 @@ def _make_env_with_valid_secrets(**overrides: str | None) -> dict[str, str]:
     env = {k: v for k, v in os.environ.items()}
     env["RECEIPT_SIGNING_KEY"] = "a" * 64
     env["PHI_HASH_SALT"] = "a" * 64
-    # GH-119 fix #2: provide a non-sentinel RBAC key so the CAFEBABE guard
+    # Provide a non-sentinel RBAC key so the CAFEBABE guard
     # doesn't reject the conftest sentinel in subprocess environments.
     env["RBAC_HMAC_KEY"] = "b" * 64
     env.pop("PYTEST_CURRENT_TEST", None)
@@ -99,7 +99,7 @@ def test_web_concurrency_gt_1_subprocess_fails() -> None:
 def test_uvicorn_workers_cli_flag_is_not_caught_by_env_guard() -> None:
     """Document the known gap: ``uvicorn --workers N`` does NOT trip the guard.
 
-    PR #131 M8: the plan's Step 1 done-when said both the env-var path
+     M8: the plan's Step 1 done-when said both the env-var path
     *and* the ``--workers N`` CLI form should hard-fail. In the pinned
     Uvicorn version, ``--workers N`` does not propagate
     ``WEB_CONCURRENCY`` to worker environments — the env-var-based guard
@@ -109,7 +109,7 @@ def test_uvicorn_workers_cli_flag_is_not_caught_by_env_guard() -> None:
     ``WEB_CONCURRENCY=1`` explicitly in production env" as a
     release-checklist item, and operators are told not to use
     ``--workers N`` on Uvicorn for this service. The structural gap is
-    tracked under GH-111 (multi-worker session-state swap), which will
+    tracked under (multi-worker session-state swap), which will
     introduce a robust multiprocess detection mechanism (e.g.,
     ``multiprocessing.current_process().name``) when it lands.
 
@@ -133,7 +133,7 @@ def test_uvicorn_workers_cli_flag_is_not_caught_by_env_guard() -> None:
 def test_uvicorn_reload_does_not_trip_guard() -> None:
     """--reload uses a child-process model but does NOT set WEB_CONCURRENCY > 1.
 
-    PR #131 M8 + plan Step 1 done-when "negative case": Uvicorn's
+     M8 + plan Step 1 done-when "negative case": Uvicorn's
     ``--reload`` flag spawns a watcher + a worker, but worker count is
     still 1 — the guard must not fire.
     """

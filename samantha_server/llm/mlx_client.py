@@ -65,7 +65,7 @@ class MLXClient:
             # Note: cause may include host filesystem paths from the underlying
             # exception's __str__ (e.g., a FileNotFoundError carries the path it
             # tried). Acceptable for a developer tool; do NOT surface .cause
-            # verbatim to remote audit logs (PR #97 review M-03).
+            # verbatim to remote audit logs.
             raise LLMModelLoadError(model_path=path, cause=str(exc)) from exc
         self._model_id: str = config.LLM_MODEL_NAME
 
@@ -109,7 +109,7 @@ class MLXClient:
         # escape as untyped exceptions and break the LLMClient Protocol's
         # "raises typed LLMClientError subclasses on failure" contract.
         # TODO(mlx_lm>=X): drop this fallback once mlx_lm.generate() returns a
-        # `usage` field with token counts (PR #97 review L-08).
+        # `usage` field with token counts.
         try:
             # Best-effort token counts — mlx-lm doesn't always report them
             # cleanly; fall back to a tokenizer-based count.
@@ -118,7 +118,7 @@ class MLXClient:
         except Exception as exc:
             raise LLMInferenceError(model_id=self._model_id, cause=str(exc)) from exc
 
-        # GH-321 review #2: protocol-agnostic numeric guard for silent
+        # Protocol-agnostic numeric guard for silent
         # truncation. `finish_reason` is unavailable from mlx_lm.generate(),
         # so the token-count comparison is the only signal MLX path can
         # emit; matches the OMLXClient.complete()/complete_json() WARNING.
@@ -147,7 +147,7 @@ class MLXClient:
     ) -> LLMResponse:
         """Not implemented — JSON mode requires oMLX (LLM_PROVIDER=omlx).
 
-        Per the GH-191 capability probe decision, structured JSON output
+        Per the capability probe decision, structured JSON output
         via response_format=json_schema is only supported on the oMLX
         server (/v1/chat/completions). The in-process MLX path does not
         support constrained decoding at this time.
@@ -158,5 +158,5 @@ class MLXClient:
         raise NotImplementedError(
             "MLXClient.complete_json is not supported. "
             "JSON output mode requires LLM_PROVIDER=omlx (oMLX server). "
-            "See GH-191 for the capability probe decision."
+            "See the capability probe decision."
         )

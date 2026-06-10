@@ -11,7 +11,7 @@ Three routes:
   200 — all load-bearing deps healthy; degraded JSON for non-blocking deps.
 
 /version is unauthenticated in Step 1 and ships with /openapi.json
-disabled so the schema doesn't leak (per PR #131 H5 fix-review applying
+disabled so the schema doesn't leak (fix-review applying
 the plan's spike-fallback floor); Step 5 adds the health:read RBAC gate
 and re-enables the schema.
 """
@@ -78,7 +78,7 @@ def register_health_routes(app: FastAPI) -> None:
             failures.append("receipt_writer_sqlite")
         if not _signing_key_present():
             failures.append("signing_key")
-        # Step 2 (GH-116): queue is load-bearing. None indicates a partial
+        # Step 2: Queue is load-bearing. None indicates a partial
         # lifespan crash — should never happen in practice but surfaces
         # immediately rather than letting the consumer silently fail.
         if state.queue is None:
@@ -93,7 +93,7 @@ def register_health_routes(app: FastAPI) -> None:
                 status_code=503,
             )
 
-        # Reported but non-blocking deps. PR #145 review L15: read
+        # Reported but non-blocking deps. review L15: read
         # LANGFUSE_ENABLED from cfg (not live env) so /readyz agrees
         # with the lifespan-bound probe selection — they were drifting
         # before. The cfg attribute is the single source of truth.
@@ -141,7 +141,7 @@ def register_health_routes(app: FastAPI) -> None:
         are replaced with '<redacted>'. Names are preserved so operators
         can verify which variables are configured.
 
-        Requires the health:read RBAC capability (GH-119 Step 5).
+        Requires the health:read RBAC capability.
         """
         state = request.app.state.engine
         return JSONResponse(
@@ -167,7 +167,7 @@ def get_commit_sha() -> str:
     per-request (each call forks a subprocess). The tests treat this as
     a public helper.
 
-    PR #145 review L17: spawn ``git`` with ``OTEL_EXPORTER_OTLP_HEADERS``
+    Spawn ``git`` with ``OTEL_EXPORTER_OTLP_HEADERS``
     stripped from the inherited env. The Langfuse Basic-auth credential
     lives in that env var when ``LANGFUSE_ENABLED=true`` (set earlier
     in the lifespan); ``git`` does not read or forward the header, but
@@ -199,7 +199,7 @@ def get_commit_sha() -> str:
 # - KEY / SALT / SECRET / PASSWORD: cryptographic material.
 # - PATH: filesystem paths leak the OS username and directory layout.
 #   (RECEIPTS_DB_PATH, SCENARIOS_DIR future entries, etc.)
-# Note: TOKEN was removed (PR #131 L3) — KEY/SECRET cover token-key
+# Note: TOKEN was removed — KEY/SECRET cover token-key
 # variables and TOKEN was over-broad (would catch RBAC_TOKEN_TTL_SEC).
 _SECRET_PATTERNS = ("KEY", "SALT", "SECRET", "PASSWORD", "PATH")
 
@@ -237,7 +237,7 @@ def _build_config_snapshot() -> dict[str, Any]:
         # their .env directly.
         "SHUTDOWN_DRAIN_TIMEOUT_SEC": cfg.SHUTDOWN_DRAIN_TIMEOUT_SEC,
         "WEB_CONCURRENCY": cfg.WEB_CONCURRENCY,
-        # GH-119 Step 5: RBAC + dispatch-token config.
+        # RBAC + dispatch-token config.
         "RBAC_HMAC_KEY": cfg.RBAC_HMAC_KEY,
         "RBAC_TOKEN_TTL_SEC": cfg.RBAC_TOKEN_TTL_SEC,
         "DISPATCH_TOKEN_TTL_SEC": cfg.DISPATCH_TOKEN_TTL_SEC,
@@ -261,7 +261,7 @@ def _is_secret(var_name: str) -> bool:
 def _looks_like_path(value: Any) -> bool:
     """True for string values that contain an OS path separator.
 
-    Catches the LLM_MODEL_NAME-defaults-to-LLM_MODEL_PATH leak (PR #131
+    Catches the LLM_MODEL_NAME-defaults-to-LLM_MODEL_PATH leak (
     L6) without requiring an exhaustive list of path-shaped variable
     names. Only string values are inspected; ints / bools / None pass
     through unchanged.

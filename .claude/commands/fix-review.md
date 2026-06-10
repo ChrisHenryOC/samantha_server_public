@@ -72,7 +72,7 @@ Run AFTER the High/Medium fixes are validated and committed, BEFORE the simplifi
 
 **Scope.** This step is the **misclassified-Low backstop**. Critical/High/Medium findings are handled by IMPLEMENT (which iterates `Critical > High > Medium`). The reviewer template `.claude/agents/_base-reviewer.md` §"What is NOT Low" recommends reviewers target at-least-Medium for anti-pattern findings; this audit catches cases where a Low slipped through anyway. Medium-classified findings of the same shape are already in IMPLEMENT scope and don't need re-evaluation here.
 
-**Do not auto-skip Lows.** A reviewer's severity label is a best guess; some Lows are misclassified bugs, not nits. Evaluate each Low row from `CONSOLIDATED-REVIEW.md` against the criteria below. Lesson that motivated this step: PR #202's "Low" #20 (`content: null` AttributeError) was a deployment-class bug — same shape as the Critical (#1) already in the matrix — and audit pressure surfaced a pre-existing twin in the legacy `complete()` path.
+**Do not auto-skip Lows.** A reviewer's severity label is a best guess; some Lows are misclassified bugs, not nits. Evaluate each Low row from `CONSOLIDATED-REVIEW.md` against the criteria below. Lesson that motivated this step: its "Low" #20 (`content: null` AttributeError) was a deployment-class bug — same shape as the Critical (#1) already in the matrix — and audit pressure surfaced a pre-existing twin in the legacy `complete` path.
 
 ### Upgrade criteria — re-classify as effective High and fix now
 
@@ -102,7 +102,7 @@ These don't merit their own PR but are free to bundle while context is fresh.
 
 ### Audit-for-twins
 
-When fixing an upgraded Low, briefly check whether the underlying bug pattern (null guard, exception-type guard, off-by-one, missing await, etc.) appears elsewhere in the same module or in a parallel module (e.g., chat-completions ↔ legacy completions). One targeted grep is usually enough. If twins are found, fix them in the same audit pass — the audit-pressure window closes once this PR merges. PR #202 surfaced exactly such a twin (legacy `complete()` had the same null-text vulnerability as the new `complete_json()`).
+When fixing an upgraded Low, briefly check whether the underlying bug pattern (null guard, exception-type guard, off-by-one, missing await, etc.) appears elsewhere in the same module or in a parallel module (e.g., chat-completions ↔ legacy completions). One targeted grep is usually enough. If twins are found, fix them in the same audit pass — the audit-pressure window closes once this PR merges. surfaced exactly such a twin (legacy `complete` had the same null-text vulnerability as the new `complete_json`).
 
 Concern-parallel twins (modules that share an abstract concern but not a directory-parallel layout) are not covered by the standard grep; documented as an accepted limitation.
 
@@ -169,7 +169,7 @@ For deferred items requiring a decision, use AskUserQuestion with options:
 - Create new issue
 - Skip
 
-**Before reaching for "Create new issue", apply the consolidation rule.** If the deferred item is a design constraint on an existing planned issue (e.g. "blocked on GH-15", "needs scaffolding from the kernel", "design depends on rules engine"), default to commenting on that issue rather than spawning a new one. The bar for a new issue: the work could be picked up by a different contributor, on a different timeline, with its own definition of done. If you can't honestly say that, it's a constraint, not a follow-up — `gh issue comment` on the parent.
+**Before reaching for "Create new issue", apply the consolidation rule.** If the deferred item is a design constraint on an existing planned issue (e.g. "blocked on ", "needs scaffolding from the kernel", "design depends on rules engine"), default to commenting on that issue rather than spawning a new one. The bar for a new issue: the work could be picked up by a different contributor, on a different timeline, with its own definition of done. If you can't honestly say that, it's a constraint, not a follow-up — `gh issue comment` on the parent.
 
 **If "Create new issue"**: Create a GitHub issue with `gh issue create`, then add a row to the Follow-ups table in `docs/project/implementation-todo.md` with the new issue's `GH-<N>` ID, `Open` status, the description, the source (e.g. `PR #N review`), and any currently-open blocking issues in `Depends on`. Insert it in execution-readiness order among the Open rows (most-pickable first). The column schema and eligibility rules live in `docs/project/implementation-todo-schema.md` — read it first if you're unsure what goes in `Depends on` vs `Gate` or what the em-dash sentinel means. Run `markdownlint-cli2 --fix "docs/project/implementation-todo.md"` and stage the change in the same commit as any other follow-up bookkeeping.
 

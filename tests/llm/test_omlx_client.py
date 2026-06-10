@@ -661,7 +661,7 @@ def test_probe_auth_header_sent_when_token_set() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-229 — Request-timing instrumentation (S1: complete() success path)
+# — Request-timing instrumentation (S1: complete success path)
 # ---------------------------------------------------------------------------
 
 
@@ -701,7 +701,7 @@ def test_complete_success_emits_timing_log_with_all_phase_keys(
 
 
 # ---------------------------------------------------------------------------
-# GH-229 — Request-timing instrumentation (S2: complete() timeout path)
+# — Request-timing instrumentation (S2: complete timeout path)
 # ---------------------------------------------------------------------------
 
 
@@ -742,7 +742,7 @@ def test_complete_timeout_emits_warning_timing_log(
 
 
 # ---------------------------------------------------------------------------
-# PR #244 S6 — M4: pre_send_us=never sentinel branch
+# S6 — M4: pre_send_us=never sentinel branch
 # ---------------------------------------------------------------------------
 
 
@@ -783,7 +783,7 @@ def test_complete_timeout_pre_send_us_never_when_request_hook_does_not_fire(
 
 
 # ---------------------------------------------------------------------------
-# PR #244 S3 — C1: Transport-error path emits diagnostic timing log
+# S3 — C1: Transport-error path emits diagnostic timing log
 # ---------------------------------------------------------------------------
 
 
@@ -794,7 +794,7 @@ def test_complete_transport_error_raises_llm_inference_error(
     a WARNING timing log with outcome=transport_error.
 
     Pre-fix: the bare except-Exception arm skips _log_timing entirely, so
-    no timing log is emitted — defeating the diagnostic purpose of GH-229.
+    no timing log is emitted — defeating the timing-log diagnostic purpose.
     """
     import logging
 
@@ -821,7 +821,7 @@ def test_complete_transport_error_raises_llm_inference_error(
 
 
 # ---------------------------------------------------------------------------
-# PR #244 L6 — ContextVar leakage: second call sees a fresh dict
+# L6 — ContextVar leakage: second call sees a fresh dict
 # ---------------------------------------------------------------------------
 
 
@@ -849,7 +849,7 @@ def test_complete_called_twice_hooks_see_independent_timing_dicts(
 
 
 # ---------------------------------------------------------------------------
-# PR #244 S1 — H1: Hook exception safety
+# S1 — H1: Hook exception safety
 # ---------------------------------------------------------------------------
 
 
@@ -945,14 +945,14 @@ def test_live_omlx_complete() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GH-229 — disable HTTP keepalive on the inference client
+# — disable HTTP keepalive on the inference client
 # ---------------------------------------------------------------------------
 
 
 def test_omlx_inference_client_disables_keepalive_gh229(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """OMLXClient must disable HTTP keepalive on the inference client (GH-229).
+    """OMLXClient must disable HTTP keepalive on the inference client.
 
     Stale keepalive connections caused 120s read timeouts in LR-001 after long
     idle gaps from the preceding query batch. Isolated-category sweep (no
@@ -996,12 +996,12 @@ def test_omlx_inference_client_disables_keepalive_gh229(
     inference_kwargs = captured[0]
     limits = inference_kwargs.get("limits")
     assert isinstance(limits, httpx.Limits), (
-        "Inference client must pass an explicit httpx.Limits (GH-229 keepalive fix)"
+        "Inference client must pass an explicit httpx.Limits"
     )
     assert limits.max_keepalive_connections == 0, (
         "Inference client must disable keepalive (max_keepalive_connections=0) "
         "so every request gets a fresh connection — prevents stale-connection "
-        "hangs after long idle gaps (GH-229)."
+        "hangs after long idle gaps."
     )
 
 
@@ -1009,7 +1009,7 @@ def test_omlx_inference_client_pool_has_keepalive_disabled_gh229(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Behavioral regression guard: the real httpcore ConnectionPool has
-    max_keepalive_connections=0 (GH-229).
+    max_keepalive_connections=0.
 
     Why this test exists in addition to the kwarg-capture test above:
     `httpx.Client._init_transport()` silently drops the `limits=` kwarg
@@ -1043,7 +1043,7 @@ def test_omlx_inference_client_pool_has_keepalive_disabled_gh229(
     pool = transport._pool
     assert pool._max_keepalive_connections == 0, (
         "httpcore ConnectionPool must have max_keepalive_connections=0 "
-        "so every request opens a fresh connection (GH-229). A non-zero "
+        "so every request opens a fresh connection. A non-zero "
         "value here means the runtime fix is silently inactive even if "
         "the constructor kwarg test passes."
     )

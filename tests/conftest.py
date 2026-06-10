@@ -26,7 +26,7 @@ _TEST_RECEIPT_KEY = "DEADBEEF" * 8  # 64 hex chars = 32 bytes
 _TEST_PHI_SALT = (
     "BADC0FFEE0" + "123456789ABCDEF0" + "FEDCBA9876543210" + "FEEDFACEDEADBEEF" + "C0FFEE"
 )
-# GH-119 Step 5: RBAC_HMAC_KEY test sentinel. Uses a distinct prefix from
+# RBAC_HMAC_KEY test sentinel. Uses a distinct prefix from
 # _TEST_RECEIPT_KEY (CAFEBABE vs DEADBEEF) so the two sentinel classes are
 # independently identifiable. Not prefixed with _TEST_RBAC_KEY_PREFIXES
 # (DEADBEEF) intentionally — RBAC key sentinel uses a different pattern
@@ -105,7 +105,7 @@ for _lf_key in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_BASE_URL
         os.environ[_lf_key] = _DOTENV_VALUES[_lf_key] or ""
 
 
-# GH-141: register the ``--models`` CLI flag at the rootdir conftest
+# Register the ``--models`` CLI flag at the rootdir conftest
 # so pytest sees it as a top-level option. The fixture and the
 # generate-tests hook are re-exported in ``tests/scenarios/conftest.py``.
 from samantha_server.scenarios.sweep import pytest_addoption  # noqa: E402,F401
