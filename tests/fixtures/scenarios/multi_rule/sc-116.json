@@ -1,0 +1,37 @@
+{
+  "scenario_id": "SC-116",
+  "category": "multi_rule",
+  "description": "Dual-match, missing billing (ACC-007 PROCEED) + unknown specimen_type (ACC-010 REVIEW_HOLD) -> PENDING_LLM_REVIEW; REVIEW_HOLD beats PROCEED; flag union carries both LLM_REVIEW_REQUESTED and MISSING_INFO_PROCEED",
+  "events": [
+    {
+      "step": 1,
+      "event_type": "order_received",
+      "event_data": {
+        "patient_name": "TESTPATIENT-0116, Anne",
+        "age": 51,
+        "sex": "F",
+        "specimen_type": "unknown_exotic_specimen",
+        "anatomic_site": "breast",
+        "fixative": "formalin",
+        "fixation_time_hours": 24.0,
+        "ordered_tests": [
+          "Breast IHC Panel"
+        ],
+        "priority": "routine",
+        "billing_info_present": false
+      },
+      "expected_output": {
+        "next_state": "PENDING_LLM_REVIEW",
+        "applied_rules": [
+          "ACC-010",
+          "ACC-007"
+        ],
+        "flags": [
+          "LLM_REVIEW_REQUESTED",
+          "MISSING_INFO_PROCEED"
+        ],
+        "routing_path": "deterministic"
+      }
+    }
+  ]
+}

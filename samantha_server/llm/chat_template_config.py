@@ -34,7 +34,7 @@ from typing import Any, Final
 _PER_MODEL_KWARGS: Final[tuple[tuple[str, Mapping[str, Any]], ...]] = (
     # Qwen3.5/3.6 thinking mode emits `<think>` reasoning that bleeds
     # into structured JSON. Must disable for schema-constrained tasks.
-    # Source: model-selection shortlist research.
+    # Source: the MLX model-shortlist research note (2026-05-15).
     ("Qwen3.5-27B", {"enable_thinking": False}),
     ("Qwen3.6-27B", {"enable_thinking": False}),
 )

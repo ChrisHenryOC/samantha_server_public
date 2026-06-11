@@ -107,3 +107,27 @@ class TestApplyRuntimeFlagClearing:
         result = apply_runtime_flag_clearing(decision, event, flags)
 
         assert "MISSING_INFO_PROCEED" in result
+
+    def test_non_billing_resolve_missing_info_leaves_flag_set(self) -> None:
+        """RESOLVE_MISSING_INFO with info_type != 'billing' leaves
+        MISSING_INFO_PROCEED set.
+
+        Mirrors test_billing_info_clears_missing_info_proceed: confirms the
+        exclusive nature of the 'billing' branch — only the exact string 'billing'
+        triggers the clear. Other info_type values (here 'insurance') must leave
+        the flag intact so resolve_transition routes to RESULTING_HOLD, not
+        RESULTING. This gap was unpinned between the existing billing-case test
+        and the 'clinical_notes'/'None'/absent variants.
+        """
+        from samantha_server.engine.action_handlers import apply_runtime_flag_clearing
+
+        decision = _make_decision("RESOLVE_MISSING_INFO")
+        event = {"info_type": "insurance"}
+        flags = frozenset({"MISSING_INFO_PROCEED", "SOME_OTHER_FLAG"})
+
+        result = apply_runtime_flag_clearing(decision, event, flags)
+
+        assert "MISSING_INFO_PROCEED" in result, (
+            "MISSING_INFO_PROCEED must remain set when info_type is not 'billing'"
+        )
+        assert "SOME_OTHER_FLAG" in result

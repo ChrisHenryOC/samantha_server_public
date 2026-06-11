@@ -74,8 +74,36 @@ class TestUndispatchedRuleError:
         # Issue a dispatch token bound to session "A".
         dispatch = list_applicable_rules(ctx, rule_index, session_id="session-A", ttl_sec=60)
         # Evaluating it with session "B" must fail — cross-session replay rejected.
-        with pytest.raises(UndispatchedRuleError):
+        # The message must name the session mismatch, not claim
+        # an HMAC failure — an operator chasing a stale-session caller should
+        # not be misdirected toward a token-forgery investigation.
+        with pytest.raises(UndispatchedRuleError, match="session mismatch"):
             evaluate(dispatch, ctx, session_id="session-B")
+
+    def test_session_id_is_required_raises_type_error(self, rule_index: RuleIndex) -> None:
+        """evaluate() without session_id raises TypeError.
+
+        The session_id parameter is keyword-only and required; omitting it
+        must raise TypeError so the cross-session replay guard can never
+        be silently bypassed by a caller that forgets the kwarg.
+        """
+        ctx = _make_ctx()
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        with pytest.raises(TypeError):
+            evaluate(dispatch, ctx)  # type: ignore[call-arg]
+
+    def test_session_id_is_keyword_only(self) -> None:
+        """session_id cannot be passed as a positional argument.
+
+        Mirrors test_filter_is_keyword_only: pins the keyword-only property
+        so a future signature edit can't silently allow positional misuse.
+        """
+        import inspect
+
+        sig = inspect.signature(evaluate)
+        param = sig.parameters["session_id"]
+        assert param.kind == inspect.Parameter.KEYWORD_ONLY
+        assert param.default is inspect.Parameter.empty
 
     def test_same_session_does_not_raise(self, rule_index: RuleIndex) -> None:
         """evaluate() with the matching session_id succeeds."""
@@ -83,7 +111,20 @@ class TestUndispatchedRuleError:
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
         # Should not raise — session matches.
         result = evaluate(dispatch, ctx, session_id="test-session")
-        assert result is not None
+        assert isinstance(result, EngineDecision)
+
+    def test_expired_dispatch_raises_through_evaluate(self, rule_index: RuleIndex) -> None:
+        """An expired dispatch token raises UndispatchedRuleError via evaluate().
+
+        the TTL guard was only unit-tested at the dispatcher
+        level; this pins the integration path. ttl_sec=-1 mints an
+        already-expired token, so with a matching session the failure routes
+        to the HMAC/expiry raise site.
+        """
+        ctx = _make_ctx()
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=-1)
+        with pytest.raises(UndispatchedRuleError, match="expired"):
+            evaluate(dispatch, ctx, session_id="test-session")
 
     def test_wrong_token_raises(self, rule_index: RuleIndex) -> None:
         ctx = _make_ctx()
@@ -93,17 +134,72 @@ class TestUndispatchedRuleError:
             token=bytes(b ^ 0xFF for b in dispatch.token),
             session_id="test-session",
         )
-        with pytest.raises(UndispatchedRuleError):
+        # Matching session, forged token: the message must point at the HMAC,
+        # not the session (discriminated raise sites).
+        with pytest.raises(UndispatchedRuleError, match="HMAC"):
             evaluate(forged, ctx, session_id="test-session")
 
     def test_wrong_rules_raises(self, rule_index: RuleIndex) -> None:
         ctx = _make_ctx()
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        # Pass a tampered DispatchResult with one rule removed but the original token
-        tampered_rules = dispatch.rules[1:] if len(dispatch.rules) > 1 else ()
-        tampered = DispatchResult(rules=tampered_rules, token=dispatch.token, session_id="test")
-        with pytest.raises(UndispatchedRuleError):
+        # Pin the ACCESSIONING multi-rule count so the `dispatch.rules[1:]`
+        # slice below can never silently degenerate to the empty-tuple branch.
+        # ACCESSIONING produces 12 rules; assert this assumption explicitly.
+        assert len(dispatch.rules) > 1, (
+            f"fixture must produce a multi-rule dispatch for ACCESSIONING; "
+            f"got {len(dispatch.rules)} rules — rule-set regression?"
+        )
+        # Pass a tampered DispatchResult with one rule removed but the original token.
+        # session_id matches the caller's so the session guard
+        # passes and the test reaches the HMAC byte check it documents.
+        tampered_rules = dispatch.rules[1:]
+        tampered = DispatchResult(
+            rules=tampered_rules, token=dispatch.token, session_id="test-session"
+        )
+        with pytest.raises(UndispatchedRuleError, match="HMAC"):
             evaluate(tampered, ctx, session_id="test-session")
+
+    def test_wrong_rules_non_empty_to_non_empty_raises(self, rule_index: RuleIndex) -> None:
+        """HMAC tamper is detected when rules are replaced with a different
+        non-empty rule set, not just when they are reduced to the empty tuple.
+
+        Grafts the SP-step rule set (non-empty) onto an ACCESSIONING dispatch token.
+        Both the original and the grafted set are non-empty, so this exercises the
+        HMAC binding beyond the degenerate empty-tuple case.
+
+        Note: with matching session ids on both sides this is
+        a pure HMAC rule-byte binding regression — it does not discriminate the
+        session bypass (that coverage lives in the cross-session and
+        TypeError contract tests above).
+        """
+        ctx_acc = _make_ctx()
+        dispatch_acc = list_applicable_rules(
+            ctx_acc, rule_index, session_id="test-session", ttl_sec=60
+        )
+        # Obtain a legitimately-dispatched non-empty rule set from a different step.
+        ctx_sp = _make_ctx(
+            state="SAMPLE_PREP_PROCESSING",
+            event_type="processing_complete",
+            event_data={"outcome": "success"},
+        )
+        dispatch_sp = list_applicable_rules(
+            ctx_sp, rule_index, session_id="test-session", ttl_sec=60
+        )
+        # Verify both sets are non-empty and genuinely different.
+        assert len(dispatch_acc.rules) > 0
+        assert len(dispatch_sp.rules) > 0
+        assert set(r.rule_id for r in dispatch_acc.rules) != set(
+            r.rule_id for r in dispatch_sp.rules
+        )
+        # Graft the SP rules onto the ACC token — HMAC now covers different rule bytes.
+        tampered = DispatchResult(
+            rules=dispatch_sp.rules,
+            token=dispatch_acc.token,
+            session_id=dispatch_acc.session_id,
+            expires_at=dispatch_acc.expires_at,
+        )
+        with pytest.raises(UndispatchedRuleError):
+            evaluate(tampered, ctx_acc, session_id="test-session")
 
     def test_empty_dispatch_with_wrong_token_raises(self, rule_index: RuleIndex) -> None:
         """Even for an empty dispatch, token must be valid."""
@@ -122,7 +218,7 @@ class TestDispatchEmpty:
         """No matching rules → outcome='dispatch_empty', applied_rule_id=None."""
         ctx = _make_ctx(state="MISSING_INFO_HOLD", event_type="some_event")
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert isinstance(decision, EngineDecision)
         assert decision.applied_rule_id is None
         assert decision.next_state == ctx.current_state
@@ -149,7 +245,7 @@ class TestAccessioningEvaluation:
             billing_info_present=True,
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "ACC-008"
         assert decision.next_state == "ACCEPTED"
         assert decision.outcome == "accessioning_validations_passed"
@@ -169,7 +265,7 @@ class TestAccessioningEvaluation:
             billing_info_present=True,
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         # ACC-005 is REJECT, should win over ACC-001 which is HOLD
         assert decision.applied_rule_id == "ACC-005"
         assert decision.next_state == "DO_NOT_PROCESS"
@@ -188,7 +284,7 @@ class TestAccessioningEvaluation:
             billing_info_present=True,
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "ACC-001"
         assert decision.next_state == "MISSING_INFO_HOLD"
 
@@ -206,7 +302,7 @@ class TestAccessioningEvaluation:
             billing_info_present=True,
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         # Both ACC-001 and ACC-002 are HOLD — one applied, the other in also_matched
         all_ids = {decision.applied_rule_id} | set(decision.also_matched)
         assert "ACC-001" in all_ids
@@ -227,20 +323,20 @@ class TestAccessioningEvaluation:
             billing_info_present=True,
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "ACC-001"
         assert "ACC-002" in decision.also_matched
 
     def test_dispatched_rule_ids_matches_dispatch_result(self, rule_index: RuleIndex) -> None:
         ctx = _make_ctx()
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert set(decision.dispatched_rule_ids) == {r.rule_id for r in dispatch.rules}
 
     def test_latency_us_is_positive_integer(self, rule_index: RuleIndex) -> None:
         ctx = _make_ctx()
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert isinstance(decision.latency_us, int)
         assert decision.latency_us >= 0
 
@@ -248,8 +344,8 @@ class TestAccessioningEvaluation:
         ctx = _make_ctx()
         dispatch1 = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
         dispatch2 = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        d1 = evaluate(dispatch1, ctx)
-        d2 = evaluate(dispatch2, ctx)
+        d1 = evaluate(dispatch1, ctx, session_id="test-session")
+        d2 = evaluate(dispatch2, ctx, session_id="test-session")
         assert d1.event_input_hash == d2.event_input_hash
 
     def test_primitive_traces_only_for_matched_rules(self, rule_index: RuleIndex) -> None:
@@ -266,7 +362,7 @@ class TestAccessioningEvaluation:
             billing_info_present=True,
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         # ACC-001 matched; its trace should be present
         assert "ACC-001" in decision.primitive_traces
         # Unmatched rules should not appear in traces
@@ -284,7 +380,7 @@ class TestNonAccessioningEvaluation:
             event_data={"outcome": "success"},
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         # SP-001 fires on outcome=success at processing_complete; priority=1
         assert decision.applied_rule_id == "SP-001"
         assert decision.also_matched == ()
@@ -300,7 +396,7 @@ class TestNonAccessioningEvaluation:
             event_data={"outcome": "failure"},
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id is None
         assert decision.outcome == "dispatch_empty"
 
@@ -312,14 +408,17 @@ class TestNonAccessioningEvaluation:
 
 class TestRuleIdFilter:
     def test_no_filter_arg_same_as_existing_call(self, rule_index: RuleIndex) -> None:
-        """evaluate(dispatch, ctx) == evaluate(dispatch, ctx, rule_id_filter=None)
-        — the new kwarg is backward-compatible."""
+        """Omitting rule_id_filter behaves the same as rule_id_filter=None.
+
+        (session_id is always required; only the filter kwarg
+        is optional here.)
+        """
         ctx = _make_ctx(
             patient_name=None,  # triggers ACC-001 (HOLD)
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision_no_kwarg = evaluate(dispatch, ctx)
-        decision_none = evaluate(dispatch, ctx, rule_id_filter=None)
+        decision_no_kwarg = evaluate(dispatch, ctx, session_id="test-session")
+        decision_none = evaluate(dispatch, ctx, session_id="test-session", rule_id_filter=None)
         assert decision_no_kwarg.applied_rule_id == decision_none.applied_rule_id
         assert decision_no_kwarg.outcome == decision_none.outcome
         assert decision_no_kwarg.dispatched_rule_ids == decision_none.dispatched_rule_ids
@@ -328,8 +427,8 @@ class TestRuleIdFilter:
         """rule_id_filter=None produces identical dispatched_rule_ids."""
         ctx = _make_ctx()
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        d1 = evaluate(dispatch, ctx)
-        d2 = evaluate(dispatch, ctx, rule_id_filter=None)
+        d1 = evaluate(dispatch, ctx, session_id="test-session")
+        d2 = evaluate(dispatch, ctx, session_id="test-session", rule_id_filter=None)
         assert d1.dispatched_rule_ids == d2.dispatched_rule_ids
 
     def test_filter_to_acc001_fires_acc001(self, rule_index: RuleIndex) -> None:
@@ -341,7 +440,7 @@ class TestRuleIdFilter:
         # Verify ACC-001 is in the dispatch
         assert any(r.rule_id == "ACC-001" for r in dispatch.rules)
 
-        decision = evaluate(dispatch, ctx, rule_id_filter="ACC-001")
+        decision = evaluate(dispatch, ctx, session_id="test-session", rule_id_filter="ACC-001")
         assert decision.applied_rule_id == "ACC-001"
 
     def test_filter_dispatched_rule_ids_is_full_original_list(self, rule_index: RuleIndex) -> None:
@@ -355,7 +454,7 @@ class TestRuleIdFilter:
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
         full_ids = tuple(r.rule_id for r in dispatch.rules)
 
-        decision = evaluate(dispatch, ctx, rule_id_filter="ACC-001")
+        decision = evaluate(dispatch, ctx, session_id="test-session", rule_id_filter="ACC-001")
         assert decision.dispatched_rule_ids == full_ids
         # L-02 review: filter implies a single rule iterated;
         # other matches are not seen, so also_matched must be empty.
@@ -368,7 +467,7 @@ class TestRuleIdFilter:
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
         full_ids = tuple(r.rule_id for r in dispatch.rules)
 
-        decision = evaluate(dispatch, ctx, rule_id_filter="NONEXISTENT")
+        decision = evaluate(dispatch, ctx, session_id="test-session", rule_id_filter="NONEXISTENT")
         assert decision.outcome == "dispatch_empty"
         assert decision.applied_rule_id is None
         assert decision.dispatched_rule_ids == full_ids
@@ -399,9 +498,177 @@ class TestRuleIdFilter:
         # Sanity: SP-001 should be in the dispatch for this ctx.
         assert "SP-001" in full_ids
 
-        decision = evaluate(dispatch, ctx, rule_id_filter="SP-001")
+        decision = evaluate(dispatch, ctx, session_id="test-session", rule_id_filter="SP-001")
         assert decision.applied_rule_id == "SP-001"
         assert decision.dispatched_rule_ids == full_ids
+
+
+# ---------------------------------------------------------------------------
+# REVIEW_HOLD tier and flag-union semantics
+# ---------------------------------------------------------------------------
+
+
+class TestReviewHoldTier:
+    """REVIEW_HOLD severity tier beats PROCEED; flag-union on dual-match."""
+
+    def test_review_hold_beats_proceed_on_dual_match(self, rule_index: RuleIndex) -> None:
+        """ACC-010 (REVIEW_HOLD: unknown specimen_type) beats ACC-007 (PROCEED: missing billing).
+
+        Before the fix both were PROCEED and ACC-007 won alphabetically, silently
+        dropping the clinically required PENDING_LLM_REVIEW transition.
+        """
+        ctx = _make_ctx(
+            patient_name="Jane Doe",
+            patient_sex="F",
+            age=45,
+            specimen_type="unknown_exotic_type",  # triggers ACC-010 (REVIEW_HOLD)
+            anatomic_site="breast",
+            fixative="formalin",
+            fixation_time_hours=8.0,
+            ordered_tests=("HER2",),
+            billing_info_present=False,  # triggers ACC-007 (PROCEED)
+        )
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
+        assert decision.applied_rule_id == "ACC-010"
+        assert decision.next_state == "PENDING_LLM_REVIEW"
+        assert "ACC-007" in decision.also_matched
+
+    def test_review_hold_beats_proceed_anatomic_site_variant(self, rule_index: RuleIndex) -> None:
+        """ACC-011 (REVIEW_HOLD: unknown anatomic_site) beats ACC-007 (PROCEED: missing billing)."""
+        ctx = _make_ctx(
+            patient_name="Jane Doe",
+            patient_sex="F",
+            age=45,
+            specimen_type="biopsy",
+            anatomic_site="unknown_exotic_site",  # triggers ACC-011 (REVIEW_HOLD)
+            fixative="formalin",
+            fixation_time_hours=8.0,
+            ordered_tests=("HER2",),
+            billing_info_present=False,  # triggers ACC-007 (PROCEED)
+        )
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
+        assert decision.applied_rule_id == "ACC-011"
+        assert decision.next_state == "PENDING_LLM_REVIEW"
+        assert "ACC-007" in decision.also_matched
+
+    def test_flag_union_review_hold_winner_includes_proceed_flags(
+        self, rule_index: RuleIndex
+    ) -> None:
+        """When winner is REVIEW_HOLD, flags_added unions set_flags from PROCEED rules.
+
+        ACC-010 sets LLM_REVIEW_REQUESTED; ACC-007 sets MISSING_INFO_PROCEED.
+        Both must appear in flags_added so the post-review billing path works.
+        """
+        ctx = _make_ctx(
+            patient_name="Jane Doe",
+            patient_sex="F",
+            age=45,
+            specimen_type="unknown_exotic_type",  # triggers ACC-010 (REVIEW_HOLD)
+            anatomic_site="breast",
+            fixative="formalin",
+            fixation_time_hours=8.0,
+            ordered_tests=("HER2",),
+            billing_info_present=False,  # triggers ACC-007 (PROCEED)
+        )
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
+        # Exact tuple: winner's declared flags first, then rescued PROCEED-tier
+        # flags in match order (H-2 — pins the concat direction).
+        assert decision.flags_added == ("LLM_REVIEW_REQUESTED", "MISSING_INFO_PROCEED")
+
+    def test_flag_union_no_duplicates(self, rule_index: RuleIndex) -> None:
+        """flags_added must not contain duplicate flag names after union."""
+        ctx = _make_ctx(
+            patient_name="Jane Doe",
+            patient_sex="F",
+            age=45,
+            specimen_type="unknown_exotic_type",
+            anatomic_site="breast",
+            fixative="formalin",
+            fixation_time_hours=8.0,
+            ordered_tests=("HER2",),
+            billing_info_present=False,
+        )
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
+        assert len(decision.flags_added) == len(set(decision.flags_added))
+
+    def test_flag_union_not_fired_for_hold_tier_winner(self, rule_index: RuleIndex) -> None:
+        """HOLD-tier winner (SC-104-shaped ctx) must NOT union PROCEED flags.
+
+        SC-104: ACC-001 (HOLD: missing patient_name) wins over ACC-007 (PROCEED: missing billing).
+        ACC-007's MISSING_INFO_PROCEED must NOT appear in flags_added.
+        """
+        ctx = _make_ctx(
+            patient_name=None,  # triggers ACC-001 (HOLD)
+            patient_sex="F",
+            age=45,
+            specimen_type="biopsy",
+            anatomic_site="breast",
+            fixative="formalin",
+            fixation_time_hours=8.0,
+            ordered_tests=("HER2",),
+            billing_info_present=False,  # triggers ACC-007 (PROCEED)
+        )
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
+        assert decision.applied_rule_id == "ACC-001"
+        assert "MISSING_INFO_PROCEED" not in decision.flags_added
+
+    def test_flag_union_not_fired_for_reject_tier_winner(self, rule_index: RuleIndex) -> None:
+        """Negative: REJECT winner must NOT union demoted flags.
+
+        ACC-006 (REJECT: HER2 fixation out of [6, 72]h tolerance) wins over
+        ACC-010 (REVIEW_HOLD: unknown specimen_type) and ACC-007 (PROCEED:
+        missing billing). A DO_NOT_PROCESS specimen must not gain
+        LLM_REVIEW_REQUESTED or MISSING_INFO_PROCEED.
+        """
+        ctx = _make_ctx(
+            patient_name="Jane Doe",
+            patient_sex="F",
+            age=45,
+            specimen_type="unknown_exotic_type",  # triggers ACC-010 (REVIEW_HOLD)
+            anatomic_site="breast",
+            fixative="formalin",
+            fixation_time_hours=100.0,  # triggers ACC-006 (REJECT)
+            ordered_tests=("HER2",),
+            billing_info_present=False,  # triggers ACC-007 (PROCEED)
+        )
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
+        assert decision.applied_rule_id == "ACC-006"
+        assert "LLM_REVIEW_REQUESTED" not in decision.flags_added
+        assert "MISSING_INFO_PROCEED" not in decision.flags_added
+
+    def test_flag_union_triple_match_review_hold_sibling_contributes_nothing(
+        self, rule_index: RuleIndex
+    ) -> None:
+        """triple-match (M): ACC-010 + ACC-011 + ACC-007 co-fire.
+
+        Unknown specimen AND unknown site AND missing billing: ACC-010 wins the
+        intra-REVIEW_HOLD tie alphabetically; ACC-011 (REVIEW_HOLD sibling) is
+        demoted but contributes no flags via the union (PROCEED-tier only);
+        ACC-007's MISSING_INFO_PROCEED is rescued. Flags are identical
+        regardless of which REVIEW_HOLD rule wins the tie.
+        """
+        ctx = _make_ctx(
+            patient_name="Jane Doe",
+            patient_sex="F",
+            age=45,
+            specimen_type="unknown_exotic_type",  # triggers ACC-010 (REVIEW_HOLD)
+            anatomic_site="unknown_exotic_site",  # triggers ACC-011 (REVIEW_HOLD)
+            fixative="formalin",
+            fixation_time_hours=8.0,
+            ordered_tests=("HER2",),
+            billing_info_present=False,  # triggers ACC-007 (PROCEED)
+        )
+        dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
+        assert decision.applied_rule_id == "ACC-010"
+        assert set(decision.also_matched) >= {"ACC-011", "ACC-007"}
+        assert decision.flags_added == ("LLM_REVIEW_REQUESTED", "MISSING_INFO_PROCEED")
 
     # M-04 review: filter resolves to a rule that IS in
     # dispatch but whose predicate evaluates false on this ctx. The
@@ -423,7 +690,7 @@ class TestRuleIdFilter:
         full_ids = tuple(r.rule_id for r in dispatch.rules)
         assert "ACC-001" in full_ids  # ACC-001 IS in the dispatch
 
-        decision = evaluate(dispatch, ctx, rule_id_filter="ACC-001")
+        decision = evaluate(dispatch, ctx, session_id="test-session", rule_id_filter="ACC-001")
         assert decision.outcome == "dispatch_empty"
         assert decision.applied_rule_id is None
         assert decision.dispatched_rule_ids == full_ids
@@ -451,7 +718,7 @@ class TestCanonicalizationTraceEmission:
             priority="routine",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         canon_traces = [t for t in decision.decision_traces if t.kind == "canonicalization_warning"]
         assert canon_traces == [], (
             f"Expected no canonicalization traces for known values; got {canon_traces}"
@@ -471,7 +738,7 @@ class TestCanonicalizationTraceEmission:
             priority="routine",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         canon_traces = [t for t in decision.decision_traces if t.kind == "canonicalization_warning"]
         assert canon_traces == [], (
             f"Uppercase known value 'HER2' should not fire a trace; got {canon_traces}"
@@ -487,7 +754,7 @@ class TestCanonicalizationTraceEmission:
             priority="routine",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         canon_traces = [t for t in decision.decision_traces if t.kind == "canonicalization_warning"]
         assert len(canon_traces) == 1
         trace = canon_traces[0]
@@ -505,7 +772,7 @@ class TestCanonicalizationTraceEmission:
             priority="routine",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         canon_traces = [t for t in decision.decision_traces if t.kind == "canonicalization_warning"]
         fields_warned = {t.field for t in canon_traces}
         assert "specimen_type" in fields_warned
@@ -524,7 +791,7 @@ class TestCanonicalizationTraceEmission:
             priority="routine",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         canon_traces = [t for t in decision.decision_traces if t.kind == "canonicalization_warning"]
         assert len(canon_traces) == 1
         trace = canon_traces[0]
@@ -545,7 +812,7 @@ class TestCanonicalizationTraceEmission:
             priority="routine",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         canon_traces = [
             t
             for t in decision.decision_traces
@@ -572,7 +839,7 @@ class TestCanonicalizationTraceEmission:
             priority="routine",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         specimen_traces = [
             t
             for t in decision.decision_traces
@@ -604,7 +871,7 @@ class TestEvaluatorOrderIdPopulation:
             order_id="O-SLICE2-FM",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.order_id == "O-SLICE2-FM"
 
     def test_no_match_dispatch_empty_populates_order_id(self, rule_index: RuleIndex) -> None:
@@ -623,7 +890,7 @@ class TestEvaluatorOrderIdPopulation:
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
         assert dispatch.rules == (), "expected empty dispatch for this state/event combo"
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.outcome == "dispatch_empty"
         assert decision.order_id == "O-SLICE2-NOMATCH"
 
@@ -644,7 +911,7 @@ class TestEvaluatorOrderIdPopulation:
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
         assert dispatch.rules != (), "expected non-empty dispatch for this state/event combo"
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.outcome == "dispatch_empty"
         assert decision.order_id == "O-SLICE2-TAILNOMATCH"
 
@@ -663,6 +930,80 @@ class TestEvaluatorOrderIdPopulation:
             order_id="O-SLICE2-ACC",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "ACC-008"
         assert decision.order_id == "O-SLICE2-ACC"
+
+
+# ---------------------------------------------------------------------------
+# CANONICAL_FIELDS_SORTED and event_input_hash consistency
+# (review fix #4)
+# ---------------------------------------------------------------------------
+
+
+def test_canonical_fields_sorted_constant_equals_sorted_canonical_fields() -> None:
+    """CANONICAL_FIELDS_SORTED equals tuple(sorted(CANONICAL_FIELDS)).
+
+    Pins the content so the hoist cannot silently introduce a different ordering.
+    """
+    from samantha_server.canonicalization import CANONICAL_FIELDS
+    from samantha_server.engine.evaluator import CANONICAL_FIELDS_SORTED
+
+    assert tuple(sorted(CANONICAL_FIELDS)) == CANONICAL_FIELDS_SORTED, (
+        "CANONICAL_FIELDS_SORTED must equal tuple(sorted(CANONICAL_FIELDS)) exactly"
+    )
+
+
+def test_canonical_fields_sorted_is_tuple() -> None:
+    """CANONICAL_FIELDS_SORTED is a tuple (not a list or frozenset)."""
+    from samantha_server.engine import evaluator
+
+    assert isinstance(evaluator.CANONICAL_FIELDS_SORTED, tuple), (
+        f"CANONICAL_FIELDS_SORTED must be a tuple; got {type(evaluator.CANONICAL_FIELDS_SORTED)}"
+    )
+
+
+def test_evaluate_event_input_hash_consistent_across_dispatch_paths() -> None:
+    """event_input_hash is the same value regardless of which
+    internal branch (no-match, accessioning, first-match) produces the decision.
+
+    Exercises the accessioning branch with identical ctx and asserts the hash
+    on the returned decision equals compute_event_input_hash(ctx). This pins the
+    single-computation contract: the hash is computed once at the top of evaluate()
+    and threaded through all internal helpers.
+    """
+    from samantha_server.engine.decision import compute_event_input_hash
+    from samantha_server.engine.dispatcher import list_applicable_rules
+    from samantha_server.engine.evaluator import evaluate
+    from samantha_server.models.context import Event, Order, SpecimenContext
+
+    order = Order(
+        order_id="O-GH387",
+        patient_name="Jane Doe",
+        patient_sex="F",
+        age=45,
+        specimen_type="biopsy",
+        anatomic_site="breast",
+        fixative="formalin",
+        fixation_time_hours=8.0,
+        ordered_tests=("HER2",),
+        priority="routine",
+        billing_info_present=True,
+    )
+    ctx = SpecimenContext(
+        order=order,
+        current_state="ACCESSIONING",
+        flags=frozenset(),
+        event=Event(event_type="order_received", event_data={}, step_index=0),
+    )
+
+    specs = load_rule_specs(SPECS_DIR)
+    index = RuleIndex(specs)
+    dispatch = list_applicable_rules(ctx, index, session_id="test-gh387", ttl_sec=60)
+    decision = evaluate(dispatch, ctx, session_id="test-gh387")
+
+    expected_hash = compute_event_input_hash(ctx)
+    assert decision.event_input_hash == expected_hash, (
+        f"event_input_hash on decision ({decision.event_input_hash!r}) must "
+        f"equal compute_event_input_hash(ctx) ({expected_hash!r})"
+    )

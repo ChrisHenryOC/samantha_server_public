@@ -888,8 +888,12 @@ def test_on_request_hook_swallows_exception_and_logs_warning(
 
     copy_context().run(_run_hook_in_context)
 
-    warning_msgs = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert any("omlx request-timing hook failed" in m for m in warning_msgs)
+    warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("omlx request-timing hook failed" in r.getMessage() for r in warning_records)
+    # The warning must carry exc_info so the failure is diagnosable.
+    assert any(r.exc_info is not None for r in warning_records), (
+        "_on_request warning must carry exc_info"
+    )
 
 
 def test_on_response_hook_swallows_exception_and_logs_warning(
@@ -920,8 +924,12 @@ def test_on_response_hook_swallows_exception_and_logs_warning(
 
     copy_context().run(_run_hook_in_context)
 
-    warning_msgs = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert any("omlx request-timing hook failed" in m for m in warning_msgs)
+    warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("omlx response-timing hook failed" in r.getMessage() for r in warning_records)
+    # The warning must carry exc_info so the failure is diagnosable.
+    assert any(r.exc_info is not None for r in warning_records), (
+        "_on_response warning must carry exc_info"
+    )
 
 
 @pytest.mark.local_omlx

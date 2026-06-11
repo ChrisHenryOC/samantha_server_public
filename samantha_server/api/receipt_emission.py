@@ -75,6 +75,11 @@ async def emit_receipt(
         Any exception from sign_decision or receipt_writer.write_signed,
         after incrementing counters.receipt_signing_failures.
     """
+    # Lazy import: receipt_emission is imported at test-collection time and must
+    # not trigger config's test-sentinel check at that point. The justification
+    # matches the pattern used across api/ (routing.py, events.py, rbac.py,
+    # lifespan.py, app.py, health.py) for modules that need config at call
+    # time but not at import time.
     import samantha_server.config as cfg
 
     if (

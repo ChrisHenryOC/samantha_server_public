@@ -2,7 +2,7 @@ rule_id: ACC-011
 step: ACCESSIONING
 applies_at: null
 event_type: order_received
-severity: PROCEED
+severity: REVIEW_HOLD
 priority: null
 when:
   # Fall-through predicate: fires when anatomic_site is non-null and
@@ -13,7 +13,7 @@ when:
   # Disjointness with ACC-003 is guaranteed by the second Not(in_enum)
   # clause (children[1]): a value on the blacklist makes that clause
   # False, so ACC-011's boolean_and short-circuits to False and ACC-011
-  # does not fire. SEVERITY_ORDER (REJECT > PROCEED) is defense-in-depth,
+  # does not fire. SEVERITY_ORDER (REJECT > REVIEW_HOLD) is defense-in-depth,
   # not the primary disjointness contract.
   #
   # Disjointness with ACC-012 (the null branch) is guaranteed by the
@@ -22,6 +22,11 @@ when:
   # Disjointness with ACC-008 (the implicit accept fall-through): a
   # whitelisted value satisfies the third clause's negation, so
   # ACC-011 does NOT fire and ACC-008 picks up the accept.
+  #
+  # Intra-tier resolution with ACC-007: ACC-011 is REVIEW_HOLD and
+  # ACC-007 is PROCEED, so ACC-011 wins on a dual-match (missing billing +
+  # unknown anatomic_site). The engine also unions ACC-007's MISSING_INFO_PROCEED
+  # flag into flags_added so the post-review billing path is not lost.
   boolean_and:
     - not:
         is_null:

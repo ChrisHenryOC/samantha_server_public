@@ -783,10 +783,10 @@ class TestAcc010:
         acc010 = next(s for s in acc_specs if s.rule_id == "ACC-010")
         assert acc010.action.transition == "PENDING_LLM_REVIEW"
 
-    def test_acc010_severity_is_proceed(self, acc_specs: list[RuleSpec]) -> None:
-        """ACC-010 must have PROCEED severity."""
+    def test_acc010_severity_is_review_hold(self, acc_specs: list[RuleSpec]) -> None:
+        """ACC-010 must have REVIEW_HOLD severity (beats PROCEED/ACC-007)."""
         acc010 = next(s for s in acc_specs if s.rule_id == "ACC-010")
-        assert acc010.severity == "PROCEED"
+        assert acc010.severity == "REVIEW_HOLD"
 
     def test_acc010_sets_llm_review_requested_flag(self, acc_specs: list[RuleSpec]) -> None:
         """ACC-010 must set LLM_REVIEW_REQUESTED."""
@@ -1119,10 +1119,10 @@ class TestAcc011LlmReviewBand:
         ctx = _make_acc011_ctx(None)
         assert acc011.when.evaluate(ctx) is False
 
-    def test_acc011_severity_is_proceed(self, acc_specs: list[RuleSpec]) -> None:
-        """ACC-011 severity must be PROCEED."""
+    def test_acc011_severity_is_review_hold(self, acc_specs: list[RuleSpec]) -> None:
+        """ACC-011 severity must be REVIEW_HOLD (beats PROCEED/ACC-007)."""
         acc011 = next(s for s in acc_specs if s.rule_id == "ACC-011")
-        assert acc011.severity == "PROCEED"
+        assert acc011.severity == "REVIEW_HOLD"
 
     def test_acc011_transition_is_pending_llm_review(self, acc_specs: list[RuleSpec]) -> None:
         """ACC-011 action transition must be PENDING_LLM_REVIEW."""

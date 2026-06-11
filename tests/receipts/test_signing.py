@@ -330,28 +330,32 @@ def test_verify_signature_invalid_via_previous_key_slot() -> None:
     assert result == VerificationResult.INVALID_SIGNATURE
 
 
-def test_verify_signature_partial_key_args_returns_key_expired() -> None:
-    """M-21: previous_key without previous_key_id → partial args silently dropped.
+def test_verify_signature_previous_key_without_id_raises() -> None:
+    """previous_key set without previous_key_id.
 
-    The contract: if previous_key_id is None, the previous key is not added to
-    key_candidates. A receipt whose signer_key_id matches no candidate → KEY_EXPIRED.
+    Mirror of the Item 1 guard: supply both or neither. When previous_key
+    is set but previous_key_id is None, verify_signature must raise
+    MisconfiguredEnvironmentError rather than silently dropping the key and
+    returning KEY_EXPIRED with no diagnostic. The "both or neither" contract
+    is now symmetric for both asymmetric cases.
     """
-    from samantha_server.receipts.signing import VerificationResult, sign_decision, verify_signature
+    from samantha_server.errors import MisconfiguredEnvironmentError
+    from samantha_server.receipts.signing import sign_decision, verify_signature
 
     k1 = _make_signing_key()
     k2 = _make_signing_key()
     decision = _make_minimal_decision()
     receipt = sign_decision(decision, key_id="v1", signing_key=k1)  # type: ignore[arg-type]
 
-    # previous_key provided but no previous_key_id — the k1 entry is dropped
-    result = verify_signature(
-        receipt,
-        current_key=k2,
-        current_key_id="v2",
-        previous_key=k1,
-        # previous_key_id intentionally absent
-    )
-    assert result == VerificationResult.KEY_EXPIRED
+    # previous_key provided but no previous_key_id — mirror asymmetric misconfiguration.
+    with pytest.raises(MisconfiguredEnvironmentError, match="previous_key_id"):
+        verify_signature(
+            receipt,
+            current_key=k2,
+            current_key_id="v2",
+            previous_key=k1,
+            # previous_key_id intentionally absent
+        )
 
 
 def test_canonical_signing_payload_raises_on_length_mismatch() -> None:
@@ -467,6 +471,59 @@ def test_pre_pr_receipt_canonical_payload_byte_identity() -> None:
     )
 
 
+def test_verify_signature_raises_on_previous_key_id_without_previous_key() -> None:
+    """previous_key_id set while previous_key is None.
+
+    Raises MisconfiguredEnvironmentError.
+
+    The mirror case of H-03: previous_key_id without previous_key is an asymmetric
+    misconfiguration. The documented rotation playbook never passes through this state
+    (previous_key_id is only meaningful alongside previous_key), so it must be rejected
+    loudly rather than silently discarding the id and leaving v1 receipts as KEY_EXPIRED
+    with no diagnostic.
+    """
+    from samantha_server.errors import MisconfiguredEnvironmentError
+    from samantha_server.receipts.signing import sign_decision, verify_signature
+
+    k1 = _make_signing_key()
+    k2 = _make_signing_key()
+    decision = _make_minimal_decision()
+    receipt = sign_decision(decision, key_id="v1", signing_key=k1)  # type: ignore[arg-type]
+
+    # previous_key_id is set but previous_key is None — asymmetric misconfiguration.
+    with pytest.raises(MisconfiguredEnvironmentError, match="previous_key_id"):
+        verify_signature(
+            receipt,
+            current_key=k2,
+            current_key_id="v2",
+            previous_key=None,  # unset
+            previous_key_id="v1",  # set — asymmetric!
+        )
+
+
+def test_verify_signature_previous_key_and_id_both_set_still_verifies_valid() -> None:
+    """Symmetric previous_key + previous_key_id config still verifies VALID.
+
+    Regression guard: the new asymmetric-misconfig check must not break the
+    normal rotation case where both previous_key and previous_key_id are set.
+    """
+    from samantha_server.receipts.signing import VerificationResult, sign_decision, verify_signature
+
+    k1 = _make_signing_key()  # previous key
+    k2 = _make_signing_key()  # current key
+    decision = _make_minimal_decision()
+    receipt = sign_decision(decision, key_id="v1", signing_key=k1)  # type: ignore[arg-type]
+
+    result = verify_signature(
+        receipt,
+        current_key=k2,
+        current_key_id="v2",
+        previous_key=k1,  # both set — normal rotation
+        previous_key_id="v1",
+    )
+    assert result == VerificationResult.VALID
+
+
 def test_verify_signature_raises_on_duplicate_key_ids() -> None:
     """H-03: verify_signature must raise MisconfiguredEnvironmentError when
     current_key_id == previous_key_id AND previous_key is not None.
@@ -491,3 +548,74 @@ def test_verify_signature_raises_on_duplicate_key_ids() -> None:
             previous_key=k2,
             previous_key_id="v1",  # same id as current!
         )
+
+
+# ---------------------------------------------------------------------------
+# ULID same-millisecond encoding
+# ---------------------------------------------------------------------------
+
+
+def test_ulid_same_millisecond_shares_timestamp_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Two ULIDs generated at the same frozen millisecond share
+    their first 10 chars (the timestamp prefix) and differ in the suffix.
+
+    Monkeypatches time.time on the signing module so both calls see the same ms.
+    """
+    import samantha_server.receipts.signing as _signing
+
+    _FROZEN_SECONDS = 1_000_000.0  # 1_000_000_000 ms — known fixed timestamp
+
+    monkeypatch.setattr(_signing.time, "time", lambda: _FROZEN_SECONDS)
+
+    ulid1 = _signing._generate_ulid()
+    ulid2 = _signing._generate_ulid()
+
+    assert len(ulid1) == 26
+    assert len(ulid2) == 26
+
+    # Same frozen ms → identical 10-char timestamp prefix.
+    assert ulid1[:10] == ulid2[:10], (
+        f"Both ULIDs must share the same 10-char timestamp prefix at the same ms; "
+        f"got {ulid1[:10]!r} vs {ulid2[:10]!r}"
+    )
+
+    # Different random suffixes (80-bit random → collision probability negligible).
+    assert ulid1[10:] != ulid2[10:], (
+        "Two ULIDs generated in the same call must have different random suffixes"
+    )
+
+
+def test_ulid_timestamp_prefix_known_value() -> None:
+    """Mutation-sensitivity check — the Crockford encode loop
+    must produce the hand-computed prefix for ms=1_000_000_000.
+
+    The expected value is derived INDEPENDENTLY below via divmod against the
+    Crockford alphabet (no reuse of the production encode loop), so the pin
+    cannot be circular. If the encode loop (e.g. the & 0x1F
+    mask or the >> 5 shift) is broken, this test catches it.
+    """
+    import samantha_server.receipts.signing as _signing
+
+    # ms = 1_000_000_000 (exactly 1 billion milliseconds)
+    _FROZEN_MS_SECONDS = 1_000_000.0  # time.time() * 1000 == 1_000_000_000 ms
+
+    # Independent reference derivation (divmod, not the production bit loop).
+    _crockford = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+    _v, _digits = 1_000_000_000, []
+    for _ in range(10):
+        _v, _rem = divmod(_v, 32)
+        _digits.append(_crockford[_rem])
+    _EXPECTED_PREFIX = "".join(reversed(_digits))
+    assert _EXPECTED_PREFIX == "0000XSNJG0"  # sanity: matches the hand computation
+
+    import pytest as _pytest
+
+    with _pytest.MonkeyPatch.context() as mp:
+        mp.setattr(_signing.time, "time", lambda: _FROZEN_MS_SECONDS)
+        ulid = _signing._generate_ulid()
+
+    assert ulid[:10] == _EXPECTED_PREFIX, (
+        f"ULID timestamp prefix mismatch for ms=1_000_000_000: "
+        f"expected {_EXPECTED_PREFIX!r}, got {ulid[:10]!r}. "
+        "The Crockford encode loop may be broken."
+    )

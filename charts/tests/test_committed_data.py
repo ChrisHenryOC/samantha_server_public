@@ -41,26 +41,29 @@ class TestChart1AccuracyRankingJson:
     def test_four_models_present(self) -> None:
         assert len(self.models) == 4
 
-    def test_incumbent_149_149(self) -> None:
+    def test_incumbent_151_151(self) -> None:
         m = self.models["Qwen3-Next-80B-A3B-Instruct-4bit"]
-        assert m["passed"] == 149
-        assert m["total"] == 149
+        assert m["passed"] == 151
+        assert m["total"] == 151
         assert m["incumbent"] is True
 
-    def test_qwen35_35b_147_149(self) -> None:
+    def test_qwen35_35b_148_151(self) -> None:
         m = self.models["Qwen3.5-35B-A3B-8bit"]
-        assert m["passed"] == 147
-        assert m["total"] == 149
+        assert m["passed"] == 148
+        assert m["total"] == 151
+        assert m["incumbent"] is False
 
-    def test_gemma_26b_147_149(self) -> None:
+    def test_gemma_26b_149_151(self) -> None:
         m = self.models["gemma-4-26B-A4B-it-MLX-4bit"]
-        assert m["passed"] == 147
-        assert m["total"] == 149
+        assert m["passed"] == 149
+        assert m["total"] == 151
+        assert m["incumbent"] is False
 
-    def test_coder_32b_144_149(self) -> None:
+    def test_coder_32b_147_151(self) -> None:
         m = self.models["Qwen2.5-Coder-32B-Instruct-MLX-4bit"]
-        assert m["passed"] == 144
-        assert m["total"] == 149
+        assert m["passed"] == 147
+        assert m["total"] == 151
+        assert m["incumbent"] is False
 
 
 class TestChart8CategoryHeatmapJson:
@@ -71,25 +74,32 @@ class TestChart8CategoryHeatmapJson:
         self.category_totals = raw["category_totals"]
         self.non_perfect = {(e["model"], e["category"]): e["passed"] for e in raw["non_perfect"]}
 
-    def test_category_totals_sum_to_149(self) -> None:
+    def test_category_totals_sum_to_151(self) -> None:
         total = sum(self.category_totals.values())
-        assert total == 149, f"category_totals sum {total} != 149"
+        assert total == 151, f"category_totals sum {total} != 151"
+
+    def test_multi_rule_total_is_12(self) -> None:
+        # pin directly so a shuffle between
+        # categories cannot hide behind the sum check.
+        assert self.category_totals["multi_rule"] == 12
 
     def test_qwen35_llm_review_passed_5(self) -> None:
         key = ("Qwen3.5-35B\n(35B)", "llm_review")
         assert self.non_perfect[key] == 5
 
-    def test_qwen35_query_passed_28(self) -> None:
+    def test_qwen35_query_passed_27(self) -> None:
         key = ("Qwen3.5-35B\n(35B)", "query")
-        assert self.non_perfect[key] == 28
+        assert self.non_perfect[key] == 27
 
     def test_gemma_query_passed_27(self) -> None:
         key = ("gemma-4-26B\n(26B)", "query")
         assert self.non_perfect[key] == 27
 
-    def test_coder_llm_review_passed_5(self) -> None:
+    def test_coder_llm_review_recovered(self) -> None:
+        # 2026-06-10 corpus-151 sweep: Coder passes LR-001, so its llm_review
+        # row is perfect and must be ABSENT from non_perfect.
         key = ("Qwen2.5-Coder-32B\n(32B)", "llm_review")
-        assert self.non_perfect[key] == 5
+        assert key not in self.non_perfect
 
     def test_coder_query_passed_25(self) -> None:
         key = ("Qwen2.5-Coder-32B\n(32B)", "query")
@@ -106,17 +116,21 @@ class TestChartN2BenchmarksJson:
     def test_four_models_present(self) -> None:
         assert len(self.models) == 4
 
+    def test_notes_cite_151_corpus(self) -> None:
+        raw = _load_json("chart-n2-benchmarks.json")
+        assert "151-fixture corpus" in raw["_meta"]["notes"]
+
     def test_samantha_stable_pcts(self) -> None:
         assert self.models["Qwen3-Next-80B-A3B-Instruct-4bit"][
             "samantha_stable_pct"
         ] == pytest.approx(100.0)
-        assert self.models["Qwen3.5-35B-A3B-8bit"]["samantha_stable_pct"] == pytest.approx(98.66)
+        assert self.models["Qwen3.5-35B-A3B-8bit"]["samantha_stable_pct"] == pytest.approx(98.01)
         assert self.models["gemma-4-26B-A4B-it-MLX-4bit"]["samantha_stable_pct"] == pytest.approx(
-            98.66
+            98.68
         )
         assert self.models["Qwen2.5-Coder-32B-Instruct-MLX-4bit"][
             "samantha_stable_pct"
-        ] == pytest.approx(96.64)
+        ] == pytest.approx(97.35)
 
     def test_local_composite_values(self) -> None:
         assert self.models["Qwen3-Next-80B-A3B-Instruct-4bit"]["local"][
@@ -181,12 +195,20 @@ class TestChart7RadarJson:
             for key in ("accuracy", "robustness", "latency_p50_s"):
                 assert key in data, f"{model} missing {key!r}"
 
+    def test_accuracy_values(self) -> None:
+        assert self.models["Qwen3-Next-80B-A3B-Instruct-4bit"]["accuracy"] == pytest.approx(100.0)
+        assert self.models["Qwen3.5-35B-A3B-8bit"]["accuracy"] == pytest.approx(98.01)
+        assert self.models["gemma-4-26B-A4B-it-MLX-4bit"]["accuracy"] == pytest.approx(98.68)
+        assert self.models["Qwen2.5-Coder-32B-Instruct-MLX-4bit"]["accuracy"] == pytest.approx(
+            97.35
+        )
+
     def test_robustness_values(self) -> None:
         assert self.models["Qwen3-Next-80B-A3B-Instruct-4bit"]["robustness"] == pytest.approx(100.0)
         assert self.models["Qwen3.5-35B-A3B-8bit"]["robustness"] == pytest.approx(83.33)
         assert self.models["gemma-4-26B-A4B-it-MLX-4bit"]["robustness"] == pytest.approx(93.10)
         assert self.models["Qwen2.5-Coder-32B-Instruct-MLX-4bit"]["robustness"] == pytest.approx(
-            83.33
+            86.21
         )
 
 
@@ -545,8 +567,16 @@ class TestChart14EvolutionJson:
         raw = _load_json("chart14-evolution.json")
         self.points = raw["points"]
 
-    def test_three_points_present(self) -> None:
-        assert len(self.points) == 3
+    def test_four_points_present(self) -> None:
+        assert len(self.points) == 4
+
+    def test_corpus151_2026_06_10_is_100_pct(self) -> None:
+        pt = next(p for p in self.points if p["date"] == "2026-06-10")
+        assert pt["accuracy_pct"] == pytest.approx(100.0)
+        assert pt["passed"] == 151
+        assert pt["total"] == 151
+        # Provenance: the audit trail back to the baseline artifact.
+        assert pt["sweep_file"] == "corpus151-Qwen3-Next-80B-A3B-Instruct-4bit-n5.txt"
 
     def test_dates_chronological(self) -> None:
         dates = [p["date"] for p in self.points]

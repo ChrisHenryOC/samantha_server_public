@@ -9,6 +9,20 @@ from types import MappingProxyType
 # Severity hierarchy for accessioning rules (highest severity first).
 # Index 0 = highest priority (REJECT wins all others).
 #
+# Tier ordering: REJECT > HOLD > REVIEW_HOLD > PROCEED > ACCEPT.
+# REVIEW_HOLD encodes "specimen held pending LLM review" (ACC-010, ACC-011).
+# The maintainer's principle: checks that hold a specimen for processing take
+# precedence over checks that flag missing information and proceed (ACC-007).
+#
+# Flag-union semantics: when the winning rule is REVIEW_HOLD-tier,
+# the engine also unions set_flags from matched-but-demoted PROCEED-tier rules
+# so ACC-007's MISSING_INFO_PROCEED flag carries alongside ACC-010/011's
+# LLM_REVIEW_REQUESTED. Rationale: review resolution goes
+# PENDING_LLM_REVIEW -> ACCEPTED directly and never re-runs accessioning,
+# so a dropped PROCEED-tier flag is permanently lost to action_handlers and
+# transitions flag branching. also_matched records the demoted rule; only
+# set_flags are unioned (no transitions/outcomes/clear_flags from demoted rules).
+#
 # Tie-break within a severity tier:
 # For ACCESSIONING ties (two rules of equal severity, e.g., two REJECTs in SC-082),
 # the winner is filesystem-stable (alphabetic by rule_id). The mechanism: rules are
@@ -23,8 +37,9 @@ SEVERITY_ORDER: MappingProxyType[str, int] = MappingProxyType(
     {
         "REJECT": 0,
         "HOLD": 1,
-        "PROCEED": 2,
-        "ACCEPT": 3,
+        "REVIEW_HOLD": 2,
+        "PROCEED": 3,
+        "ACCEPT": 4,
     }
 )
 

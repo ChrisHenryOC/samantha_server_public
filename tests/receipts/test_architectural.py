@@ -115,7 +115,6 @@ def _make_dispatch_event_deps(
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": llm,
-        "scenarios_index": {},
         "skills_index": skills,
         "rule_index": RuleIndex([]),
     }

@@ -81,7 +81,7 @@ ctx = SpecimenContext(
 )
 ```
 
-The router-shim's `route()`
+The router-shim's [`route()`](../../samantha_server/llm/router.py)
 runs in fixed order:
 
 1. **State check.** `current_state != "PENDING_LLM_REVIEW"`, so the

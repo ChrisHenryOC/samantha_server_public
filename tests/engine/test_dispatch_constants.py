@@ -1,8 +1,11 @@
 """Tests for dispatch_constants — STATE_TO_STEP and SEVERITY_ORDER."""
 
+from typing import get_args
+
 import pytest
 
 from samantha_server.engine.dispatch_constants import SEVERITY_ORDER, STATE_TO_STEP
+from samantha_server.rules.spec import Severity
 
 
 class TestStateToStep:
@@ -57,17 +60,27 @@ class TestSeverityOrder:
     def test_hold_is_second(self) -> None:
         assert SEVERITY_ORDER["HOLD"] == 1
 
-    def test_proceed_is_third(self) -> None:
-        assert SEVERITY_ORDER["PROCEED"] == 2
+    def test_review_hold_is_third(self) -> None:
+        """REVIEW_HOLD sits between HOLD and PROCEED."""
+        assert SEVERITY_ORDER["REVIEW_HOLD"] == 2
+
+    def test_proceed_is_fourth(self) -> None:
+        """PROCEED shifts to index 3 after REVIEW_HOLD insertion."""
+        assert SEVERITY_ORDER["PROCEED"] == 3
 
     def test_accept_has_highest_index(self) -> None:
-        assert SEVERITY_ORDER["ACCEPT"] == 3
+        assert SEVERITY_ORDER["ACCEPT"] == 4
 
     def test_reject_beats_hold(self) -> None:
         assert SEVERITY_ORDER["REJECT"] < SEVERITY_ORDER["HOLD"]
 
-    def test_hold_beats_proceed(self) -> None:
-        assert SEVERITY_ORDER["HOLD"] < SEVERITY_ORDER["PROCEED"]
+    def test_hold_beats_review_hold(self) -> None:
+        """HOLD (hard stop) beats REVIEW_HOLD (hold for review)."""
+        assert SEVERITY_ORDER["HOLD"] < SEVERITY_ORDER["REVIEW_HOLD"]
+
+    def test_review_hold_beats_proceed(self) -> None:
+        """REVIEW_HOLD (specimen held for review) beats PROCEED (flag-and-proceed)."""
+        assert SEVERITY_ORDER["REVIEW_HOLD"] < SEVERITY_ORDER["PROCEED"]
 
     def test_proceed_beats_accept(self) -> None:
         assert SEVERITY_ORDER["PROCEED"] < SEVERITY_ORDER["ACCEPT"]
@@ -75,3 +88,29 @@ class TestSeverityOrder:
     def test_is_immutable(self) -> None:
         with pytest.raises((TypeError, AttributeError)):
             SEVERITY_ORDER["NEW_KEY"] = 99  # type: ignore[index]
+
+
+class TestSeverityLiteralParity:
+    """Guard/pin that Severity Literal and SEVERITY_ORDER stay in sync.
+
+    These are not red-first tests — both assertions pass today (by design).
+    They pin the invariant so a future edit that adds a severity to the Literal
+    but forgets to add it to SEVERITY_ORDER (or vice-versa) is caught immediately.
+    """
+
+    def test_severity_literal_keys_match_severity_order_keys(self) -> None:
+        """Every member of the Severity Literal must appear in SEVERITY_ORDER and vice-versa."""
+        assert set(get_args(Severity)) == set(SEVERITY_ORDER.keys())
+
+    def test_severity_literal_order_agrees_with_severity_order_values(self) -> None:
+        """The index of each Severity member in the Literal must equal its SEVERITY_ORDER value.
+
+        The loader derives sort keys from SEVERITY_ORDER[r.severity]. The Literal
+        order was historically used as the canonical rank source; pinning both
+        directions here ensures they never silently diverge.
+        """
+        for idx, sev in enumerate(get_args(Severity)):
+            assert SEVERITY_ORDER[sev] == idx, (
+                f"Severity Literal position {idx} is {sev!r} but "
+                f"SEVERITY_ORDER[{sev!r}] == {SEVERITY_ORDER[sev]}"
+            )

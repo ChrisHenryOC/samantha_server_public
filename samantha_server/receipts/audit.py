@@ -39,6 +39,27 @@ __all__ = [
 
 
 # ---------------------------------------------------------------------------
+# 9-column projection shared by all audit SELECT queries.
+#
+# Column ordinals correspond to _row_to_receipt's positional expectations:
+#   0: receipt_id        4: outcome          8: signed_at_utc
+#   1: event_input_hash  5: signer_key_id
+#   2: applied_rule_id   6: signature
+#   3: next_state        7: payload_json
+#
+# NOTE: order_id (physically at schema position 3) is intentionally excluded.
+# decision.order_id is rehydrated from payload_json; the column is a
+# write-only search index here. A query that adds order_id to its SELECT
+# list must not reuse these ordinals.
+# Compile-time string literal — no runtime data is ever interpolated into
+# this projection (all query values go through parameterized placeholders).
+_RECEIPT_SELECT = (
+    "receipt_id, event_input_hash, applied_rule_id, next_state, "
+    "outcome, signer_key_id, signature, payload_json, signed_at_utc"
+)
+
+
+# ---------------------------------------------------------------------------
 # Row → SignedReceipt rehydration
 # ---------------------------------------------------------------------------
 
@@ -110,9 +131,7 @@ def fetch_by_event_hash(
         0 or more receipts, in insertion order.
     """
     cursor = conn.execute(
-        "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-        "outcome, signer_key_id, signature, payload_json, signed_at_utc "
-        "FROM receipts WHERE event_input_hash = ?",
+        f"SELECT {_RECEIPT_SELECT} FROM receipts WHERE event_input_hash = ?",
         (event_input_hash,),
     )
     return [_row_to_receipt(row) for row in cursor.fetchall()]
@@ -141,15 +160,11 @@ def fetch_by_rule_id(
     """
     if rule_id is None:
         cursor = conn.execute(
-            "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-            "outcome, signer_key_id, signature, payload_json, signed_at_utc "
-            "FROM receipts WHERE applied_rule_id IS NULL",
+            f"SELECT {_RECEIPT_SELECT} FROM receipts WHERE applied_rule_id IS NULL",
         )
     else:
         cursor = conn.execute(
-            "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-            "outcome, signer_key_id, signature, payload_json, signed_at_utc "
-            "FROM receipts WHERE applied_rule_id = ?",
+            f"SELECT {_RECEIPT_SELECT} FROM receipts WHERE applied_rule_id = ?",
             (rule_id,),
         )
     return [_row_to_receipt(row) for row in cursor.fetchall()]
@@ -180,8 +195,7 @@ def fetch_in_window(
     _validate_utc(end_utc, "end_utc")
 
     cursor = conn.execute(
-        "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-        "outcome, signer_key_id, signature, payload_json, signed_at_utc "
+        f"SELECT {_RECEIPT_SELECT} "
         "FROM receipts "
         "WHERE signed_at_utc >= ? AND signed_at_utc <= ? "
         "ORDER BY signed_at_utc ASC",
@@ -219,10 +233,12 @@ def fetch_by_query_text_hash(
     """
     from samantha_server.engine.decision import QueryTrace
 
+    # outcome='query_response' intentionally excludes refusal receipts: refusals
+    # carry no recoverable response text (llm_failed is scoped to
+    # LLMClientError; parse failures produce llm_failed=False with no
+    # suggestions), so matching them by query_text_hash has no useful result.
     cursor = conn.execute(
-        "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-        "outcome, signer_key_id, signature, payload_json, signed_at_utc "
-        "FROM receipts WHERE outcome = 'query_response'",
+        f"SELECT {_RECEIPT_SELECT} FROM receipts WHERE outcome = 'query_response'",
     )
     results = []
     # M-12a: iterate cursor directly instead of fetchall() for O(1) peak memory
@@ -277,9 +293,7 @@ def fetch_by_outcome(
         0 or more receipts, in insertion order.
     """
     cursor = conn.execute(
-        "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-        "outcome, signer_key_id, signature, payload_json, signed_at_utc "
-        "FROM receipts WHERE outcome = ?",
+        f"SELECT {_RECEIPT_SELECT} FROM receipts WHERE outcome = ?",
         (outcome,),
     )
     results: list[SignedReceipt] = []
@@ -321,9 +335,7 @@ def fetch_by_order_id(
         0 or more receipts, in insertion order.
     """
     cursor = conn.execute(
-        "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-        "outcome, signer_key_id, signature, payload_json, signed_at_utc "
-        "FROM receipts WHERE order_id = ?",
+        f"SELECT {_RECEIPT_SELECT} FROM receipts WHERE order_id = ?",
         (order_id,),
     )
     results: list[SignedReceipt] = []
@@ -357,9 +369,7 @@ def fetch_by_id(conn: sqlite3.Connection, receipt_id: str) -> SignedReceipt | No
         The matching receipt, or None if no receipt has that id.
     """
     cursor = conn.execute(
-        "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-        "outcome, signer_key_id, signature, payload_json, signed_at_utc "
-        "FROM receipts WHERE receipt_id = ? LIMIT 1",
+        f"SELECT {_RECEIPT_SELECT} FROM receipts WHERE receipt_id = ? LIMIT 1",
         (receipt_id,),
     )
     row = cursor.fetchone()
@@ -395,8 +405,7 @@ def fetch_paginated(
         0 or more receipts, newest first.
     """
     cursor = conn.execute(
-        "SELECT receipt_id, event_input_hash, applied_rule_id, next_state, "
-        "outcome, signer_key_id, signature, payload_json, signed_at_utc "
+        f"SELECT {_RECEIPT_SELECT} "
         "FROM receipts "
         "ORDER BY signed_at_utc DESC, receipt_id DESC "
         "LIMIT ? OFFSET ?",

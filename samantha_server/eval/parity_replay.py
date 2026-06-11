@@ -2,14 +2,14 @@
 
 Replays a samantha POC subset (screening or accumulated_state) through
 `samantha_server`'s `replay()` engine and emits a comparison report
-shaped against the upstream POC's `results/model_selection_phase1/
-summary.json`.
+shaped against the upstream POC's
+`results/model_selection_phase1/summary.json`.
 
 Usage::
 
     python -m samantha_server.eval.parity_replay \\
         --subset screening \\
-        --corpus "$SAMANTHA_POC_CORPUS_PATH" \\
+        --corpus /nonexistent/poc-corpus \\
         --out results/samantha-poc-parity \\
         --run-id parity-2026-05-10
 
@@ -60,9 +60,9 @@ _log = logging.getLogger(__name__)
 _RUN_ID_PATTERN: re.Pattern[str] = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 _DEFAULT_CORPUS_ENV: str = "SAMANTHA_POC_CORPUS_PATH"
-_DEFAULT_CORPUS_FALLBACK: str = "poc-corpus/scenarios"
+_DEFAULT_CORPUS_FALLBACK: str = "/nonexistent/poc-corpus"
 # results/<run-class>/ matches the project convention (sibling: results/perf,
-# results/regression) and mirrors the upstream POC's results/<run-class>/ shape.
+# results/regression) and mirrors the samantha POC's results/<run-class>/ shape.
 # `results/` is gitignored — run artifacts (JSON / Markdown / receipts.sqlite)
 # stay out of the tree by default.
 _DEFAULT_OUT_DIR: str = "results/samantha-poc-parity"

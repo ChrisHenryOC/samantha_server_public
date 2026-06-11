@@ -4,7 +4,7 @@
 **Box:** lab/CI host (64 GiB unified memory, `iogpu.wired_limit_mb` unset)
 **Server:** `oMLX` at `http://127.0.0.1:8000` (loopback, bearer auth)
 **Baseline model:** `Qwen3-Next-80B-A3B-Instruct-4bit`
-**Install:** editable checkout of oMLX, branch `local/customizations-v0.3.12` (off tag `v0.3.12`)
+**Install:** editable checkout at a local path, branch `local/customizations-v0.3.12` (off tag `v0.3.12`)
 
 The 0.3.9 adoption was driven by memory stability under high-context
 load, and the 0.3.9 to 0.3.12 range is dominated by that same work
@@ -20,7 +20,7 @@ against the locked corpus baseline.
 | `settings.json` `memory` block migrated to tier schema, no stale keys | Pass |
 | Corpus replay holds at locked 149/149 stable (N=5) | Pass (149/149 stable, 745/745 raw) |
 | No memory-stability regression under high-context 80B | Pass (no eviction, throttle, abort, or panic) |
-| Prefix-cache telemetry reassessed via post-upgrade `cached_tokens` probe | Still blocked (expected) |
+| prefix-cache telemetry reassessed via post-upgrade `cached_tokens` probe | Still blocked (expected) |
 
 ## Settings schema migration
 
@@ -58,8 +58,8 @@ the included 143/143 and the overall 149/149 are 100%, so the headline
 
 **Corpus-path note.** The baseline is the vendored corpus at
 `tests/fixtures/scenarios/`, which the `/replay-scenarios` command
-targets. It is not `$SAMANTHA_POC_CORPUS_PATH`: that env var points at
-the separate
+targets. It is not `$SAMANTHA_POC_CORPUS_PATH`
+(a local checkout of the upstream POC corpus): that env var points at the separate
 public parity-discovery corpus, which ships older ground truth (expects
 pre-ACC-010/011/012 outcomes), enumerates fewer scenarios, and lacks the
 `llm_review` category. Replaying the baseline against the public corpus
@@ -91,7 +91,7 @@ model at this context peaks well under the 51.8 GB clamp, so the
 `balanced` tier is sufficient. On a 64 GiB box, wiring 56 GB to the GPU
 would leave only about 8 GB for the rest of the system, so Apple's
 conservative default is the safer choice unless a future workload
-approaches the clamp. Tuning the tier is out of scope for this upgrade.
+approaches the clamp. Tuning the tier is out of scope.
 
 ## Prefix-cache telemetry reassessment
 
@@ -100,7 +100,7 @@ oMLX prefix-cache telemetry stays blocked. Two identical
 `usage.prompt_tokens_details.cached_tokens = 0`, and the `/v1/responses`
 endpoint exists but does not populate cached-token telemetry either. No
 commit in the 0.3.9 to 0.3.12 range touches the populator, so the
-upgrade does not unblock prefix-cache telemetry, as expected.
+upgrade does not unblock it, as expected.
 
 ## Rollback
 

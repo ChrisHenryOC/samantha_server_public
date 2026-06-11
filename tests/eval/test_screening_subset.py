@@ -22,10 +22,12 @@ from pathlib import Path
 
 import pytest
 
-# Set `SAMANTHA_REPO_PATH` to a local checkout of the upstream POC repo to
-# enable the drift guard. Unset by default, so on CI, a fresh checkout, or a
-# contributor without that repo, the test cleanly skips.
-_SAMANTHA_REPO = Path(os.environ.get("SAMANTHA_REPO_PATH", "upstream-poc-repo")).expanduser()
+# `SAMANTHA_REPO_PATH` overrides the search path so contributors with the
+# upstream repo checked out elsewhere still get the drift guard. The
+# committed default is the original developer's path; everyone else falls
+# back to the env-var lookup or the test cleanly skips.
+_DEFAULT_SAMANTHA_REPO = Path("/nonexistent/samantha-poc")
+_SAMANTHA_REPO = Path(os.environ.get("SAMANTHA_REPO_PATH") or _DEFAULT_SAMANTHA_REPO)
 _UPSTREAM_SCRIPT = _SAMANTHA_REPO / "scripts" / "run_phase1_screen.sh"
 
 

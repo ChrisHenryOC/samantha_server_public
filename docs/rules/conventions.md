@@ -3,7 +3,7 @@
 Conventions that the YAML rule specs in `samantha_server/rules/specs/` follow.
 The loader (`samantha_server/rules/loader.py`) does not enforce these — they
 exist to keep the corpus readable and to prevent silent collisions across the
-40 rules authored across Steps 6–10 of the phase-1 plan.
+44 rules in the shipped corpus (originally 40 authored across Steps 6–10 of the phase-1 plan; count re-derived from the specs).
 
 ## `outcome` verb-prefix convention
 
@@ -14,13 +14,27 @@ rule's verdict from the outcome alone.
 
 For ACCESSIONING rules (severity-based):
 
-| `severity` | Outcome prefix      | Example                                |
-| ---------- | ------------------- | -------------------------------------- |
-| `HOLD`     | `held_*`            | `held_missing_patient_name`            |
-| `REJECT`   | `rejected_*`        | `rejected_fixation_out_of_tolerance`   |
-| `PROCEED`  | `proceeding_*`      | `proceeding_missing_billing`           |
-| `ACCEPT`   | `accessioning_*`    | `accessioning_validations_passed`      |
+| `severity`     | Outcome prefix      | Example                                |
+| -------------- | ------------------- | -------------------------------------- |
+| `HOLD`         | `held_*`            | `held_missing_patient_name`            |
+| `REJECT`       | `rejected_*`        | `rejected_fixation_out_of_tolerance`   |
+| `REVIEW_HOLD`  | `proceeding_*`      | `proceeding_pending_llm_review`        |
+| `PROCEED`      | `proceeding_*`      | `proceeding_missing_billing`           |
+| `ACCEPT`       | `accessioning_*`    | `accessioning_validations_passed`      |
 
+> **Note: `REVIEW_HOLD` keeps `proceeding_*` outcomes.** The
+> `REVIEW_HOLD` tier was introduced between `HOLD` and `PROCEED` to encode
+> "specimen held pending LLM review." Its rules (ACC-010, ACC-011) retain their
+> original `proceeding_*` outcome strings for receipt-vocabulary stability, even
+> though the tier name suggests a hold-for-review verdict. Renaming would churn
+> fixture baselines and receipt hashes with no behavioral benefit.
+>
+> Related fixture-authoring note: scenario fixtures' `flags` arrays are compared
+> as **sets** by the replay harness (and `applied_rules` positions 1+ likewise);
+> only `applied_rules[0]` (the winner) is order-sensitive. The engine does not
+> guarantee a flag ordering beyond winner-flags-first, so don't encode ordering
+> expectations in fixtures.
+>
 > **Note: `ACCEPT` is the deliberate exception.** The other three prefixes are
 > verdict verbs (`held`, `rejected`, `proceeding`). `ACCEPT`'s prefix is the
 > *workflow step name* (`accessioning_`), not a verdict verb — using `accepted_*`
@@ -48,7 +62,7 @@ A rule's `when:` predicate must reference fields that exist on the
 `Order` model (`samantha_server/models/context.py`) or via `event.<key>`
 namespacing on `Event.event_data`. The `SpecimenContext.field()` accessor
 returns `None` for any unknown name via a `getattr` fallback, which means
-typos are silent at evaluate time. Review caught one such case (ACC-002
+typos are silent at evaluate time. One such case was caught (ACC-002
 referenced `sex` instead of `patient_sex`); the round-trip behavioral test
 in `tests/rules/test_acc_specs.py` is the runtime guard.
 

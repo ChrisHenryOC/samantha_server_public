@@ -18,7 +18,7 @@ from enum import Enum
 
 import nacl.exceptions
 import nacl.signing
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, PrivateAttr, field_validator
 
 from samantha_server.engine.decision import EngineDecision, _make_serialisable
 from samantha_server.errors import MisconfiguredEnvironmentError
@@ -98,6 +98,11 @@ class SignedReceipt(BaseModel, frozen=True):
     signer_key_id: identifies which key generation produced this receipt
     signature: 64-byte Ed25519 detached signature over canonical payload
     signed_at_utc: tz-aware UTC timestamp of signing
+
+    _canonical_payload_bytes: non-serialized carry set by sign_decision so
+        store.insert can reuse the bytes already computed at signing time
+. Not present on rehydrated receipts; insert falls
+        back to _canonical_signing_payload in that case.
     """
 
     receipt_id: str
@@ -105,6 +110,11 @@ class SignedReceipt(BaseModel, frozen=True):
     signer_key_id: str
     signature: bytes
     signed_at_utc: datetime
+
+    # Carry canonical payload bytes from signing to insert.
+    # PrivateAttr is excluded from serialization, model_dump, model_copy,
+    # and schema — stored receipts are unaffected.
+    _canonical_payload_bytes: bytes = PrivateAttr(default=b"")
 
     @field_validator("receipt_id")
     @classmethod
@@ -126,6 +136,17 @@ class SignedReceipt(BaseModel, frozen=True):
         if not _is_utc(v):
             raise ValueError(f"signed_at_utc must be tz-aware UTC; got {v!r}")
         return v
+
+    def canonical_payload_bytes(self) -> bytes:
+        """Signing-time canonical payload carry; b'' when rehydrated.
+
+        Returns the bytes that were passed to the Ed25519 signing operation at
+        signing time (set by sign_decision via object.__setattr__). On receipts
+        that were rehydrated from the DB (constructed directly from stored
+        fields) the private attr holds its default b'', signalling that the
+        caller should recompute via _canonical_signing_payload if needed.
+        """
+        return self._canonical_payload_bytes
 
 
 # ---------------------------------------------------------------------------
@@ -237,13 +258,18 @@ def sign_decision(
     # nacl.signing.SignedMessage = signature (64 bytes) + message
     signature = bytes(signed.signature)
 
-    return SignedReceipt(
+    receipt = SignedReceipt(
         receipt_id=_generate_ulid(),
         decision=decision,
         signer_key_id=key_id,
         signature=signature,
         signed_at_utc=datetime.now(tz=UTC),
     )
+    # Carry the already-computed payload bytes so store.insert
+    # can reuse them without a second _canonical_signing_payload call.
+    # object.__setattr__ is required because SignedReceipt is frozen=True.
+    object.__setattr__(receipt, "_canonical_payload_bytes", payload)
+    return receipt
 
 
 # ---------------------------------------------------------------------------
@@ -307,6 +333,28 @@ def verify_signature(
             f"{current_key_id!r}. The key rotation id must be bumped when the key "
             f"material changes. Generate a new key via: "
             f"python -m samantha_server.receipts.signing --gen-key"
+        )
+
+    # Reject the asymmetric misconfiguration where previous_key_id
+    # is set but previous_key is None. No step of the documented rotation playbook
+    # produces this state — it is always a config error. Silently dropping the id
+    # would leave old receipts returning KEY_EXPIRED with no diagnostic.
+    if previous_key is None and previous_key_id is not None:
+        raise MisconfiguredEnvironmentError(
+            f"previous_key_id={previous_key_id!r} is set but previous_key is None. "
+            f"Supply previous_key alongside previous_key_id, or leave both unset. "
+            f"See the receipt-signing key rotation playbook in CLAUDE.md."
+        )
+
+    # mirror guard — previous_key set
+    # without previous_key_id. The "both or neither" contract is now symmetric.
+    # Silently dropping the key and returning KEY_EXPIRED would leave the caller
+    # with no diagnostic about the misconfiguration.
+    if previous_key is not None and previous_key_id is None:
+        raise MisconfiguredEnvironmentError(
+            "previous_key is set but previous_key_id is None. "
+            "Supply previous_key_id alongside previous_key, or leave both unset. "
+            "See the receipt-signing key rotation playbook in CLAUDE.md."
         )
 
     # Build the map of key_id → verify_key from known keys (H-09: cached)

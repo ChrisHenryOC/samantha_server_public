@@ -26,7 +26,7 @@ from samantha_server.tools.fixture_impact import Match, ScanResult, format_repor
 # ---------------------------------------------------------------------------
 
 
-def _make_rule_spec(when: Primitive, rule_id: str = "ACC-TEST") -> RuleSpec:
+def _make_rule_spec(when: Primitive, rule_id: str = "ACC-900") -> RuleSpec:
     """Construct a minimal ACCESSIONING RuleSpec with the given predicate."""
     return RuleSpec(
         rule_id=rule_id,
@@ -421,7 +421,7 @@ class TestFormatReport:
 # ---------------------------------------------------------------------------
 
 _CANDIDATE_CLI_YAML = textwrap.dedent("""\
-    rule_id: ACC-CLI-TEST
+    rule_id: ACC-901
     step: ACCESSIONING
     applies_at: null
     event_type: order_received
@@ -448,7 +448,7 @@ class TestCLIMain:
         from samantha_server.tools.fixture_impact import main
 
         # Write the candidate rule YAML.
-        candidate = tmp_path / "ACC-CLI-TEST.yaml"
+        candidate = tmp_path / "ACC-901.yaml"
         candidate.write_text(_CANDIDATE_CLI_YAML)
 
         # Use real specs dir and real fixtures dir so the tool exercises its full path.
@@ -467,7 +467,7 @@ class TestCLIMain:
         assert ret == 0
         captured = capsys.readouterr()
         # Output should contain the rule_id and either "predicate matches" or "predicate would"
-        assert "ACC-CLI-TEST" in captured.out
+        assert "ACC-901" in captured.out
         assert "predicate" in captured.out
 
     def test_main_invalid_candidate_exits_one(
@@ -499,7 +499,7 @@ class TestCLIMain:
 # ---------------------------------------------------------------------------
 
 _CANDIDATE_IHC_STEP_YAML = textwrap.dedent("""\
-    rule_id: IHC-CLI-TEST
+    rule_id: SP-901
     step: SAMPLE_PREP
     applies_at: null
     event_type: processing_complete
@@ -525,7 +525,7 @@ class TestCLIMainNonAccessioning:
     ) -> None:
         from samantha_server.tools.fixture_impact import main
 
-        candidate = tmp_path / "IHC-CLI-TEST.yaml"
+        candidate = tmp_path / "SP-901.yaml"
         candidate.write_text(_CANDIDATE_IHC_STEP_YAML)
 
         real_specs_dir = Path(__file__).parent.parent.parent / "samantha_server" / "rules" / "specs"

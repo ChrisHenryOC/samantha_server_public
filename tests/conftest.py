@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import collections.abc
-import contextlib
 import os
 import pathlib
 import tempfile as _tempfile
+import typing
 from typing import TYPE_CHECKING
 
 import pytest
@@ -111,32 +111,57 @@ for _lf_key in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_BASE_URL
 from samantha_server.scenarios.sweep import pytest_addoption  # noqa: E402,F401
 
 
+@pytest.fixture(autouse=True)
+def _forbid_real_replay_llm_client(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unmarked tests must not build a real LLM client.
+
+    ``replay()`` funnels every real-client construction through the single
+    seam ``_build_llm_client_for_replay`` (lazily, only when the corpus has
+    LLM-path scenarios and no ``_llm_client_override`` was injected). A test
+    that reaches that seam unmarked would pass on the lab host (live oMLX)
+    and fail in any fresh environment — exactly the container
+    regression. Tests that genuinely need the live server opt out with the
+    ``live_llm`` / ``local_omlx`` markers. Pinned by
+    tests/architectural/test_hermeticity.py.
+    """
+    if request.node.get_closest_marker("live_llm") or request.node.get_closest_marker("local_omlx"):
+        return
+    import samantha_server.scenarios.replay as _replay_mod
+
+    def _refuse() -> typing.NoReturn:
+        raise AssertionError(
+            "hermeticity guard: this unmarked test reached replay()'s "
+            "real LLM-client construction. Pass _llm_client_override=<stub> "
+            "or mark the test live_llm/local_omlx."
+        )
+
+    monkeypatch.setattr(_replay_mod, "_build_llm_client_for_replay", _refuse)
+
+
 @pytest.fixture
 def receipts_test_isolation(
     tmp_path: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> collections.abc.Generator[None, None, None]:
-    """Reset module-level caches so per-test RECEIPTS_DB_PATH overrides take effect.
+    """Point RECEIPTS_DB_PATH at a fresh per-test DB and reset module caches.
 
-    Any test that sets its own RECEIPTS_DB_PATH (e.g., via monkeypatch.setenv)
-    must request this fixture to ensure the cached write connection is closed
-    and re-opened against the new path. Resets the canonical cache in
-    receipts/store.py (H-04) and also resets signing-key caches (H-10) to
-    prevent cross-test key leakage.
+    Any test that needs an isolated receipts DB (e.g., via monkeypatch.setenv)
+    must request this fixture. It resets signing-key caches (H-10) to prevent
+    cross-test key leakage and clears the skills discover() cache (H-02).
+
+    The module-level write-connection cache (_write_conn) was removed
+    from store.py; this fixture no longer resets it.
     """
     import samantha_server.config as _cfg
-    import samantha_server.receipts.store as _store
 
     # Point to a fresh per-test DB
     db_path = str(tmp_path / "receipts.db")
     monkeypatch.setenv("RECEIPTS_DB_PATH", db_path)
-    # Also update the already-imported config module so _get_write_conn sees the new path
+    # Also update the already-imported config module so callers see the new path
     monkeypatch.setattr(_cfg, "RECEIPTS_DB_PATH", db_path)
-
-    # Reset the canonical connection cache in store.py (H-04 canonical location)
-    old_store_conn = _store._write_conn
-    monkeypatch.setattr(_store, "_write_conn", None)
-    monkeypatch.setattr(_store, "_write_conn_path", None)
 
     # H-10: reset signing-key caches so monkeypatched signing keys take effect
     import samantha_server.receipts.signing as _signing
@@ -153,11 +178,6 @@ def receipts_test_isolation(
 
     # Restore discover() cache state after the test
     _discover.cache_clear()
-
-    # Cleanup: close any connection opened during the test (monkeypatch restores attrs)
-    if _store._write_conn is not None and _store._write_conn is not old_store_conn:
-        with contextlib.suppress(Exception):
-            _store._write_conn.close()
 
 
 # ---------------------------------------------------------------------------

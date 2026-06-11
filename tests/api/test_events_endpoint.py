@@ -501,6 +501,43 @@ def test_post_events_invalid_ctx_returns_422_not_500() -> None:
     assert resp.status_code == 422
 
 
+def test_post_events_422_real_field_phi_not_in_body() -> None:
+    """422 response from a structurally-plausible body must not
+    echo sentinel patient_name.
+
+    Posts a body that matches the SpecimenContext shape but fails validation via
+    an invalid enum value in a nested field (patient_sex is invalid). The body
+    carries a sentinel in patient_name that should never appear in the 422
+    response — a PHI boundary regression guard.
+
+    Distinguishes from test_post_events_422_body_has_no_phi by using a
+    *valid-shape* body with a real field carrying a sentinel value, rather than
+    a wholly malformed ctx. Both must hold: Pydantic's error format must not
+    echo field values in 422 messages regardless of where the validation fails.
+    """
+    app, state = _make_test_app()
+    _SENTINEL = "PHI_PATIENT_NAME_SENTINEL_GH385"
+
+    body = _make_event_request_body()
+    # Inject the PHI sentinel into patient_name — a real field on the order.
+    body["ctx"]["order"]["patient_name"] = _SENTINEL
+    # Cause the validation failure via an invalid patient_sex enum value so
+    # the request fails 422 despite having a structurally-plausible shape.
+    body["ctx"]["order"]["patient_sex"] = "INVALID_SEX_GH385"
+
+    with patch("samantha_server.api.rbac._get_rbac_hmac_key", return_value=_EVENTS_TEST_KEY):
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.post("/events", json=body, headers=_make_auth_headers())
+
+    assert resp.status_code == 422, (
+        f"Expected 422 for invalid patient_sex, got {resp.status_code}: {resp.text}"
+    )
+    assert _SENTINEL not in resp.text, (
+        f"PHI sentinel {_SENTINEL!r} must not appear in the 422 response body; "
+        f"got: {resp.text[:300]!r}"
+    )
+
+
 def test_post_events_422_msg_does_not_contain_input_value() -> None:
     """422 error `msg` field must not contain repr() of the submitted value.
 

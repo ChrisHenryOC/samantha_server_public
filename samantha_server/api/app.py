@@ -124,7 +124,6 @@ async def _consume(state: AppState) -> None:
                 write_lock=state.receipt_write_lock,
                 counters=state.counters,
                 llm_client=state.llm_client,
-                scenarios_index=state.scenario_index,
                 skills_index=state.skill_index,
                 rule_index=state.rule_index,
                 prompt_timestamp=current_payload.prompt_timestamp,

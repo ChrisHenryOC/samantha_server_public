@@ -145,7 +145,7 @@ class DriftMonitor:
         if routing_path == "llm":
             self._llm_count += 1
 
-    def qsize(self) -> int:
+    def resident_count(self) -> int:
         """Return the current resident-event count in the buffer."""
         return len(self._buffer)
 

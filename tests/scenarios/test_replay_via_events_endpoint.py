@@ -835,3 +835,35 @@ def test_receipt_read_path_delivers_non_empty_primitive_traces(
             parsed.get("primitive_traces")
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# review fix #3a — assert harness is not None → RuntimeError
+# ---------------------------------------------------------------------------
+
+
+def test_replay_scenario_async_raises_runtime_error_when_harness_is_none() -> None:
+    """review fix #3a: calling _replay_scenario_async without a harness
+    must raise RuntimeError, not AssertionError (which is stripped under -O).
+
+    Red: before the fix, `assert harness is not None` raises AssertionError;
+    after the fix, `if harness is None: raise RuntimeError(...)` raises
+    RuntimeError regardless of optimisation level.
+
+    hermeticity guard: this scenario is deterministic (category='rule_coverage')
+    so no _llm_client_override is needed — the harness=None guard fires before
+    any LLM dispatch path is reached.
+    """
+    import anyio
+    import pytest as _pytest
+
+    from samantha_server.scenarios.replay import _replay_scenario_async
+
+    scenario = _make_sc001_scenario()
+    rule_index = _build_rule_index()
+
+    async def _impl() -> None:
+        with _pytest.raises(RuntimeError, match="harness must be provided"):
+            await _replay_scenario_async(scenario, rule_index, harness=None)
+
+    anyio.run(_impl)

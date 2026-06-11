@@ -17,6 +17,7 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, get_args
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -136,6 +137,24 @@ def _raises(exc: Exception) -> Callable[..., Any]:
     return _fn
 
 
+def _make_unreachable_llm_stub() -> MagicMock:
+    """Stub LLMClient for the failure-path tests — raises if ever called.
+
+    Passing this via ``_llm_client_override`` removes the real
+    OMLXClient constructor probe (live GET /v1/models) from the default
+    suite. The handler-level monkeypatch raises before any LLM call, so
+    this client must be unreachable; the AssertionError side effects make
+    a future refactor that touches the client pre-failure fail loudly
+    instead of silently asserting against MagicMock-derived values
+.
+    """
+    stub = MagicMock()
+    stub.model_id = "stub-model"
+    stub.complete.side_effect = AssertionError("LLM client must not be called in this test")
+    stub.complete_json.side_effect = AssertionError("LLM client must not be called in this test")
+    return stub
+
+
 def _assert_post_loop_diagnostic(
     diagnostic: str | None, *, refusal_reason: str, outcome: str
 ) -> None:
@@ -210,6 +229,7 @@ class TestSlice2QuerySkillUnavailable:
         matches the expected shape.
         Post-fix: the scenario fails with status='fail'.
         """
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -219,8 +239,10 @@ class TestSlice2QuerySkillUnavailable:
             _handlers, "load_skill", _raises(SkillLoaderError("test skill failure"))
         )
 
+        stub = _make_unreachable_llm_stub()
+
         _write_query_scenario(tmp_path, "QR-287-SKILL-FAIL")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "QR-287-SKILL-FAIL"]
         assert len(verdicts) == 1
@@ -233,6 +255,7 @@ class TestSlice2QuerySkillUnavailable:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """status='skill_unavailable' AND post-loop diagnostic shape on the failing step."""
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -242,8 +265,10 @@ class TestSlice2QuerySkillUnavailable:
             _handlers, "load_skill", _raises(SkillLoaderError("test skill failure"))
         )
 
+        stub = _make_unreachable_llm_stub()
+
         _write_query_scenario(tmp_path, "QR-287-SKILL-STATUS")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "QR-287-SKILL-STATUS"]
         assert len(verdicts) == 1
@@ -315,6 +340,7 @@ class TestSlice3QueryPhiBoundary:
 
         Pre-fix: silent pass. Post-fix: verdict.status == 'fail'.
         """
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -322,8 +348,10 @@ class TestSlice3QueryPhiBoundary:
         monkeypatch.setattr(config, "SAMANTHA_LLM_OUTPUT_MODE", "json")
         monkeypatch.setattr(_handlers, "phi_safe", _raises(PHIBoundaryError(age=95)))
 
+        stub = _make_unreachable_llm_stub()
+
         _write_query_scenario(tmp_path, "QR-287-PHI-FAIL")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "QR-287-PHI-FAIL"]
         assert len(verdicts) == 1
@@ -336,6 +364,7 @@ class TestSlice3QueryPhiBoundary:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """status='phi_boundary_violation' AND post-loop diagnostic shape on the failing step."""
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -343,8 +372,10 @@ class TestSlice3QueryPhiBoundary:
         monkeypatch.setattr(config, "SAMANTHA_LLM_OUTPUT_MODE", "json")
         monkeypatch.setattr(_handlers, "phi_safe", _raises(PHIBoundaryError(age=95)))
 
+        stub = _make_unreachable_llm_stub()
+
         _write_query_scenario(tmp_path, "QR-287-PHI-STATUS")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "QR-287-PHI-STATUS"]
         assert len(verdicts) == 1
@@ -378,6 +409,7 @@ class TestSlice4LlmReviewSkillPhi:
         scenario-level fail assertions. Ensures the per-step skill_unavailable
         status propagates into the aggregate verdict.
         """
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -387,8 +419,10 @@ class TestSlice4LlmReviewSkillPhi:
             _handlers, "load_skill", _raises(SkillLoaderError("test skill failure"))
         )
 
+        stub = _make_unreachable_llm_stub()
+
         _write_llm_review_scenario(tmp_path, "LR-287-SKILL-FAIL")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "LR-287-SKILL-FAIL"]
         assert len(verdicts) == 1
@@ -401,6 +435,7 @@ class TestSlice4LlmReviewSkillPhi:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """The llm_review step must carry status='skill_unavailable' on SkillLoaderError."""
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -410,8 +445,10 @@ class TestSlice4LlmReviewSkillPhi:
             _handlers, "load_skill", _raises(SkillLoaderError("test skill failure"))
         )
 
+        stub = _make_unreachable_llm_stub()
+
         _write_llm_review_scenario(tmp_path, "LR-287-SKILL-STATUS")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "LR-287-SKILL-STATUS"]
         assert len(verdicts) == 1
@@ -434,6 +471,7 @@ class TestSlice4LlmReviewSkillPhi:
 
         ScenarioVerdict roll-up regression guard for the PHI branch.
         """
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -441,8 +479,10 @@ class TestSlice4LlmReviewSkillPhi:
         monkeypatch.setattr(config, "SAMANTHA_LLM_OUTPUT_MODE", "json")
         monkeypatch.setattr(_handlers, "phi_safe", _raises(PHIBoundaryError(age=95)))
 
+        stub = _make_unreachable_llm_stub()
+
         _write_llm_review_scenario(tmp_path, "LR-287-PHI-FAIL")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "LR-287-PHI-FAIL"]
         assert len(verdicts) == 1
@@ -455,6 +495,7 @@ class TestSlice4LlmReviewSkillPhi:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """The llm_review step must carry status='phi_boundary_violation' on PHIBoundaryError."""
+
         import samantha_server.llm.handlers as _handlers
         from samantha_server import config
         from samantha_server.scenarios.replay import replay
@@ -462,8 +503,10 @@ class TestSlice4LlmReviewSkillPhi:
         monkeypatch.setattr(config, "SAMANTHA_LLM_OUTPUT_MODE", "json")
         monkeypatch.setattr(_handlers, "phi_safe", _raises(PHIBoundaryError(age=95)))
 
+        stub = _make_unreachable_llm_stub()
+
         _write_llm_review_scenario(tmp_path, "LR-287-PHI-STATUS")
-        report = replay(tmp_path)
+        report = replay(tmp_path, _llm_client_override=stub)
 
         verdicts = [v for v in report.scenario_verdicts if v.scenario_id == "LR-287-PHI-STATUS"]
         assert len(verdicts) == 1

@@ -82,7 +82,6 @@ def _make_deps(*, rule_index: Any | None = None) -> dict[str, Any]:
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": _make_mock_llm(),
-        "scenarios_index": {},
         "skills_index": discover(),
         "rule_index": rule_index if rule_index is not None else RuleIndex([]),
     }
@@ -176,7 +175,6 @@ def test_deterministic_event_emits_signed_receipt() -> None:
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": _make_mock_llm(),
-        "scenarios_index": {},
         "skills_index": discover(),
         "rule_index": _make_rule_index(),
     }
@@ -225,7 +223,6 @@ def test_no_rule_match_returns_dispatch_empty_and_receipt() -> None:
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": _make_mock_llm(),
-        "scenarios_index": {},
         "skills_index": discover(),
         "rule_index": RuleIndex([]),  # empty index → no rule matches
     }
@@ -338,7 +335,6 @@ def test_symbolic_advance_sample_prep_resolves_to_concrete_state() -> None:
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": _make_mock_llm(),
-        "scenarios_index": {},
         "skills_index": discover(),
         "rule_index": _make_rule_index(),
     }
@@ -384,7 +380,6 @@ def test_passthrough_he_staining_resolves_to_he_qc() -> None:
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": _make_mock_llm(),
-        "scenarios_index": {},
         "skills_index": discover(),
         "rule_index": _make_rule_index(),
     }
@@ -458,7 +453,6 @@ def test_undispatched_rule_error_propagates_from_deterministic_branch() -> None:
                 write_lock=asyncio.Lock(),
                 counters=CounterRegistry(),
                 llm_client=_make_mock_llm(),
-                scenarios_index={},
                 skills_index=discover(),
                 rule_index=rule_index,
             )
@@ -528,7 +522,6 @@ def test_dispatch_empty_unknown_event_type_increments_counter_and_warns(
             write_lock=asyncio.Lock(),
             counters=counters,
             llm_client=_make_mock_llm(),
-            scenarios_index={},
             skills_index=discover(),
             rule_index=_make_rule_index(),
         )
@@ -577,7 +570,6 @@ def test_dispatch_empty_known_event_no_rule_match_does_not_warn(
             write_lock=asyncio.Lock(),
             counters=counters,
             llm_client=_make_mock_llm(),
-            scenarios_index={},
             skills_index=discover(),
             rule_index=_make_rule_index(),  # real index: order_received IS a known event_type
         )
@@ -592,3 +584,65 @@ def test_dispatch_empty_known_event_no_rule_match_does_not_warn(
     assert len(warning_records) == 0, (
         f"Known event_type with no rule match must NOT emit a WARNING; got: {warning_records}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Joint-propagation pin
+# ---------------------------------------------------------------------------
+
+
+def test_deterministic_event_carries_both_next_state_and_session_id() -> None:
+    """The merged model_copy contract — a DETERMINISTIC state-changing
+    event must produce a decision and receipt that carry BOTH the resolved next_state
+    AND the caller's session_id.
+
+    SP-001 fires on grossing_complete in ACCEPTED state and transitions to
+    SAMPLE_PREP_PROCESSING (resolved from ADVANCE_SAMPLE_PREP). This exercises
+    the resolved_state branch of the joint model_copy call in routing.py, pinning
+    that neither field is lost when both are stamped in a single model_copy update.
+    """
+    from samantha_server.api.routing import dispatch_event
+    from tests.api.helpers import SpyReceiptWriter
+
+    ctx = _make_grossing_complete_ctx(current_state="ACCEPTED", order_id="PR402-FIX2")
+    written: list[SignedReceipt] = []
+
+    from samantha_server.observability.counters import CounterRegistry
+    from samantha_server.skills.loader import discover
+
+    deps = {
+        "receipt_writer": SpyReceiptWriter(written),
+        "write_lock": asyncio.Lock(),
+        "counters": CounterRegistry(),
+        "llm_client": _make_mock_llm(),
+        "skills_index": discover(),
+        "rule_index": _make_rule_index(),
+    }
+
+    async def run() -> tuple[Any, Any, Any]:
+        return await dispatch_event(
+            ctx,
+            session_id="pr402-fix2-session",
+            priority=EventPriority.ROUTINE,
+            queue_wait_us=0,
+            **deps,
+        )
+
+    decision, dispatch_ctx, receipt = asyncio.run(run())
+
+    # Both fields must be present and correct on the returned decision.
+    assert decision.next_state == "SAMPLE_PREP_PROCESSING", (
+        f"Expected resolved next_state 'SAMPLE_PREP_PROCESSING', got {decision.next_state!r}"
+    )
+    assert decision.session_id == "pr402-fix2-session", (
+        f"Expected session_id 'pr402-fix2-session' on decision, got {decision.session_id!r}"
+    )
+
+    # The receipt must carry the same values (the receipt is signed over stamped decision).
+    assert receipt.decision.next_state == "SAMPLE_PREP_PROCESSING", (
+        f"Receipt stamped wrong next_state: {receipt.decision.next_state!r}"
+    )
+    assert receipt.decision.session_id == "pr402-fix2-session", (
+        f"Receipt stamped wrong session_id: {receipt.decision.session_id!r}"
+    )
+    assert dispatch_ctx.routing_path == "deterministic"

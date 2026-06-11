@@ -717,6 +717,33 @@ def llm_complete_json_with_span(
         return response
 
 
+def _stamp_attribute(span: Span, name: str, value: AttributeValue) -> None:
+    """Call set_span_attribute, logging a per-attribute warning on failure.
+
+    Containment is per-attribute so a single bad key does not silence
+    any other attribute in the same stamp_trace_attributes call. The broad
+    second catch keeps the fail-soft contract ("observability must not gate
+    the decision return") for non-ValueError SDK failures too (
+    review); its log line carries the key and exception type only — never
+    str(exc), whose content the SDK controls (G18: values can be PHI).
+    """
+    try:
+        set_span_attribute(span, name, value)
+    except ValueError as exc:
+        _log.warning(
+            "stamp_trace_attributes: allowlist rejection — %s; "
+            "other attributes in this call are unaffected.",
+            exc,
+        )
+    except Exception as exc:
+        _log.warning(
+            "stamp_trace_attributes: failed to stamp %r (%s); "
+            "other attributes in this call are unaffected.",
+            name,
+            type(exc).__name__,
+        )
+
+
 def stamp_trace_attributes(
     span: Span,
     ctx: TraceContext,
@@ -730,84 +757,71 @@ def stamp_trace_attributes(
     - ``run_id`` wins over ``sweep_run_id`` for ``langfuse.release``.
 
     Fails soft on ``ValueError`` from ``set_span_attribute`` — observability
-    must not gate the decision return. Logs a warning with the prefix
+    must not gate the decision return. Each attribute is contained
+    independently: a rejection on one key does not drop any
+    subsequent key. Logs one warning per rejected attribute with the prefix
     ``"stamp_trace_attributes: allowlist rejection — %s"``.
     """
 
-    try:
-        if ctx.session_id is not None:
-            set_span_attribute(span, "samantha.session_id", ctx.session_id)
-            if ctx.scenario_id is None:
-                set_span_attribute(span, "langfuse.trace.name", ctx.session_id)
-                set_span_attribute(span, "langfuse.trace.metadata.scenario_id", ctx.session_id)
+    if ctx.session_id is not None:
+        _stamp_attribute(span, "samantha.session_id", ctx.session_id)
+        if ctx.scenario_id is None:
+            _stamp_attribute(span, "langfuse.trace.name", ctx.session_id)
+            _stamp_attribute(span, "langfuse.trace.metadata.scenario_id", ctx.session_id)
 
-        if ctx.scenario_id is not None:
-            # samantha.scenario_id dropped; canonical surface is metadata.*
-            set_span_attribute(span, "langfuse.trace.name", ctx.scenario_id)
-            set_span_attribute(span, "langfuse.trace.metadata.scenario_id", ctx.scenario_id)
+    if ctx.scenario_id is not None:
+        # samantha.scenario_id dropped; canonical surface is metadata.*
+        _stamp_attribute(span, "langfuse.trace.name", ctx.scenario_id)
+        _stamp_attribute(span, "langfuse.trace.metadata.scenario_id", ctx.scenario_id)
 
-        if ctx.scenario_category is not None:
-            # samantha.scenario_category dropped; canonical surface is metadata.*
-            set_span_attribute(span, "langfuse.trace.tags", [ctx.scenario_category])
-            set_span_attribute(
-                span,
-                "langfuse.trace.metadata.scenario_category",
-                ctx.scenario_category,
-            )
+    if ctx.scenario_category is not None:
+        # samantha.scenario_category dropped; canonical surface is metadata.*
+        _stamp_attribute(span, "langfuse.trace.tags", [ctx.scenario_category])
+        _stamp_attribute(span, "langfuse.trace.metadata.scenario_category", ctx.scenario_category)
 
-        if ctx.sweep_run_id is not None:
-            # samantha.sweep_run_id dropped; canonical surface is metadata.*
-            set_span_attribute(span, "langfuse.trace.metadata.sweep_run_id", ctx.sweep_run_id)
-            if ctx.run_id is None:
-                set_span_attribute(span, "langfuse.release", ctx.sweep_run_id)
+    if ctx.sweep_run_id is not None:
+        # samantha.sweep_run_id dropped; canonical surface is metadata.*
+        _stamp_attribute(span, "langfuse.trace.metadata.sweep_run_id", ctx.sweep_run_id)
+        if ctx.run_id is None:
+            _stamp_attribute(span, "langfuse.release", ctx.sweep_run_id)
 
-        if ctx.run_id is not None:
-            set_span_attribute(span, "langfuse.release", ctx.run_id)
+    if ctx.run_id is not None:
+        _stamp_attribute(span, "langfuse.release", ctx.run_id)
 
-        if ctx.environment is not None:
-            # samantha.environment dropped; canonical surface is metadata.*
-            set_span_attribute(span, "langfuse.environment", ctx.environment)
-            set_span_attribute(span, "langfuse.trace.metadata.environment", ctx.environment)
+    if ctx.environment is not None:
+        # samantha.environment dropped; canonical surface is metadata.*
+        _stamp_attribute(span, "langfuse.environment", ctx.environment)
+        _stamp_attribute(span, "langfuse.trace.metadata.environment", ctx.environment)
 
-        if ctx.priority is not None:
-            set_span_attribute(span, "samantha.priority", ctx.priority)
+    if ctx.priority is not None:
+        _stamp_attribute(span, "samantha.priority", ctx.priority)
 
-        if ctx.event_input_hash is not None:
-            set_span_attribute(span, "samantha.event_input_hash", ctx.event_input_hash)
+    if ctx.event_input_hash is not None:
+        _stamp_attribute(span, "samantha.event_input_hash", ctx.event_input_hash)
 
-        if ctx.routing_path is not None:
-            # samantha.routing_path dropped; canonical surface is metadata.*
-            set_span_attribute(span, "langfuse.trace.metadata.routing_path", ctx.routing_path)
+    if ctx.routing_path is not None:
+        # samantha.routing_path dropped; canonical surface is metadata.*
+        _stamp_attribute(span, "langfuse.trace.metadata.routing_path", ctx.routing_path)
 
-        if ctx.next_state is not None:
-            # samantha.next_state dropped; canonical surface is metadata.*
-            set_span_attribute(span, "langfuse.trace.metadata.next_state", ctx.next_state)
+    if ctx.next_state is not None:
+        # samantha.next_state dropped; canonical surface is metadata.*
+        _stamp_attribute(span, "langfuse.trace.metadata.next_state", ctx.next_state)
 
-        if ctx.outcome is not None:
-            # samantha.outcome dropped; canonical surface is metadata.*
-            set_span_attribute(span, "langfuse.trace.metadata.outcome", ctx.outcome)
+    if ctx.outcome is not None:
+        # samantha.outcome dropped; canonical surface is metadata.*
+        _stamp_attribute(span, "langfuse.trace.metadata.outcome", ctx.outcome)
 
-        if ctx.latency_us is not None:
-            set_span_attribute(span, "samantha.latency_us", ctx.latency_us)
+    if ctx.latency_us is not None:
+        _stamp_attribute(span, "samantha.latency_us", ctx.latency_us)
 
-        if ctx.applied_rule_id is not None:
-            set_span_attribute(span, "samantha.applied_rule_id", ctx.applied_rule_id)
+    if ctx.applied_rule_id is not None:
+        _stamp_attribute(span, "samantha.applied_rule_id", ctx.applied_rule_id)
 
-        if ctx.receipt_id is not None:
-            set_span_attribute(span, "samantha.receipt_id", ctx.receipt_id)
+    if ctx.receipt_id is not None:
+        _stamp_attribute(span, "samantha.receipt_id", ctx.receipt_id)
 
-        if ctx.order_id is not None:
-            set_span_attribute(span, "samantha.order_id", ctx.order_id)
-
-    except ValueError as exc:
-        # The except sits at the function boundary, so a rejection on attribute
-        # N silently skips attributes N+1..end of the call. Surface that in the
-        # log line so operators don't assume the span carries the full set.
-        _log.warning(
-            "stamp_trace_attributes: allowlist rejection — %s. "
-            "Subsequent attributes in this call were not emitted.",
-            exc,
-        )
+    if ctx.order_id is not None:
+        _stamp_attribute(span, "samantha.order_id", ctx.order_id)
 
 
 def make_counting_exporter(inner: SpanExporter, counters: CounterRegistry) -> SpanExporter:

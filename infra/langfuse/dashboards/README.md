@@ -79,11 +79,11 @@ wants to visualise replay data instead duplicates the dashboard in
 Langfuse, swaps the filter to `replay`, and saves under a separate
 name — no need to touch the production-default YAMLs.
 
-### Preemptive filter caveat
+### Pre-shipment: preemptive filter caveat
 
-Until Step 13 ships, the `langfuse.trace.metadata.environment` attribute is **unset
+Until replay tagging ships, the `langfuse.trace.metadata.environment` attribute is **unset
 on every span**. The panel filter is preemptive — wired into the
-YAMLs now so the Step 13 change is a single-attribute change rather than
+YAMLs now so the replay-tagging PR is a single-attribute change rather than
 an N-dashboards change.
 
 **Caveat (operator-visible):** Langfuse v3.172.0's exact
@@ -91,10 +91,10 @@ equality-filter semantics for absent attributes are not documented.
 There are two possible behaviours:
 
 - **Strict equality** — filters on absent attributes match nothing.
-  Every panel shows 0 events until Step 13 lands. **Workaround:** on
+  Every panel shows 0 events until replay tagging lands. **Workaround:** on
   first import, set the filter to "is set OR equals production"
   (or temporarily disable the filter) and remove the workaround when
-  Step 13 ships.
+  replay tagging ships.
 - **Pass-through on missing** — filters on absent attributes match
   every event. Every panel shows production data correctly today; no
   workaround needed.
@@ -107,5 +107,6 @@ and checking whether events appear.
 ## Cross-links
 
 - Trace schema: [`docs/observability/trace-schema.md`](../../../docs/observability/trace-schema.md)
+- Plan: `docs/plans/phase-3-implementation.md` § Step 11
 - Schema test: [`tests/observability/test_dashboard_schema.py`](../../../tests/observability/test_dashboard_schema.py)
-- Step 13 (replay tagging): not yet shipped
+- Step 13 (replay tagging):

@@ -145,18 +145,31 @@ class MLXClient:
         max_tokens: int | None = None,
         temperature: float | None = None,
     ) -> LLMResponse:
-        """Not implemented — JSON mode requires oMLX (LLM_PROVIDER=omlx).
+        """JSON mode not supported on the MLX path — raises LLMInferenceError.
 
         Per the capability probe decision, structured JSON output
         via response_format=json_schema is only supported on the oMLX
         server (/v1/chat/completions). The in-process MLX path does not
         support constrained decoding at this time.
 
+        Raises LLMInferenceError (a subclass of LLMClientError) so that
+        handlers' `except LLMClientError` catches this refusal and emits a
+        signed receipt rather than propagating a raw untyped exception.
+        The startup guard (config.py) only rejects LLM_PROVIDER=mlx +
+        SAMANTHA_LLM_OUTPUT_MODE=json; the specimen-review handler is a
+        hard cutover that always uses JSON mode, so a guard-permitted
+        mlx + free_text deployment still reaches this method on any
+        PENDING_LLM_REVIEW event. For that path the typed error is the
+        primary refusal mechanism, not just defense-in-depth.
+
         Set LLM_PROVIDER=omlx and SAMANTHA_LLM_OUTPUT_MODE=json to use
         JSON mode with the oMLX backend.
         """
-        raise NotImplementedError(
-            "MLXClient.complete_json is not supported. "
-            "JSON output mode requires LLM_PROVIDER=omlx (oMLX server). "
-            "See the capability probe decision."
+        raise LLMInferenceError(
+            model_id=self._model_id,
+            cause=(
+                "MLXClient.complete_json is not supported. "
+                "JSON output mode requires LLM_PROVIDER=omlx (oMLX server). "
+                "See the capability probe decision."
+            ),
         )

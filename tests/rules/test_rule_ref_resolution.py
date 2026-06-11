@@ -235,27 +235,27 @@ class TestUnknownRuleRef:
 
 class TestCycleDetection:
     def test_mutual_cycle_raises_value_error(self, tmp_path: Path) -> None:
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "B"))
-        (tmp_path / "B.yaml").write_text(_make_rule_with_ref("B", "A"))
+        (tmp_path / "ACC-910.yaml").write_text(_make_rule_with_ref("ACC-910", "ACC-911"))
+        (tmp_path / "ACC-911.yaml").write_text(_make_rule_with_ref("ACC-911", "ACC-910"))
         with pytest.raises(ValueError, match="cycle"):
             load_rule_specs(tmp_path)
 
     def test_self_cycle_raises_value_error(self, tmp_path: Path) -> None:
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "A"))
+        (tmp_path / "ACC-910.yaml").write_text(_make_rule_with_ref("ACC-910", "ACC-910"))
         with pytest.raises(ValueError, match="cycle"):
             load_rule_specs(tmp_path)
 
     def test_mutual_cycle_message_names_both_rule_ids(self, tmp_path: Path) -> None:
         """Cycle message must contain both A and B in traversal order (A -> B -> A)."""
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "B"))
-        (tmp_path / "B.yaml").write_text(_make_rule_with_ref("B", "A"))
-        with pytest.raises(ValueError, match=r"A.*B.*A"):
+        (tmp_path / "ACC-910.yaml").write_text(_make_rule_with_ref("ACC-910", "ACC-911"))
+        (tmp_path / "ACC-911.yaml").write_text(_make_rule_with_ref("ACC-911", "ACC-910"))
+        with pytest.raises(ValueError, match=r"ACC-910.*ACC-911.*ACC-910"):
             load_rule_specs(tmp_path)
 
     def test_self_cycle_message_names_rule_id(self, tmp_path: Path) -> None:
         """Self-cycle message must contain the rule_id twice (A -> A)."""
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "A"))
-        with pytest.raises(ValueError, match=r"A.*->.*A"):
+        (tmp_path / "ACC-910.yaml").write_text(_make_rule_with_ref("ACC-910", "ACC-910"))
+        with pytest.raises(ValueError, match=r"ACC-910.*->.*ACC-910"):
             load_rule_specs(tmp_path)
 
 
@@ -320,19 +320,19 @@ class TestRuleRefTypeGuard:
 
 class TestTransitiveResolution:
     def test_transitive_ref_resolves_to_terminal_predicate(self, tmp_path: Path) -> None:
-        """A → B → C: after load, A's when must be the inlined C predicate."""
-        (tmp_path / "C.yaml").write_text(_make_atomic_rule("C", field="patient_name"))
-        (tmp_path / "B.yaml").write_text(_make_rule_with_ref("B", "C"))
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "B"))
+        """ACC-003 → ACC-002 → ACC-001: ACC-003's when must be the inlined ACC-001 predicate."""
+        (tmp_path / "ACC-001.yaml").write_text(_make_atomic_rule("ACC-001", field="patient_name"))
+        (tmp_path / "ACC-002.yaml").write_text(_make_rule_with_ref("ACC-002", "ACC-001"))
+        (tmp_path / "ACC-003.yaml").write_text(_make_rule_with_ref("ACC-003", "ACC-002"))
         specs = load_rule_specs(tmp_path)
-        rule_a = next(s for s in specs if s.rule_id == "A")
+        rule_a = next(s for s in specs if s.rule_id == "ACC-003")
         assert isinstance(rule_a.when, IsNull)
         assert rule_a.when.field == "patient_name"
 
     def test_transitive_ref_all_three_loaded(self, tmp_path: Path) -> None:
-        (tmp_path / "C.yaml").write_text(_make_atomic_rule("C", field="patient_name"))
-        (tmp_path / "B.yaml").write_text(_make_rule_with_ref("B", "C"))
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "B"))
+        (tmp_path / "ACC-001.yaml").write_text(_make_atomic_rule("ACC-001", field="patient_name"))
+        (tmp_path / "ACC-002.yaml").write_text(_make_rule_with_ref("ACC-002", "ACC-001"))
+        (tmp_path / "ACC-003.yaml").write_text(_make_rule_with_ref("ACC-003", "ACC-002"))
         specs = load_rule_specs(tmp_path)
         assert len(specs) == 3
 
@@ -344,21 +344,21 @@ class TestTransitiveResolution:
 
 class TestDiamondResolution:
     def test_diamond_ref_loads_without_error(self, tmp_path: Path) -> None:
-        """A → C and B → C must load successfully — no cycle error."""
-        (tmp_path / "C.yaml").write_text(_make_atomic_rule("C", field="patient_name"))
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "C"))
-        (tmp_path / "B.yaml").write_text(_make_rule_with_ref("B", "C"))
+        """ACC-003 → ACC-001 and ACC-002 → ACC-001 must load successfully — no cycle error."""
+        (tmp_path / "ACC-001.yaml").write_text(_make_atomic_rule("ACC-001", field="patient_name"))
+        (tmp_path / "ACC-002.yaml").write_text(_make_rule_with_ref("ACC-002", "ACC-001"))
+        (tmp_path / "ACC-003.yaml").write_text(_make_rule_with_ref("ACC-003", "ACC-001"))
         specs = load_rule_specs(tmp_path)
         assert len(specs) == 3
 
     def test_diamond_ref_both_resolve_to_same_predicate_shape(self, tmp_path: Path) -> None:
-        """Both A and B must inline C's predicate correctly."""
-        (tmp_path / "C.yaml").write_text(_make_atomic_rule("C", field="patient_name"))
-        (tmp_path / "A.yaml").write_text(_make_rule_with_ref("A", "C"))
-        (tmp_path / "B.yaml").write_text(_make_rule_with_ref("B", "C"))
+        """Both ACC-002 and ACC-003 must inline ACC-001's predicate correctly."""
+        (tmp_path / "ACC-001.yaml").write_text(_make_atomic_rule("ACC-001", field="patient_name"))
+        (tmp_path / "ACC-002.yaml").write_text(_make_rule_with_ref("ACC-002", "ACC-001"))
+        (tmp_path / "ACC-003.yaml").write_text(_make_rule_with_ref("ACC-003", "ACC-001"))
         specs = load_rule_specs(tmp_path)
-        rule_a = next(s for s in specs if s.rule_id == "A")
-        rule_b = next(s for s in specs if s.rule_id == "B")
+        rule_a = next(s for s in specs if s.rule_id == "ACC-003")
+        rule_b = next(s for s in specs if s.rule_id == "ACC-002")
         assert isinstance(rule_a.when, IsNull)
         assert rule_a.when.field == "patient_name"
         assert isinstance(rule_b.when, IsNull)

@@ -13,6 +13,11 @@ no-receipt paths (backpressure_rejection, pre_dequeue_cancellation) never
 reach this function. All event_types — including deterministic events that
 match no rule (dispatch_empty) — return normally with a receipt.
 
+UndispatchedRuleError from evaluate() intentionally propagates WITHOUT a
+receipt: the dispatch token is untrusted (rule_id did not survive the
+dispatcher gate), so signing a receipt over it would be dubious. It surfaces
+as a 500 via the app-level handler.
+
 Architectural invariants:
 - LLM handler imports happen at module scope because routing.py is the
   orchestrator-side dispatcher; LLM imports are expected here and do NOT
@@ -20,6 +25,9 @@ Architectural invariants:
   import from api/).
 - emit_receipt is the sole call to sign_decision in the orchestrator layer.
 - The deterministic branch must not reference llm_client.
+- OpenTelemetry span management: dispatch_event does not create its own
+  span. The HTTP layer (FastAPI route) owns the root span; individual LLM
+  handlers own their internal spans via llm_complete_with_span helpers.
 """
 
 from __future__ import annotations
@@ -37,7 +45,7 @@ from samantha_server.engine.action_handlers import apply_runtime_flag_clearing
 from samantha_server.engine.decision import EngineDecision
 from samantha_server.engine.dispatcher import list_applicable_rules
 from samantha_server.engine.evaluator import evaluate
-from samantha_server.engine.transitions import get_known_event_types, resolve_transition
+from samantha_server.engine.transitions import resolve_transition
 from samantha_server.llm.client import LLMClient
 from samantha_server.llm.handlers import (
     handle_clarification,
@@ -49,14 +57,13 @@ from samantha_server.observability.counters import CounterRegistry
 from samantha_server.queue.priority import EventPriority
 from samantha_server.receipts.signing import SignedReceipt
 from samantha_server.rules.loader import RuleIndex
-from samantha_server.scenarios.loader import Scenario
 from samantha_server.skills.loader import SkillSpec
 
 _log = logging.getLogger(__name__)
 
 # Narrow literal type for routing_path — only "llm" and "deterministic" are valid
 # classifications for events that complete dispatch. All event_types that reach
-# _dispatch_event_core route to one of these two paths; "refused" is never
+# dispatch_event route to one of these two paths; "refused" is never
 # a runtime value here.
 RoutingPath = Literal["deterministic", "llm"]
 
@@ -71,7 +78,6 @@ async def dispatch_event(
     write_lock: asyncio.Lock,
     counters: CounterRegistry,
     llm_client: LLMClient,
-    scenarios_index: Mapping[str, Scenario],
     skills_index: Mapping[str, SkillSpec],
     rule_index: RuleIndex,
     prompt_timestamp: str | None = None,
@@ -96,8 +102,6 @@ async def dispatch_event(
         CounterRegistry for silent-loss observability.
     llm_client:
         Initialized LLM client.
-    scenarios_index:
-        Mapping of scenario_id → Scenario.
     skills_index:
         Mapping of skill_name → SkillSpec.
     rule_index:
@@ -115,42 +119,14 @@ async def dispatch_event(
     events that match no rule produce a dispatch_empty EngineDecision with
     a receipt, instead of raising NotImplementedError.
     """
-    return await _dispatch_event_core(
-        ctx,
-        session_id=session_id,
-        priority=priority,
-        queue_wait_us=queue_wait_us,
-        receipt_writer=receipt_writer,
-        write_lock=write_lock,
-        counters=counters,
-        llm_client=llm_client,
-        scenarios_index=scenarios_index,
-        skills_index=skills_index,
-        rule_index=rule_index,
-        prompt_timestamp=prompt_timestamp,
-    )
-
-
-async def _dispatch_event_core(
-    ctx: SpecimenContext,
-    *,
-    session_id: str,
-    priority: EventPriority,
-    queue_wait_us: int,
-    receipt_writer: ReceiptWriterProtocol,
-    write_lock: asyncio.Lock,
-    counters: CounterRegistry,
-    llm_client: LLMClient,
-    scenarios_index: Mapping[str, Scenario],
-    skills_index: Mapping[str, SkillSpec],
-    rule_index: RuleIndex,
-    prompt_timestamp: str | None = None,
-) -> tuple[EngineDecision, EventDispatchContext, SignedReceipt]:
-    """Core dispatch logic — no span management. Called by both production and replay paths."""
     # Determine routing path and dispatch to the appropriate handler.
     # State-first precedence mirrors router.py::route().
     routing_path: RoutingPath
     decision: EngineDecision
+    # resolved_state carries the concrete next_state for the
+    # deterministic path so both next_state and session_id can be applied in
+    # one model_copy at the stamp step below (instead of two separate calls).
+    resolved_state: str | None = None
 
     if ctx.current_state == "PENDING_LLM_REVIEW":
         routing_path = "llm"
@@ -169,7 +145,6 @@ async def _dispatch_event_core(
             decision = handle_clinical_query(
                 ctx,
                 llm_client,
-                scenarios_index,
                 skills_index,
                 prompt_timestamp=prompt_timestamp,
                 counters=counters,
@@ -206,7 +181,6 @@ async def _dispatch_event_core(
                 ctx.event.event_type,
                 accumulated_flags=post_flags,
             )
-            decision = decision.model_copy(update={"next_state": resolved_state})
 
             # Unknown-event observability: when dispatch_empty produced no
             # state change AND the event_type is not in the known set, this is a
@@ -215,7 +189,7 @@ async def _dispatch_event_core(
             if (
                 decision.applied_rule_id is None
                 and resolved_state == ctx.current_state
-                and ctx.event.event_type not in get_known_event_types(rule_index)
+                and ctx.event.event_type not in rule_index.known_event_types
             ):
                 counters.dispatch_unknown_event_type.increment()
                 # %r is deliberate (not %s): repr-escapes control chars / ANSI in the
@@ -229,8 +203,14 @@ async def _dispatch_event_core(
                     ctx.current_state,
                 )
 
-    # Stamp session_id on the decision.
-    stamped = decision.model_copy(update={"session_id": session_id})
+    # Stamp session_id and (for deterministic events) the
+    # resolved next_state in a single model_copy call instead of two.
+    if resolved_state is not None:
+        stamped = decision.model_copy(
+            update={"next_state": resolved_state, "session_id": session_id}
+        )
+    else:
+        stamped = decision.model_copy(update={"session_id": session_id})
 
     # Emit receipt — the orchestrator-side chokepoint.
     receipt = await emit_receipt(

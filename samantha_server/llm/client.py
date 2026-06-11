@@ -154,7 +154,9 @@ class LLMClient(Protocol):
         Notes
         -----
         SAMANTHA_LLM_OUTPUT_MODE=json requires LLM_PROVIDER=omlx.
-        MLXClient raises NotImplementedError — JSON mode is oMLX-only
+        MLXClient raises LLMInferenceError — JSON mode is oMLX-only
         per the capability probe decision (see docs/llm/omlx-capabilities.md).
+        Typed LLMInferenceError (not NotImplementedError) so
+        handlers' `except LLMClientError` catches it and emits a receipt.
         """
         ...

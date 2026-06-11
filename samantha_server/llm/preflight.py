@@ -60,10 +60,15 @@ _SORTED_CANONICALIZED_FIELDS: tuple[str, ...] = tuple(sorted(CANONICALIZED_ORDER
 # Guard against drift between CANONICALIZED_ORDER_FIELDS and the canonical
 # pick-list data. If a field is removed from canonical-fields.json but still
 # listed here, preflight would silently pass every value for that field.
-assert CANONICALIZED_ORDER_FIELDS <= CANONICAL_FIELDS, (
-    f"CANONICALIZED_ORDER_FIELDS contains fields not in CANONICAL_FIELDS: "
-    f"{CANONICALIZED_ORDER_FIELDS - CANONICAL_FIELDS}"
-)
+# explicit raise so the guard survives Python -O.
+# No dedicated unit test for this guard: the guard fires at import time and
+# would require mutating the module-level constant to test in isolation;
+# the -O subprocess pattern from test_rule_index covers the shape generically.
+if not (CANONICALIZED_ORDER_FIELDS <= CANONICAL_FIELDS):
+    raise RuntimeError(
+        f"CANONICALIZED_ORDER_FIELDS contains fields not in CANONICAL_FIELDS: "
+        f"{CANONICALIZED_ORDER_FIELDS - CANONICAL_FIELDS}"
+    )
 
 
 # ---------------------------------------------------------------------------

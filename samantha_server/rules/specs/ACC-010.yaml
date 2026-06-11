@@ -2,7 +2,7 @@ rule_id: ACC-010
 step: ACCESSIONING
 applies_at: null
 event_type: order_received
-severity: PROCEED
+severity: REVIEW_HOLD
 priority: null
 when:
   # Fall-through predicate: fires when specimen_type is neither in ACC-004's
@@ -12,7 +12,12 @@ when:
   #
   # Disjointness with ACC-004 is guaranteed by the first Not(in_enum) clause:
   # if specimen_type is on the blacklist, ACC-004 (REJECT) wins; ACC-010 cannot
-  # also fire for the same value (SEVERITY_ORDER enforces REJECT > PROCEED).
+  # also fire for the same value (SEVERITY_ORDER enforces REJECT > REVIEW_HOLD).
+  #
+  # Intra-tier resolution with ACC-007: ACC-010 is REVIEW_HOLD and
+  # ACC-007 is PROCEED, so ACC-010 wins on a dual-match (missing billing +
+  # unknown specimen_type). The engine also unions ACC-007's MISSING_INFO_PROCEED
+  # flag into flags_added so the post-review billing path is not lost.
   #
   # The two enum values lists (blacklist and whitelist) govern specimen routing.
   boolean_and:

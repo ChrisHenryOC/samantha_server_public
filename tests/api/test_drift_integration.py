@@ -85,7 +85,7 @@ def test_consume_records_dispatch_via_public_accessor() -> None:
         with contextlib.suppress(asyncio.CancelledError):
             await task
 
-        assert state.drift_monitor.qsize() == 1
+        assert state.drift_monitor.resident_count() == 1
         # Public accessor — no reach into ``_buffer``.
         assert state.drift_monitor.routing_paths() == [dispatch_ctx.routing_path]
 

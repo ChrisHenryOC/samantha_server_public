@@ -894,7 +894,12 @@ class TestQueryContentGate:
         assert step_status == "mismatch_query_response", f"Step status: {step_status!r}"
 
     def test_query_content_gate_parse_failure_yields_invalid_json(self, tmp_path: object) -> None:
-        """When query trace has parse_failure → invalid_json on the last LLM step."""
+        """Unparseable LLM response → invalid_json on the last LLM step.
+
+        The handler now emits a RefusalTrace (STAGE_PRE_UNPARSEABLE)
+        instead of a QueryTrace with parse_failure; the post-loop gate maps
+        that refusal to the invalid_json step status.
+        """
         from pathlib import Path
 
         assert isinstance(tmp_path, Path)
@@ -910,10 +915,11 @@ class TestQueryContentGate:
     ) -> None:
         """Valid JSON that violates QueryResponseV1 (bad answer_type) → invalid_json.
 
-        Covers the schema_violation parse_failure branch (handlers.py): the stub
-        returns parseable JSON whose answer_type is not a valid AnswerType, so
-        model_validate_json raises a schema error (not a json_decode error). Like
-        json_decode, this must surface as an invalid_json verdict on the LLM step.
+        Covers the schema_violation branch (handlers.py): the stub returns
+        parseable JSON whose answer_type is not a valid AnswerType, so
+        model_validate_json raises a schema error (not a json_decode error).
+        Like json_decode, this now produces a STAGE_PRE_UNPARSEABLE
+        refusal, which the post-loop gate surfaces as invalid_json.
         """
         from pathlib import Path
 

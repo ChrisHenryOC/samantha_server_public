@@ -408,6 +408,71 @@ def test_aclose_logs_dead_consumer_task_exception(
     assert any("consumer task exited" in rec.message for rec in caplog.records)
 
 
+def test_aclose_logs_warning_when_receipt_writer_close_raises(
+    caplog: pytest.LogCaptureFixture,  # type: ignore[name-defined]  # noqa: F821
+) -> None:
+    """aclose() logs a WARNING with exc_info when receipt_writer.close() raises.
+
+    Under the old code the failure was silently suppressed via
+    contextlib.suppress(Exception). The fix emits a WARNING so operators
+    can diagnose the failure.
+    """
+    import logging
+    import sqlite3
+
+    from tests.api.helpers import make_minimal_app_state
+
+    async def run() -> None:
+        state = make_minimal_app_state()
+        state.receipt_writer.close = MagicMock(  # type: ignore[method-assign]
+            side_effect=RuntimeError("writer exploded")
+        )
+        state.receipt_audit_conn = MagicMock(spec=sqlite3.Connection)  # type: ignore[assignment]
+
+        with caplog.at_level(logging.WARNING, logger="samantha_server.api.lifespan"):
+            await state.aclose()
+
+    asyncio.run(run())
+
+    warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any(
+        r.exc_info is not None and isinstance(r.exc_info[1], RuntimeError) for r in warning_records
+    ), (
+        "aclose() must log a WARNING with exc_info[1] as RuntimeError"
+        " when receipt_writer.close() raises"
+    )
+
+
+def test_aclose_logs_warning_when_audit_conn_close_raises(
+    caplog: pytest.LogCaptureFixture,  # type: ignore[name-defined]  # noqa: F821
+) -> None:
+    """aclose() logs a WARNING with exc_info when receipt_audit_conn.close() raises."""
+    import logging
+    import sqlite3
+
+    from tests.api.helpers import make_minimal_app_state
+
+    async def run() -> None:
+        state = make_minimal_app_state()
+
+        mock_audit_conn = MagicMock(spec=sqlite3.Connection)
+        mock_audit_conn.close.side_effect = OSError("audit conn close failed")
+        state.receipt_audit_conn = mock_audit_conn  # type: ignore[assignment]
+
+        with caplog.at_level(logging.WARNING, logger="samantha_server.api.lifespan"):
+            await state.aclose()
+
+    asyncio.run(run())
+
+    warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any(
+        r.exc_info is not None and isinstance(r.exc_info[1], OSError) for r in warning_records
+    ), (
+        "aclose() must log a WARNING with exc_info[1] as OSError"
+        " when receipt_audit_conn.close() raises"
+    )
+
+
 def test_aclose_closes_audit_conn_even_when_writer_close_raises() -> None:
     """aclose() closes receipt_audit_conn even if receipt_writer.close() raises.
 

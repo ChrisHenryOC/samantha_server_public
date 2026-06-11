@@ -560,3 +560,70 @@ def test_phi_hash_salt_passes_entropy_floor() -> None:
         f"(minimum: 16). Regenerate with os.urandom(32)."
     )
     assert len(PHI_HASH_SALT) == 32, f"salt length: {len(PHI_HASH_SALT)} bytes"
+
+
+# ---------------------------------------------------------------------------
+# Slice 7 — _ORDER_PASS_THROUGH driven copy pin
+# ---------------------------------------------------------------------------
+
+
+def test_phi_safe_pass_through_copy_driven_by_constant() -> None:
+    """Every field in _ORDER_PASS_THROUGH lands on safe_order with the source value.
+
+    Iterates the constant directly so a future field addition to
+    _ORDER_PASS_THROUGH is automatically covered without a test update.
+
+    Division of labor: this test is deliberately
+    self-referential on the constant — it pins the COPY, not the membership.
+    A PHI field wrongly added to _ORDER_PASS_THROUGH is caught by
+    test_order_pass_through_covers_exactly_non_phi_fields, not here.
+    """
+    from samantha_server.llm.phi import _ORDER_PASS_THROUGH, phi_safe
+
+    ctx = _make_ctx(
+        order_id="ORD-CONST-001",
+        age=45,
+        specimen_type="biopsy",
+        anatomic_site="breast",
+        fixative="formalin",
+        fixation_time_hours=24.0,
+        ordered_tests=("HER2",),
+        priority="routine",
+        billing_info_present=True,
+    )
+    result = phi_safe(ctx)  # type: ignore[arg-type]
+
+    for field in _ORDER_PASS_THROUGH:
+        source_val = getattr(ctx.order, field)  # type: ignore[union-attr]
+        safe_val = getattr(result.order, field)
+        assert safe_val == source_val, (
+            f"_ORDER_PASS_THROUGH field {field!r}: "
+            f"expected {source_val!r} on safe_order, got {safe_val!r}"
+        )
+
+
+def test_phi_safe_pass_through_copies_none_values_verbatim() -> None:
+    """Optional pass-through fields propagate None unchanged.
+
+    The constant-driven sibling uses all-non-None values; this variant pins
+    the None path for the Optional fields so a future Optional addition to
+    _ORDER_PASS_THROUGH is exercised on both paths.
+    """
+    from samantha_server.llm.phi import _ORDER_PASS_THROUGH, phi_safe
+
+    ctx = _make_ctx(
+        order_id="ORD-NONE-001",
+        age=None,
+        specimen_type=None,
+        anatomic_site=None,
+        fixative=None,
+        fixation_time_hours=None,
+        ordered_tests=(),
+        priority=None,
+        billing_info_present=True,
+    )
+    result = phi_safe(ctx)  # type: ignore[arg-type]
+    for field in _ORDER_PASS_THROUGH:
+        assert getattr(result.order, field) == getattr(ctx.order, field), (
+            f"pass-through field {field!r} must copy verbatim (incl. None)"
+        )

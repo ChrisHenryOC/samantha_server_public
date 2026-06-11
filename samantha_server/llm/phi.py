@@ -134,17 +134,7 @@ def phi_safe(ctx: SpecimenContext) -> SafeContext:
         raise PHIBoundaryError(age=ctx.order.age)
 
     order = ctx.order
-    safe_order = SafeOrder(
-        order_id=order.order_id,
-        specimen_type=order.specimen_type,
-        anatomic_site=order.anatomic_site,
-        fixative=order.fixative,
-        fixation_time_hours=order.fixation_time_hours,
-        ordered_tests=order.ordered_tests,
-        priority=order.priority,
-        billing_info_present=order.billing_info_present,
-        age=order.age,
-    )
+    safe_order = SafeOrder(**{f: getattr(order, f) for f in _ORDER_PASS_THROUGH})
 
     return SafeContext(
         order=safe_order,

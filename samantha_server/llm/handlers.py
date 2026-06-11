@@ -70,7 +70,6 @@ from samantha_server.observability.otel import (
     llm_complete_with_span,
     set_span_attribute,
 )
-from samantha_server.scenarios.loader import Scenario
 from samantha_server.skills.loader import SkillLoaderError, SkillSpec
 from samantha_server.skills.loader import load as load_skill
 
@@ -477,74 +476,6 @@ def build_query_prompt(
 
 
 # ---------------------------------------------------------------------------
-# Similar-scenario retrieval
-# ---------------------------------------------------------------------------
-
-
-def _retrieve_similar(
-    ctx: SpecimenContext,
-    scenarios_index: Mapping[str, Scenario],
-    k: int = 3,
-) -> tuple[Scenario, ...]:
-    """Return up to k scenarios that match ctx.current_state and category="query".
-
-    Intentionally not called from `handle_clinical_query`
-    (production `scenarios_index` is empty and the corpus guard
-    always returned ()). Retained for the Phase 3 exemplar-corpus
-    rollout (M-21) so the corpus-leakage guard and the
-    deterministic ordering invariant do not have to be rebuilt from
-    scratch when the index is populated. A dead-code sweep should
-    consult this note before deletion.
-
-    Algorithm v1 (simple, auditable):
-    - Guard: if ctx.order.order_id is a key in scenarios_index the
-      index IS the test corpus being evaluated — return () to prevent
-      sibling-fixture leakage. Production order_ids are never in the index.
-    - Filter: category == "query" AND any step has matching current_state.
-    - Sort by scenario_id for deterministic ordering (M-09: receipt replay
-      depends on stable scenarios_cited).
-    - Return first k.
-
-    Trade-off documented: O(N) scan over all scenarios; acceptable for
-    development-tool scale. Phase 3 will add a pre-built inverted index
-    keyed by (category, state) for similarity-based retrieval (M-21).
-
-    Parameters
-    ----------
-    ctx:
-        The current evaluation context.
-    scenarios_index:
-        A mapping of scenario_id → Scenario (from build_scenario_index).
-    k:
-        Maximum number of scenarios to return.
-
-    Returns
-    -------
-    tuple[Scenario, ...]
-        At most k scenarios, sorted by scenario_id. May be empty.
-    """
-    # Replay-against-test-corpus detection.
-    # Production order_ids never appear in scenarios_index, so this guard is inert there.
-    if ctx.order.order_id in scenarios_index:
-        # order_id is a synthetic LIS identifier (not PHI, not Safe Harbor).
-        # Log the raw order_id directly — no hashing required inside the trust boundary.
-        _logger.debug(
-            "Corpus guard fired: order_id=%s is in scenarios_index; "
-            "returning () to prevent sibling-fixture leakage.",
-            ctx.order.order_id,
-        )
-        return ()
-    matching = [
-        s
-        for s in scenarios_index.values()
-        if s.category == "query"
-        and any(step.expected_next_state == ctx.current_state for step in s.steps)
-    ]
-    matching.sort(key=lambda s: s.scenario_id)
-    return tuple(matching[:k])
-
-
-# ---------------------------------------------------------------------------
 # Clinical query handler
 # ---------------------------------------------------------------------------
 
@@ -552,7 +483,6 @@ def _retrieve_similar(
 def handle_clinical_query(
     ctx: SpecimenContext,
     llm_client: LLMClient,
-    scenarios_index: Mapping[str, Scenario],
     skills_index: Mapping[str, SkillSpec],
     *,
     prompt_timestamp: str | None = None,
@@ -580,14 +510,6 @@ def handle_clinical_query(
         The current evaluation context.
     llm_client:
         An LLMClient implementation; must be initialized.
-    scenarios_index:
-        A mapping of scenario_id → Scenario. Accepted for interface
-        stability and forward-compatibility; not consumed in the
-        function body (the `<similar_scenarios>` block was
-        removed because the production index is empty and the
-        replay guard always returned ()). When the exemplar-corpus
-        rollout (Phase 3 M-21) reattaches `_retrieve_similar`, this
-        parameter becomes live again without a signature change.
     skills_index:
         A mapping of skill_name → SkillSpec for skill lookup.
     prompt_timestamp:
@@ -664,10 +586,8 @@ def handle_clinical_query(
             current_state=ctx.current_state,
         )
 
-    # _retrieve_similar no longer called; production index is empty
-    # and the corpus guard always returned (). scenarios_cited hardcoded to ().
-    # _retrieve_similar is kept defined for future exemplar-corpus rollout
-    # (Phase 3 M-21; see the function's docstring for the dead-code-sweep note).
+    # scenarios_cited hardcoded to () — production index is empty and the
+    # similar-scenario retrieval helper was deleted.
     scenarios_cited: tuple[str, ...] = ()
 
     # PHIBoundaryError must be caught here and converted to a refusal receipt.
@@ -859,9 +779,9 @@ def _handle_clinical_query_json(
     """JSON-mode branch for handle_clinical_query.
 
     Calls complete_json() with temperature=0.0. Defensively strips markdown
-    fences. Parses the response as QueryResponseV1. On parse failure, records
-    parse_failure in the QueryTrace but still returns outcome="query_response"
-    (Phase C / will tighten this into a refusal bucket).
+    fences. Parses the response as QueryResponseV1. On parse failure, returns
+    a STAGE_PRE_UNPARSEABLE refusal so the receipt records the
+    failure honestly — mirrors the specimen-review parse-failure path.
     """
     messages = _build_query_messages(
         skill_body,
@@ -880,7 +800,13 @@ def _handle_clinical_query_json(
             temperature=0.0,
         )
     except LLMClientError as exc:
-        _logger.warning("LLMClient.complete_json() failed; returning refused_llm_unavailable.")
+        # Include str(exc) so a permanent capability gap (e.g.
+        # LLMInferenceError from MLXClient.complete_json) is
+        # distinguishable from a transient failure at default log levels.
+        _logger.warning(
+            "LLMClient.complete_json() failed; returning refused_llm_unavailable. error=%s",
+            exc,
+        )
         _logger.debug("LLMClient.complete_json() failed (full traceback).", exc_info=exc)
         return _make_refusal_decision(
             "STAGE_PRE_LLM_UNAVAILABLE",
@@ -894,32 +820,35 @@ def _handle_clinical_query_json(
     stripped = _strip_markdown_fences(raw_text)
 
     # Attempt parse — defensive: model may produce non-JSON or schema-violating output.
-    parsed_order_ids: tuple[str, ...] | None = None
-    parsed_answer_type = None
-    parse_failure: Literal["json_decode", "schema_violation"] | None = None
-    response_text_hash: str
-
     try:
         parsed = QueryResponseV1.model_validate_json(stripped)
     except PydanticValidationError as exc:
         # Pydantic v2 model_validate_json wraps json.JSONDecodeError in ValidationError
         # with error type "json_invalid". Distinguish the two failure modes for the
-        # parse_failure field in QueryTrace.
+        # gen_ai.parse_failure span attribute and the logs.
         errors = exc.errors(include_url=False)
         is_json_decode = any(e.get("type") == "json_invalid" for e in errors)
         parse_failure = "json_decode" if is_json_decode else "schema_violation"
-        response_text_hash = _sha256_hex(raw_text)
-    else:
-        parsed_order_ids = parsed.order_ids
-        parsed_answer_type = parsed.answer_type
-        response_text_hash = _canonical_response_hash(parsed)
-
-    if parse_failure is not None:
         _logger.warning("JSON parse failure in clinical query handler: %s", parse_failure)
         _logger.debug("JSON parse failure body fragment (first 120 chars): %r", raw_text[:120])
         # Set gen_ai.parse_failure on the active OTel span so operators can detect
         # parse-failure rates via span attributes (rather than only WARNING logs).
         set_span_attribute(_otel_trace.get_current_span(), "gen_ai.parse_failure", parse_failure)
+        # Return a refusal so the receipt records the failure honestly.
+        # Mirrors the specimen-review parse-failure path (_handle_pending_llm_review_json).
+        # order_id is intentionally omitted here (None): the clinical-query path is
+        # multi-order; there is no single subject order_id to stamp — matches the
+        # LLM-unavailable refusal above, which also omits order_id. No response
+        # hash is carried: RefusalTrace deliberately stores no response-derived
+        # fields (an earlier draft computed a raw-text hash here
+        # that was never forwarded into the receipt).
+        return _make_refusal_decision(
+            "STAGE_PRE_UNPARSEABLE",
+            "refused_unparseable_response",
+            event_hash=event_hash,
+            current_state=ctx.current_state,
+            latency_us=response.latency_us,
+        )
 
     return EngineDecision(
         applied_rule_id=None,
@@ -938,12 +867,11 @@ def _handle_clinical_query_json(
                 skill_doc_hash=skill_doc_hash,
                 scenarios_cited=scenarios_cited,
                 model_id=response.model_id,
-                response_text_hash=response_text_hash,
+                response_text_hash=_canonical_response_hash(parsed),
                 database_state_hash=database_state_hash,
                 prompt_timestamp_hash=prompt_timestamp_hash,
-                parsed_order_ids=parsed_order_ids,
-                parsed_answer_type=parsed_answer_type,
-                parse_failure=parse_failure,
+                parsed_order_ids=parsed.order_ids,
+                parsed_answer_type=parsed.answer_type,
                 user_role=user_role,
                 user_role_coercion_failure=user_role_coercion_failure,
             ),
@@ -1085,8 +1013,13 @@ def _handle_pending_llm_review_json(
 
     Hard cutover — always uses JSON path regardless of SAMANTHA_LLM_OUTPUT_MODE.
     (unlike the clinical-query path, specimen-review has no
-    free_text fallback. An mlx user will hit NotImplementedError at complete_json
-    time — that is the documented consequence of the hard-cutover design.)
+    free_text fallback. The config.py startup guard only rejects LLM_PROVIDER=mlx
+    + SAMANTHA_LLM_OUTPUT_MODE=json — because of the hard cutover, a
+    guard-permitted mlx + free_text deployment still reaches complete_json here,
+    so the typed LLMInferenceError from MLXClient is the primary fix on this
+    path: the except below catches it and returns
+    refused_llm_unavailable with a signed receipt, satisfying the
+    receipt-emission invariant.)
 
     Calls complete_json() with temperature=0.0. Defensively strips markdown fences.
     Parses the response as SpecimenReviewResponseV1. On parse failure, returns a
@@ -1105,9 +1038,11 @@ def _handle_pending_llm_review_json(
             temperature=0.0,
         )
     except LLMClientError as exc:
+        # Include str(exc) — see the clinical-query catch site.
         _logger.warning(
             "LLMClient.complete_json() failed during specimen review; "
-            "returning refused_llm_unavailable."
+            "returning refused_llm_unavailable. error=%s",
+            exc,
         )
         _logger.debug(
             "LLMClient.complete_json() failed during specimen review (full traceback).",
@@ -1192,18 +1127,23 @@ def _llm_error_literal(
 ) -> Literal["LLMTimeoutError", "LLMInferenceError", "LLMModelLoadError"]:
     """Narrow ``type(exc).__name__`` to the Literal accepted by RefusalTrace.
 
-    Asserts the name is in the known set: a future LLMClientError subclass
-    that isn't listed here fails the assertion at the refusal handler rather
-    than leaking through Pydantic with a different type name. Update the
-    Literal and ``_LLM_ERROR_NAMES`` in lockstep when adding subclasses.
+    Raises AssertionError if the name is not in the known set (explicit raise
+    — survives python -O): a future LLMClientError subclass that isn't
+    listed here fails loudly at the refusal handler rather than leaking through
+    Pydantic with a different type name. Update the Literal and
+    ``_LLM_ERROR_NAMES`` in lockstep when adding subclasses.
     """
     name = type(exc).__name__
-    assert name in _LLM_ERROR_NAMES, (
-        f"unhandled LLMClientError subclass: {name}; "
-        "update RefusalTrace.underlying_error_type Literal and "
-        "_LLM_ERROR_NAMES together."
-    )
-    return name  # type: ignore[return-value]  # narrowed by assert above
+    # AssertionError marks a programming error (the
+    # _LLM_ERROR_NAMES registry out of sync with the LLMClientError hierarchy),
+    # distinct from ValueError used for data-invariant violations.
+    if name not in _LLM_ERROR_NAMES:
+        raise AssertionError(
+            f"unhandled LLMClientError subclass: {name}; "
+            "update RefusalTrace.underlying_error_type Literal and "
+            "_LLM_ERROR_NAMES together."
+        )
+    return name  # type: ignore[return-value]  # narrowed by guard above
 
 
 def _make_refusal_decision(
@@ -1367,6 +1307,12 @@ def _parse_clarification_response(
     _MAX_SUGGESTED_VALUE_LEN before storage. Duplicate field lines use
     first-write-wins (later lines for the same field are ignored) — first-
     write-wins is more conservative under hypothetical prefix-injection.
+
+    Note on garbage-parse: a healthy LLM producing an unparseable response
+    (no 'field=value' lines, or all lines dropped) returns {} with
+    llm_failed=False. This is deliberately not distinguished from a
+    successful empty parse — llm_failed is scoped to LLMClientError
+    (transport failure), not to content-level parse quality.
 
     Parameters
     ----------
@@ -1570,6 +1516,10 @@ def handle_clarification(
     latency_us = 0
     suggested: dict[str, str] = {}
     model_id = ""
+    # Track whether the LLM call itself failed so the receipt can
+    # distinguish a genuine failure from a healthy LLM that returned no usable
+    # suggestions (both produce empty suggested_values without this flag).
+    llm_failed = False
 
     try:
         response = llm_complete_with_span(llm_client, prompt, temperature=0.0)
@@ -1584,6 +1534,7 @@ def handle_clarification(
         _logger.debug(
             "LLMClient.complete() failed during clarification (full traceback).", exc_info=exc
         )
+        llm_failed = True
     else:
         latency_us = response.latency_us
         model_id = response.model_id
@@ -1607,6 +1558,7 @@ def handle_clarification(
                 unknown_canonical_fields=preflight_result.unknown_canonical_fields,
                 suggested_values=suggested,
                 model_id=model_id,
+                llm_failed=llm_failed,
             ),
         ),
     )

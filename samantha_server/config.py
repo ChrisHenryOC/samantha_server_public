@@ -306,6 +306,19 @@ if RECEIPT_SIGNING_KEY_ID != "v1" and RECEIPT_SIGNING_KEY_PREVIOUS is None:
         RECEIPT_SIGNING_KEY_ID,
     )
 
+# forgotten id-bump indicator.
+# Playbook steps 2-3 set RECEIPT_SIGNING_KEY_PREVIOUS before bumping the id.
+# If the id was never bumped, new receipts still carry the old id and rotation
+# is effectively incomplete. This is the "canonical indicator of a forgotten
+# id-bump" per CLAUDE.md — warn loudly but do not error (the state is transient).
+if RECEIPT_SIGNING_KEY_PREVIOUS is not None and RECEIPT_SIGNING_KEY_ID == "v1":
+    _log.warning(
+        "RECEIPT_SIGNING_KEY_PREVIOUS is set but RECEIPT_SIGNING_KEY_ID is still "
+        "'v1'. Increment RECEIPT_SIGNING_KEY_ID (e.g. 'v2') and restart so new "
+        "receipts carry the new key id. See the receipt-signing rotation playbook "
+        "in CLAUDE.md."
+    )
+
 # --- Step 5 PHI hash salt (eager validation) ---
 _GEN_SALT_HINT = "python -c 'import os; print(os.urandom(32).hex())'"
 PHI_HASH_SALT: bytes = _required_hex("PHI_HASH_SALT", gen_hint=_GEN_SALT_HINT)

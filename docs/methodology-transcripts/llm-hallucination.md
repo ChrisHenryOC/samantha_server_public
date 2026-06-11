@@ -109,9 +109,9 @@ Routing:
    the *picked* rule plus the *alternatives* tuple. The judge
    re-reads the skill body and the safe-context and votes on whether
    the pick is grounded. (Stage B lives in
-   `samantha_server/tools/propose_transition.py`,
+   [`samantha_server/tools/propose_transition.py`](../../samantha_server/tools/propose_transition.py),
    not in the router-shim's
-   `route()`.)
+   [`route()`](../../samantha_server/llm/router.py).)
 
 This transcript captures step 5.
 
@@ -254,7 +254,7 @@ Stage B verdict's job is to refuse, not to fix.
 
 `latency_us` on the receipt is hardcoded to `0`. Refusal decisions
 are synthetic — `_make_refusal_decision`
-(`propose_transition.py`)
+([`propose_transition.py`](../../samantha_server/tools/propose_transition.py))
 doesn't preserve the judge-call wall time on the receipt; the timing
 signal lives in observability backends (e.g. Langfuse), not in the
 signed audit trail.
