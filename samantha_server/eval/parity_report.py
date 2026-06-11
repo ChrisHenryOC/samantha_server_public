@@ -2,11 +2,12 @@
 
 Walks one or more `AccuracyReport` instances (multi-model sweep) and
 emits the published-shape JSON + markdown rollup that the parity CLI
-ships against the upstream POC's `results/model_selection_phase1/
-summary.json`.
+ships against the upstream POC's
+`results/model_selection_phase1/summary.json`.
 
-Failure-mode mapping follows the parity-discovery memo's table
-(updated):
+Mapping rationale lives in
+`docs/eval/samantha-public-parity-discovery.md`. Failure-mode mapping
+follows the memo's table (updated):
 
 - `mismatch_state` → `wrong_state`
 - `mismatch_rules` → `wrong_rules`
@@ -479,7 +480,7 @@ def _render_markdown(run_id: str, metrics: list[ParityModelMetrics]) -> str:
     lines = [
         f"# Parity replay {run_id}",
         "",
-        "Comparison shape mirrors the POC's `results/model_selection_phase1/summary.json`.",
+        "Comparison shape mirrors the upstream POC summary.json shape.",
         "Token columns intentionally omitted.",
         "",
     ]

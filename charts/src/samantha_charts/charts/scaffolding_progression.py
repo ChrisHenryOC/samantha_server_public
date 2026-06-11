@@ -7,7 +7,7 @@ reference line, and a top-right "higher is better" indicator.
 
 The series is a set of project-intervention deltas, NOT a single-model
 temporal run. Stages 1-6 are the original POC eval accuracy (issue #317);
-the final point is samantha_server stable accuracy on the 149-fixture
+the final point is samantha_server stable accuracy on the 151-fixture
 corpus (docs/presentation/current-truth.md, "Phase progression").
 """
 
@@ -29,6 +29,7 @@ _CLOUD_COLOR_DARK = "#A78BFA"
 
 def _cloud_color() -> str:
     return _CLOUD_COLOR_DARK if style.active_theme() == "dark" else _CLOUD_COLOR_LIGHT
+
 
 # ---------------------------------------------------------------------------
 # Data model
@@ -78,7 +79,7 @@ def render_evolution(
     subtitle: str = "Best local-model accuracy at each optimization stage, no fine-tuning",
     footnote: str = (
         "Stages 1-6 are POC eval accuracy; the final point is samantha_server stable "
-        "accuracy on the 149-fixture corpus. Every gain came from structuring "
+        "accuracy on the 151-fixture corpus. Every gain came from structuring "
         "information and tools, not model fine-tuning."
     ),
 ) -> None:
@@ -222,7 +223,7 @@ def render_scaffolding_progression(output_path: Path) -> None:
         EvolutionPoint(
             "Deterministic\n+ LLM",
             100.0,
-            "Qwen3-Next-80B\n(149-corpus)",
+            "Qwen3-Next-80B\n(151-corpus)",
             is_endpoint=True,
         ),
     ]

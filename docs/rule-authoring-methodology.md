@@ -83,7 +83,9 @@ for the collision-risk worked examples (SP-001/SP-004,
 IHC-002/003 vs IHC-004/005, RES-001 vs RES-002).
 
 The `list_applicable_rules` kernel gate is the boundary that enforces
-this contract. Any deterministic transition flows through it.
+this contract. Any deterministic transition flows through it; the
+[`tool-catalog.md`](tool-catalog.md) doc surfaces the same gate to the
+LLM path under a vendor-neutral signature.
 
 ## 3. Rules vs. skills
 
@@ -230,8 +232,9 @@ Skills are agentskills.io playbooks under
      `Jane Doe` style placeholders, and made-up MRNs / DOBs / SSNs.
      There is no programmatic check at the skill-loader boundary at
      POC stage; PR review is the enforcement seam, and a discover-time
-     scan is a queued production-hardening follow-up (closed as
-     deferred).
+     scan is a queued production-hardening follow-up
+     (
+     — closed as deferred).
 4. **Place under `samantha_server/skills/specs/<skill_name>/`.** One
    directory per skill. The `SKILL.md` filename is mandatory; the
    loader globs for it during discovery.
@@ -347,17 +350,20 @@ PR that lands the transcript file under
 
 Every change to a rule, skill, primitive, or engine module runs
 through CI before merge. The pre-merge contract is **convention-based**
-(branch protection is unavailable on the free private GitHub plan),
+(branch protection is unavailable on the free private GitHub plan;
+see `docs/plans/ci-implementation.md` § 2),
 so reviewers must check that all CI jobs are green before merging.
 
-The points most relevant to rule and skill authors:
+The full CI shape is documented in
+`docs/plans/ci-implementation.md`. The
+points most relevant to rule and skill authors:
 
 ### 9.1 Per-PR cadence
 
 CI runs one tier: **per-PR validate**, on every PR and every push to
 `main`. Full pytest, ruff, mypy `--strict`, markdownlint, gitleaks,
 plus the architectural-invariant tests. Runs from
-`.github/workflows/ci.yml`. The
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml). The
 [`conftest.py`](../conftest.py) `_forbid_real_network` fixture
 blocks outbound calls to non-loopback hosts as a defense-in-depth
 guard.
@@ -399,7 +405,8 @@ All four CLAUDE.md "Architectural invariants" are pinned in CI:
   in Phase 2).
 
 The PHI payload-side strip/hash invariant lands when the first LLM-payload
-module exists.
+module exists — see
+`docs/plans/ci-implementation.md` § 5.4.
 
 ### 9.3 Adding a rule or skill — what CI checks
 
@@ -437,7 +444,8 @@ Phase 2 introduces:
 - A developer-side LLM determinism strategy: structural assertions
   for routing tests against the real model, tolerance-based
   assertions for accuracy/eval tests. Per-PR fake-substituted tests
-  are deterministic by construction.
+  are deterministic by construction. See
+  `docs/plans/ci-implementation.md` § 5.6.
 
 Real-LLM regression validation happens on developer machines via
 `/replay-scenarios` against the loaded local model — not in CI.
@@ -515,6 +523,8 @@ Two consequences worth pinning down before reading the transcripts:
 
 ## See also
 
+- `docs/plans/ci-implementation.md` —
+  full CI shape, tier cadence, and the platform-constraint context.
 - [`docs/rule-breakdown/decision-gate.md`](rule-breakdown/decision-gate.md)
   — the design rationale and primitive-set lock.
 - [`docs/rule-breakdown/rules-vs-skills.md`](rule-breakdown/rules-vs-skills.md)
@@ -523,5 +533,8 @@ Two consequences worth pinning down before reading the transcripts:
   the 40-rule corpus that anchors every primitive choice.
 - [`docs/rules/conventions.md`](rules/conventions.md) — outcome
   prefix and field-naming rules for the YAML specs.
+- [`docs/tool-catalog.md`](tool-catalog.md) — the four LLM-facing
+  tools the engine will expose in W1 Phase 3, including the
+  `list_applicable_rules` dispatcher boundary.
 - `samantha_server/rules/specs/` — the 40 authored rule YAMLs.
 - `samantha_server/skills/specs/` — the six authored skill playbooks.

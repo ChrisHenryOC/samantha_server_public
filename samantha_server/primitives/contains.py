@@ -7,9 +7,10 @@ from pydantic import BaseModel, PrivateAttr, model_validator
 
 from samantha_server.canonicalization import canonicalize
 from samantha_server.models import SpecimenContext
+from samantha_server.primitives._cache import set_cached
 from samantha_server.primitives.trace import PrimitiveTrace
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class Contains(BaseModel, frozen=True):
@@ -30,9 +31,7 @@ class Contains(BaseModel, frozen=True):
     @model_validator(mode="after")
     def _populate_canonical_value(self) -> "Contains":
         if isinstance(self.value, str):
-            object.__setattr__(
-                self, "_canonical_value", canonicalize(self.field, self.value).canonical
-            )
+            set_cached(self, "_canonical_value", canonicalize(self.field, self.value).canonical)
         return self
 
     def evaluate(self, ctx: SpecimenContext) -> bool:
@@ -41,10 +40,10 @@ class Contains(BaseModel, frozen=True):
             return False
         if isinstance(self.value, str):
             try:
-                if logger.isEnabledFor(logging.DEBUG):
+                if _logger.isEnabledFor(logging.DEBUG):
                     non_string_count = sum(1 for e in collection if not isinstance(e, str))
                     if non_string_count:
-                        logger.debug(
+                        _logger.debug(
                             "Contains: field=%r collection contains %d non-string element(s) "
                             "that will be skipped during canonicalized comparison",
                             self.field,

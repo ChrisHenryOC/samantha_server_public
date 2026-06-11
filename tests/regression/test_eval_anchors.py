@@ -16,7 +16,9 @@ A JSON trend file is written to results/regression/<timestamp>.json AFTER
 the gate decision is computed so `gate_passed` reflects all three anchors
 (not just the first two).
 
+Phase 1 plan reference: docs/plans/phase-1-implementation.md § "Step 15".
 LLM-path anchor added; bucket broadened.
+Cross-reference: docs/eval-anchors.md.
 
 Population scope note:
 - AccuracyReport.p99_latency_us aggregates over deterministic-category,

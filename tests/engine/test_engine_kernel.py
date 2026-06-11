@@ -114,26 +114,34 @@ class TestDispatchBoundary:
         """A DispatchResult with modified rules (wrong HMAC) raises."""
         ctx = _make_ctx()
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
+        # Pin the ACCESSIONING multi-rule count so the
+        # `dispatch.rules[1:]` slice below can never silently degenerate to the
+        # empty-tuple branch. ACCESSIONING produces 12 rules; pin explicitly.
+        assert len(dispatch.rules) > 1, (
+            f"fixture must produce a multi-rule dispatch for ACCESSIONING; "
+            f"got {len(dispatch.rules)} rules — rule-set regression?"
+        )
         # Fabricate a DispatchResult with tampered rules but the real token
-        tampered_rules = (
-            dispatch.rules[1:] if len(dispatch.rules) > 1 else dispatch.rules + dispatch.rules
-        )
+        tampered_rules = dispatch.rules[1:]
+        # session_id matches the caller's so the session guard
+        # passes and the test reaches the HMAC byte check it documents.
         tampered_dispatch = DispatchResult(
-            rules=tampered_rules, token=dispatch.token, session_id="test"
+            rules=tampered_rules, token=dispatch.token, session_id="test-session"
         )
-        with pytest.raises(UndispatchedRuleError):
-            evaluate(tampered_dispatch, ctx)
+        with pytest.raises(UndispatchedRuleError, match="HMAC"):
+            evaluate(tampered_dispatch, ctx, session_id="test-session")
 
     def test_forged_token_raises_undispatched(self, rule_index: RuleIndex) -> None:
         """A DispatchResult with a bitflipped token raises."""
         ctx = _make_ctx()
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
         forged_token = bytes(b ^ 0xFF for b in dispatch.token)
+        # Matching session_id — see test_tampered_rules_raises.
         forged_dispatch = DispatchResult(
-            rules=dispatch.rules, token=forged_token, session_id="test"
+            rules=dispatch.rules, token=forged_token, session_id="test-session"
         )
-        with pytest.raises(UndispatchedRuleError):
-            evaluate(forged_dispatch, ctx)
+        with pytest.raises(UndispatchedRuleError, match="HMAC"):
+            evaluate(forged_dispatch, ctx, session_id="test-session")
 
     def test_tokens_differ_per_call(self, rule_index: RuleIndex) -> None:
         """Each call to list_applicable_rules produces a distinct token (different nonce)."""
@@ -143,8 +151,8 @@ class TestDispatchBoundary:
         # Per-call nonces ensure token uniqueness even for identical rule sets
         assert dispatch1.token != dispatch2.token
         # Both tokens are valid for the same ctx+rules
-        evaluate(dispatch1, ctx)
-        evaluate(dispatch2, ctx)
+        evaluate(dispatch1, ctx, session_id="test-session")
+        evaluate(dispatch2, ctx, session_id="test-session")
 
     def test_fabricated_dispatch_result_raises_undispatched(self, rule_index: RuleIndex) -> None:
         """T4: A fully fabricated DispatchResult with a zeroed token must be rejected
@@ -155,11 +163,55 @@ class TestDispatchBoundary:
         real_dispatch = list_applicable_rules(
             ctx, rule_index, session_id="test-session", ttl_sec=60
         )
+        # Matching session_id — see test_tampered_rules_raises.
         fabricated = DispatchResult(
-            rules=real_dispatch.rules, token=b"\x00" * 64, session_id="test"
+            rules=real_dispatch.rules, token=b"\x00" * 64, session_id="test-session"
+        )
+        with pytest.raises(UndispatchedRuleError, match="HMAC"):
+            evaluate(fabricated, ctx, session_id="test-session")
+
+    def test_non_empty_rules_replaced_with_different_non_empty_set_raises(
+        self, rule_index: RuleIndex
+    ) -> None:
+        """HMAC tamper is caught when rules are replaced with a genuinely
+        different non-empty set, not only when truncated to the empty tuple.
+
+        ACCESSIONING dispatch (12 ACC rules) token is reused with the SAMPLE_PREP
+        rule set (3 SP rules) grafted in.  Both sets are non-empty and disjoint,
+        so verify_dispatch must reject via HMAC mismatch on the rule bytes.
+
+        Note: with matching session ids on both sides this is
+        a pure HMAC rule-byte binding regression — it does not discriminate the
+        session bypass (that coverage lives in the evaluator suite's
+        cross-session and TypeError contract tests).
+        """
+        ctx_acc = _make_ctx()
+        dispatch_acc = list_applicable_rules(
+            ctx_acc, rule_index, session_id="test-session", ttl_sec=60
+        )
+        ctx_sp = _make_ctx(
+            state="SAMPLE_PREP_PROCESSING",
+            event_type="processing_complete",
+            event_data={"outcome": "success"},
+        )
+        dispatch_sp = list_applicable_rules(
+            ctx_sp, rule_index, session_id="test-session", ttl_sec=60
+        )
+        # Both dispatches are non-empty and their rule sets are disjoint.
+        assert len(dispatch_acc.rules) > 0
+        assert len(dispatch_sp.rules) > 0
+        assert set(r.rule_id for r in dispatch_acc.rules).isdisjoint(
+            r.rule_id for r in dispatch_sp.rules
+        )
+        # Graft SP rules onto ACC token — HMAC now covers wrong rule bytes.
+        tampered = DispatchResult(
+            rules=dispatch_sp.rules,
+            token=dispatch_acc.token,
+            session_id=dispatch_acc.session_id,
+            expires_at=dispatch_acc.expires_at,
         )
         with pytest.raises(UndispatchedRuleError):
-            evaluate(fabricated, ctx)
+            evaluate(tampered, ctx_acc, session_id="test-session")
 
 
 class TestAccSeverityHierarchy:
@@ -174,7 +226,7 @@ class TestAccSeverityHierarchy:
             ordered_tests=("HER2",),
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "ACC-005"
         assert "ACC-001" in decision.also_matched
 
@@ -192,7 +244,7 @@ class TestAccSeverityHierarchy:
             billing_info_present=True,
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "ACC-008"
         assert decision.next_state == "ACCEPTED"
         assert decision.outcome == "accessioning_validations_passed"
@@ -201,7 +253,7 @@ class TestAccSeverityHierarchy:
         """ACC-008 predicate is NOT(OR(ACC-001..007,ACC-009)) — won't fire when others match."""
         ctx = _make_ctx(patient_name=None)  # ACC-001 HOLD fires
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id != "ACC-008"
 
 
@@ -215,7 +267,7 @@ class TestFirstMatchByPriority:
             event_data={"outcome": "success"},
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "SP-001"
         assert decision.also_matched == ()
 
@@ -227,7 +279,7 @@ class TestFirstMatchByPriority:
             event_data={"outcome": "pass"},
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "SP-004"
         assert decision.also_matched == ()
 
@@ -271,7 +323,7 @@ class TestIHCDispatch:
             fixation_time_hours=1.0,  # below 6h threshold → IHC-001 fires
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "IHC-001"
         assert decision.next_state == "IHC_STAINING"
 
@@ -282,7 +334,7 @@ class TestIHCDispatch:
             event_data={"all_slides_complete": True},
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "IHC-002"
         assert decision.next_state == "IHC_SCORING"
 
@@ -294,7 +346,7 @@ class TestIHCDispatch:
             event_type="ihc_qc",
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id is None
         assert decision.outcome == "dispatch_empty"
 
@@ -307,7 +359,7 @@ class TestEvaluateAlwaysReturnsDecision:
 
         ctx = _make_ctx(state="MISSING_INFO_HOLD", event_type="noop")
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        result = evaluate(dispatch, ctx)
+        result = evaluate(dispatch, ctx, session_id="test-session")
         assert isinstance(result, EngineDecision)
         assert result is not None
 
@@ -325,7 +377,7 @@ class TestEvaluateAlwaysReturnsDecision:
             event_data={"outcome": "failure"},
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        result = evaluate(dispatch, ctx)
+        result = evaluate(dispatch, ctx, session_id="test-session")
         assert isinstance(result, EngineDecision)
         assert result.outcome == "dispatch_empty"
         assert result.applied_rule_id is None
@@ -343,6 +395,6 @@ class TestResultingStepEvaluation:
             flags=frozenset({"MISSING_INFO_PROCEED"}),
         )
         dispatch = list_applicable_rules(ctx, rule_index, session_id="test-session", ttl_sec=60)
-        decision = evaluate(dispatch, ctx)
+        decision = evaluate(dispatch, ctx, session_id="test-session")
         assert decision.applied_rule_id == "RES-001"
         assert decision.next_state == "RESULTING_HOLD"

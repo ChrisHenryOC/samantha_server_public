@@ -161,19 +161,11 @@ def model_under_test(
     # time a fixture body runs, PYTEST_CURRENT_TEST is set, so the
     # test-sentinel rejection is suppressed.
     import samantha_server.config as cfg
-    from samantha_server.receipts import store as _store
 
     monkeypatch.setenv("LLM_MODEL_NAME", model)
     monkeypatch.setenv("RECEIPTS_DB_PATH", str(db_path))
     monkeypatch.setattr(cfg, "LLM_MODEL_NAME", model)
     monkeypatch.setattr(cfg, "RECEIPTS_DB_PATH", str(db_path))
-
-    # Reset the receipt-store write-conn cache so the per-parametrization
-    # path actually opens a new connection on next write. ``receipts_test_isolation``
-    # already cleared this once before; we clear it again because we just
-    # changed the path under it.
-    monkeypatch.setattr(_store, "_write_conn", None)
-    monkeypatch.setattr(_store, "_write_conn_path", None)
 
     yield model
 

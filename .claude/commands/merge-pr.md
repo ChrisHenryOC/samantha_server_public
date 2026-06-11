@@ -84,7 +84,7 @@ The "ahead" check is symmetric to the "behind" check on purpose: a silent push f
 
 ### Select next eligible issue
 
-> **Schema source of truth:** the rules in this section are an inline copy of the canonical schema at `docs/project/implementation-todo-schema.md`. The duplication is deliberate — `/merge-pr` runs against its own context window and can't depend on having loaded another doc — but if you change one, change both. CI doesn't enforce this; reviewers do.
+> **Schema source of truth:** the rules in this section are an inline copy of the canonical schema at [`docs/project/implementation-todo-schema.md`](../../docs/project/implementation-todo-schema.md). The duplication is deliberate — `/merge-pr` runs against its own context window and can't depend on having loaded another doc — but if you change one, change both. CI doesn't enforce this; reviewers do.
 
 Read `docs/project/implementation-todo.md` and walk the **active** tables in this order: **Follow-ups → Phase 2**. This walk order is authoritative for selection — it takes precedence over the Follow-ups table's "execution-readiness order" comment (the comment is a cosmetic ordering preference; if Follow-ups has any Open row, that row is picked first regardless of cosmetic ordering).
 

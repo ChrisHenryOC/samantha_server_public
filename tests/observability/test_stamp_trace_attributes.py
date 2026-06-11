@@ -431,3 +431,310 @@ def test_stamp_trace_attributes_omits_order_id_when_none() -> None:
 
     attrs = dict(exporter.get_finished_spans()[0].attributes or {})
     assert "samantha.order_id" not in attrs
+
+
+# ---------------------------------------------------------------------------
+# Per-attribute exception containment
+# ---------------------------------------------------------------------------
+
+
+def test_stamp_trace_attributes_mid_batch_rejection_does_not_drop_later_attrs(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A single mid-batch rejection must NOT drop attributes stamped after it.
+
+    The old function-boundary try/except silently dropped every
+    attribute after the first rejection. This test is the acceptance criterion:
+    attributes before AND after the rejected key must all appear on the span.
+
+    Stamping order (condensed for this test):
+      1. samantha.session_id          <- before rejection
+      2. langfuse.trace.name          <- before rejection
+      3. langfuse.trace.metadata.scenario_id  <- before rejection
+      4. langfuse.environment         <- before rejection
+      5. langfuse.trace.metadata.environment  <- before rejection
+      6. samantha.priority            <- REJECTED (monkeypatched)
+      7. langfuse.trace.metadata.outcome  <- after rejection (must survive)
+      8. samantha.receipt_id          <- after rejection (must survive)
+    """
+    import samantha_server.observability.otel as otel_module
+    from samantha_server.observability.otel import set_span_attribute, stamp_trace_attributes
+    from samantha_server.observability.trace_context import TraceContext
+
+    tracer, exporter = _make_tracer_with_exporter()
+
+    ctx = TraceContext(
+        session_id="sess-381",
+        environment="replay",
+        priority="ROUTINE",
+        outcome="acc_001",
+        receipt_id="REC-381",
+    )
+
+    _real = set_span_attribute
+
+    def _reject_priority(span: object, name: str, value: object) -> None:
+        if name == "samantha.priority":
+            raise ValueError(f"OTel span attribute {name!r} is not on the allowlist.")
+        _real(span, name, value)  # type: ignore[arg-type]
+
+    with (
+        caplog.at_level(logging.WARNING, logger="samantha_server.observability.otel"),
+        tracer.start_as_current_span("test") as span,
+        patch.object(otel_module, "set_span_attribute", side_effect=_reject_priority),
+    ):
+        stamp_trace_attributes(span, ctx)
+
+    attrs = dict(exporter.get_finished_spans()[0].attributes or {})
+
+    # (a) Attributes stamped BEFORE the rejected key are present.
+    assert attrs.get("samantha.session_id") == "sess-381"
+    assert attrs.get("langfuse.trace.name") == "sess-381"
+    assert attrs.get("langfuse.trace.metadata.scenario_id") == "sess-381"
+    assert attrs.get("langfuse.environment") == "replay"
+    assert attrs.get("langfuse.trace.metadata.environment") == "replay"
+
+    # (b) Attributes stamped AFTER the rejected key are ALSO present.
+    assert attrs.get("langfuse.trace.metadata.outcome") == "acc_001", (
+        "Outcome must not be silently dropped by a prior rejection"
+    )
+    assert attrs.get("samantha.receipt_id") == "REC-381", (
+        "receipt_id must not be silently dropped by a prior rejection"
+    )
+
+    # (c) The rejected attribute itself is absent.
+    assert "samantha.priority" not in attrs
+
+    # (d) A warning was logged naming the rejected attribute.
+    assert any(
+        "stamp_trace_attributes: allowlist rejection" in r.message
+        and "samantha.priority" in r.message
+        for r in caplog.records
+    ), f"Expected warning naming 'samantha.priority'; got: {[r.message for r in caplog.records]}"
+
+    # (e) The warning carries the accurate containment statement, not the old
+    # claim that subsequent attributes were dropped (pin the
+    # affirmative tail so a neutral rewording can't silently weaken it).
+    for record in caplog.records:
+        if "stamp_trace_attributes: allowlist rejection" in record.message:
+            assert "Subsequent attributes" not in record.message, (
+                "Warning must not falsely claim subsequent attrs were not emitted"
+            )
+            assert "other attributes in this call are unaffected" in record.message
+
+
+def test_stamp_trace_attributes_multiple_rejections_stamps_everything_else(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Two rejections each produce a warning; all other attributes are stamped.
+
+    Slice 2 verifies the per-attribute loop handles multiple bad keys
+    in a single call without short-circuiting on the first failure.
+
+    Rejected keys: samantha.priority (middle) and samantha.receipt_id (late).
+    All other keys set in the context must appear on the span.
+    """
+    import samantha_server.observability.otel as otel_module
+    from samantha_server.observability.otel import set_span_attribute, stamp_trace_attributes
+    from samantha_server.observability.trace_context import TraceContext
+
+    tracer, exporter = _make_tracer_with_exporter()
+
+    ctx = TraceContext(
+        session_id="sess-381b",
+        environment="replay",
+        priority="ROUTINE",
+        outcome="acc_002",
+        receipt_id="REC-381b",
+    )
+
+    _real = set_span_attribute
+    _rejected = {"samantha.priority", "samantha.receipt_id"}
+
+    def _reject_two(span: object, name: str, value: object) -> None:
+        if name in _rejected:
+            raise ValueError(f"OTel span attribute {name!r} is not on the allowlist.")
+        _real(span, name, value)  # type: ignore[arg-type]
+
+    with (
+        caplog.at_level(logging.WARNING, logger="samantha_server.observability.otel"),
+        tracer.start_as_current_span("test") as span,
+        patch.object(otel_module, "set_span_attribute", side_effect=_reject_two),
+    ):
+        stamp_trace_attributes(span, ctx)
+
+    attrs = dict(exporter.get_finished_spans()[0].attributes or {})
+
+    # Both rejected keys are absent.
+    assert "samantha.priority" not in attrs
+    assert "samantha.receipt_id" not in attrs
+
+    # All other expected keys are stamped.
+    assert attrs.get("samantha.session_id") == "sess-381b"
+    assert attrs.get("langfuse.trace.name") == "sess-381b"
+    assert attrs.get("langfuse.trace.metadata.scenario_id") == "sess-381b"
+    assert attrs.get("langfuse.environment") == "replay"
+    assert attrs.get("langfuse.trace.metadata.environment") == "replay"
+    assert attrs.get("langfuse.trace.metadata.outcome") == "acc_002"
+
+    # Exactly two warnings, one per rejected attribute.
+    rejection_records = [
+        r for r in caplog.records if "stamp_trace_attributes: allowlist rejection" in r.message
+    ]
+    assert len(rejection_records) == 2, (
+        f"Expected 2 rejection warnings, got {len(rejection_records)}: "
+        f"{[r.message for r in rejection_records]}"
+    )
+    warning_text = " ".join(r.message for r in rejection_records)
+    assert "samantha.priority" in warning_text
+    assert "samantha.receipt_id" in warning_text
+
+
+@pytest.mark.parametrize(
+    ("ctx_kwargs", "rejected_key", "surviving", "case"),
+    [
+        pytest.param(
+            {"session_id": "sess-pos", "priority": "ROUTINE", "order_id": "O-POS-1"},
+            "samantha.session_id",
+            {
+                "langfuse.trace.name": "sess-pos",
+                "langfuse.trace.metadata.scenario_id": "sess-pos",
+                "samantha.priority": "ROUTINE",
+                "samantha.order_id": "O-POS-1",
+            },
+            "first stamped key",
+            id="first-key",
+        ),
+        pytest.param(
+            {"session_id": "sess-pos", "priority": "ROUTINE", "order_id": "O-POS-2"},
+            "samantha.order_id",
+            {
+                "samantha.session_id": "sess-pos",
+                "langfuse.trace.name": "sess-pos",
+                "samantha.priority": "ROUTINE",
+            },
+            "last stamped key",
+            id="last-key",
+        ),
+        pytest.param(
+            {"scenario_category": "query", "priority": "ROUTINE"},
+            "langfuse.trace.tags",
+            {
+                "langfuse.trace.metadata.scenario_category": "query",
+                "samantha.priority": "ROUTINE",
+            },
+            "list-valued key",
+            id="list-valued-key",
+        ),
+        pytest.param(
+            {"scenario_id": "SC-POS", "order_id": "O-POS-3"},
+            "langfuse.trace.name",
+            {
+                "langfuse.trace.metadata.scenario_id": "SC-POS",
+                "samantha.order_id": "O-POS-3",
+            },
+            "scenario_id-branch key",
+            id="scenario-branch-key",
+        ),
+    ],
+)
+def test_stamp_trace_attributes_rejection_position_containment(
+    caplog: pytest.LogCaptureFixture,
+    ctx_kwargs: dict[str, str],
+    rejected_key: str,
+    surviving: dict[str, str],
+    case: str,
+) -> None:
+    """Containment holds regardless of WHERE the rejection lands.
+
+    The slice-1/slice-2 tests only ever reject a mid-batch, session-branch,
+    scalar key. This parametrization pins the boundary positions (first and
+    last stamped key), the single list-valued attribute, and the
+    scenario_id-branch keys: in every case the rejected key is absent, every
+    other key survives, and one warning names the rejected key.
+    """
+    import samantha_server.observability.otel as otel_module
+    from samantha_server.observability.otel import set_span_attribute, stamp_trace_attributes
+    from samantha_server.observability.trace_context import TraceContext
+
+    tracer, exporter = _make_tracer_with_exporter()
+    ctx = TraceContext(**ctx_kwargs)  # type: ignore[arg-type]
+
+    _real = set_span_attribute
+
+    def _reject_one(span: object, name: str, value: object) -> None:
+        if name == rejected_key:
+            raise ValueError(f"OTel span attribute {name!r} is not on the allowlist.")
+        _real(span, name, value)  # type: ignore[arg-type]
+
+    with (
+        caplog.at_level(logging.WARNING, logger="samantha_server.observability.otel"),
+        tracer.start_as_current_span("test") as span,
+        patch.object(otel_module, "set_span_attribute", side_effect=_reject_one),
+    ):
+        stamp_trace_attributes(span, ctx)
+
+    attrs = dict(exporter.get_finished_spans()[0].attributes or {})
+
+    assert rejected_key not in attrs, f"{case}: rejected key must be absent"
+    for key, value in surviving.items():
+        got = attrs.get(key)
+        if key == "langfuse.trace.tags":
+            got = tuple(got or ())
+        assert got == value, f"{case}: {key!r} must survive the rejection of {rejected_key!r}"
+
+    rejection_records = [
+        r for r in caplog.records if "stamp_trace_attributes: allowlist rejection" in r.message
+    ]
+    assert len(rejection_records) == 1, f"{case}: exactly one warning expected"
+    assert rejected_key in rejection_records[0].message
+
+
+def test_stamp_trace_attributes_non_valueerror_is_contained(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A non-ValueError from the OTel SDK must not escape stamp_trace_attributes.
+
+    the fail-soft contract says observability must not gate
+    the decision return, but only ValueError was contained — a TypeError from
+    the SDK (e.g. BoundedAttributes' immutable-span guard) would propagate
+    into the request handler as a 500 with a dropped trace. The warning is
+    key + exception type only (G18: never echo the value, which can be PHI).
+    """
+    import samantha_server.observability.otel as otel_module
+    from samantha_server.observability.otel import set_span_attribute, stamp_trace_attributes
+    from samantha_server.observability.trace_context import TraceContext
+
+    tracer, exporter = _make_tracer_with_exporter()
+
+    ctx = TraceContext(session_id="sess-te", priority="ROUTINE", receipt_id="REC-TE")
+
+    _real = set_span_attribute
+
+    def _typeerror_on_priority(span: object, name: str, value: object) -> None:
+        if name == "samantha.priority":
+            raise TypeError("immutable span attributes")
+        _real(span, name, value)  # type: ignore[arg-type]
+
+    with (
+        caplog.at_level(logging.WARNING, logger="samantha_server.observability.otel"),
+        tracer.start_as_current_span("test") as span,
+        patch.object(otel_module, "set_span_attribute", side_effect=_typeerror_on_priority),
+    ):
+        # Must NOT raise — fail-soft posture covers more than ValueError.
+        stamp_trace_attributes(span, ctx)
+
+    attrs = dict(exporter.get_finished_spans()[0].attributes or {})
+    assert attrs.get("samantha.session_id") == "sess-te"
+    assert attrs.get("samantha.receipt_id") == "REC-TE", (
+        "attributes after the failing key must survive"
+    )
+    assert "samantha.priority" not in attrs
+
+    failure_records = [
+        r for r in caplog.records if "samantha.priority" in r.message and "TypeError" in r.message
+    ]
+    assert failure_records, (
+        f"Expected a warning naming the key and exception type; "
+        f"got: {[r.message for r in caplog.records]}"
+    )

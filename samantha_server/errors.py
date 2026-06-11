@@ -115,6 +115,9 @@ class LLMInferenceError(LLMClientError):
 
     model_id: the model that failed.
     cause: human-readable description of the inference failure.
+
+    Also used for permanent capability-not-supported stubs (e.g. MLXClient.complete_json,
+    a separate LLMCapabilityError was considered and rejected as post-POC scope.
     """
 
     def __init__(self, *, model_id: str, cause: str) -> None:

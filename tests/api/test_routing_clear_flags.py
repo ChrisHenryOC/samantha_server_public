@@ -3,11 +3,11 @@
 The existing RES-002 routing tests drive the post_flags line with EMPTY spec deltas
 (RES-002 has set_flags: [] / clear_flags: []). This test drives SP-007, which has
 clear_flags: [RECUT_REQUESTED], so set(decision.flags_cleared) is non-empty and the
-set-difference branch in _dispatch_event_core executes with real content.
+set-difference branch in dispatch_event executes with real content.
 
 Coverage intent: crash-guard + coverage of `(ctx.flags - set(decision.flags_cleared))`.
 The expression's logic-inversion case is unobservable with the current rule catalog
-because the SP-007 transition (ADVANCE_SAMPLE_PREP) does not branch on flags — so
+because the SP-007 transition (ADVANCE_SAMPLE_PREP) does not branch on flags, so
 clearing RECUT_REQUESTED does not change the resolved next_state. Full guard comes
 with Phase B parity.
 """
@@ -67,7 +67,6 @@ def _make_deps(*, rule_index: Any) -> dict[str, Any]:
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": _make_mock_llm(),
-        "scenarios_index": {},
         "skills_index": discover(),
         "rule_index": rule_index,
         "_written": written,
@@ -106,7 +105,7 @@ def _make_sp007_ctx(*, order_id: str = "GH328-SP007") -> SpecimenContext:
 
 
 def test_sp007_clear_flags_executes_through_dispatch_event() -> None:
-    """SP-007 has clear_flags=[RECUT_REQUESTED]; driving it through
+    """SP-007 has clear_flags=[RECUT_REQUESTED]; driving through
     dispatch_event exercises the `ctx.flags - set(decision.flags_cleared)` branch
     with real non-empty content.
 

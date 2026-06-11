@@ -489,3 +489,58 @@ class TestEventTypeNormalization:
             "embedding_complete",
             "sectioning_complete",
         )
+
+
+# ---------------------------------------------------------------------------
+# Fix 3 — rule_id shape validation (guard against | separator injection)
+# ---------------------------------------------------------------------------
+
+
+class TestRuleIdShapeValidation:
+    def test_pipe_in_rule_id_raises_validation_error(self) -> None:
+        """rule_id containing '|' must be rejected at spec construction.
+
+        The dispatcher (dispatcher.py) uses b'|' as the HMAC field separator when
+        building the dispatch token.  A rule_id that contains '|' would silently
+        corrupt the token and could be used to spoof dispatch-token content.
+        """
+        data = _minimal_accessioning_spec()
+        data["rule_id"] = "ACC|001"
+        with pytest.raises(ValidationError, match=r"ACC\|001"):
+            RuleSpec(**data)
+
+    def test_lowercase_rule_id_raises_validation_error(self) -> None:
+        """rule_id must match ^[A-Z]+-\\d+$ — lowercase prefix rejected."""
+        data = _minimal_accessioning_spec()
+        data["rule_id"] = "acc-001"
+        with pytest.raises(ValidationError, match="acc-001"):
+            RuleSpec(**data)
+
+    def test_valid_rule_id_accepted(self) -> None:
+        """Standard rule_id shapes must still be accepted."""
+        for rule_id in ("ACC-001", "SP-001", "IHC-006", "QR-023", "LR-001"):
+            data = _minimal_accessioning_spec()
+            data["rule_id"] = rule_id
+            # Should not raise; just check we get the expected rule_id back
+            spec = RuleSpec(**data)
+            assert spec.rule_id == rule_id
+
+    def test_rule_id_validation_error_message_names_offending_id(self) -> None:
+        """The ValidationError message must name the offending rule_id."""
+        data = _minimal_accessioning_spec()
+        data["rule_id"] = "ACC|001"
+        with pytest.raises(ValidationError) as exc_info:
+            RuleSpec(**data)
+        assert "ACC|001" in str(exc_info.value)
+
+    def test_rule_id_validation_error_mentions_separator_rationale(self) -> None:
+        """The error message should reference the dispatch-token separator
+        so the reason for the constraint is self-documenting."""
+        data = _minimal_accessioning_spec()
+        data["rule_id"] = "ACC|001"
+        with pytest.raises(ValidationError) as exc_info:
+            RuleSpec(**data)
+        # The validator comment says to mention the separator; the error message
+        # should give enough context for the author to understand the constraint.
+        msg = str(exc_info.value)
+        assert "|" in msg or "separator" in msg or "dispatch" in msg

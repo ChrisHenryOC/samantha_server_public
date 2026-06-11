@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import stat
 from pathlib import Path
@@ -138,6 +139,9 @@ def test_validate_store_path_rejects_symlink_escape(tmp_path: Path) -> None:
         _validate_store_path(link, allowed_base=allowed_base)
 
 
+@pytest.mark.skipif(
+    os.geteuid() == 0, reason="chmod-based unwritability is bypassed by root"
+)
 def test_init_store_raises_on_unwriteable_parent(tmp_path: Path) -> None:
     """M-24: init_store on a non-writeable parent dir raises ReceiptPersistenceError."""
     import stat
@@ -420,30 +424,6 @@ def test_audit_conn_rejects_delete(db_path: Path) -> None:
             (receipt.receipt_id,),
         )
     audit_conn.close()
-
-
-# ---------------------------------------------------------------------------
-# H-04: _get_write_conn lives in store.py; the router delegates here.
-# Smoke test: two calls return the same connection object.
-# ---------------------------------------------------------------------------
-
-
-def test_get_write_conn_returns_same_connection(
-    receipts_test_isolation: None,
-) -> None:
-    """_get_write_conn returns the same sqlite3.Connection on repeated calls.
-
-    H-04: the connection cache is owned by store.py. The router calls
-    store._get_write_conn; this test confirms idempotency.
-    """
-    from samantha_server.receipts.store import _get_write_conn
-
-    conn1 = _get_write_conn()
-    conn2 = _get_write_conn()
-    assert conn1 is conn2, (
-        "_get_write_conn must return the same connection object on repeated calls "
-        "(module-level cache check)"
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -844,4 +824,260 @@ def test_init_store_migrates_legacy_db_missing_order_id_column(db_path: Path) ->
     assert len(results) == 1, (
         "fetch_by_order_id must return the inserted receipt for the legacy DB "
         "after init_store migrates the missing order_id column"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Back-door removal — store must not expose _get_write_conn
+# or module-level _write_conn/_write_conn_path.
+# ---------------------------------------------------------------------------
+
+
+def test_store_does_not_expose_get_write_conn() -> None:
+    """Store module must not expose the _get_write_conn back-door.
+
+    The module-level write-connection cache (_write_conn, _write_conn_path,
+    _get_write_conn) is dead production code; ReceiptWriter.open() owns the
+    connection. Asserting absence here pins the removal so it cannot regress.
+    """
+    import samantha_server.receipts.store as store
+
+    assert not hasattr(store, "_get_write_conn"), (
+        "store must not expose _get_write_conn (back-door removal)"
+    )
+    assert not hasattr(store, "_write_conn"), (
+        "store must not expose _write_conn (back-door removal)"
+    )
+    assert not hasattr(store, "_write_conn_path"), (
+        "store must not expose _write_conn_path (back-door removal)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Single canonical serialization carry
+# (review fix #4)
+# ---------------------------------------------------------------------------
+
+
+def _make_signed_receipt_gh387() -> object:
+    """Return a freshly signed minimal SignedReceipt for carry tests."""
+    import nacl.signing
+
+    from samantha_server.engine.decision import EngineDecision
+    from samantha_server.receipts.signing import sign_decision
+
+    decision = EngineDecision(
+        applied_rule_id="ACC-008",
+        next_state="ACCEPTED",
+        flags_added=(),
+        flags_cleared=(),
+        outcome="accepted",
+        also_matched=(),
+        dispatched_rule_ids=("ACC-008",),
+        event_input_hash="a" * 64,
+        primitive_traces={},
+        latency_us=10,
+    )
+    key = bytes(nacl.signing.SigningKey.generate())
+    return sign_decision(decision, key_id="v1", signing_key=key)
+
+
+def _make_schema_conn_gh387() -> sqlite3.Connection:
+    from samantha_server.receipts.store import _SCHEMA_SQL
+
+    conn = sqlite3.connect(":memory:", check_same_thread=False)
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.executescript(_SCHEMA_SQL)
+    conn.commit()
+    return conn
+
+
+def test_signed_receipt_canonical_payload_carry_equals_fresh_computation() -> None:
+    """The payload bytes carried on a fresh SignedReceipt equal
+    a fresh call to _canonical_signing_payload(receipt.decision).
+
+    This is the load-bearing byte-compat test: if the carry algorithm ever
+    diverges from the signing algorithm, this fails.
+    """
+    from samantha_server.receipts.signing import SignedReceipt, _canonical_signing_payload
+
+    receipt = _make_signed_receipt_gh387()
+    assert isinstance(receipt, SignedReceipt)
+    carried = receipt.canonical_payload_bytes()
+    fresh = _canonical_signing_payload(receipt.decision)
+
+    assert carried == fresh, (
+        "Carried payload bytes must be byte-identical to a fresh "
+        "_canonical_signing_payload call.\n"
+        f"carried={carried!r}\nfresh={fresh!r}"
+    )
+
+
+def test_insert_rehydrated_receipt_does_not_raise() -> None:
+    """store.insert works on a REHYDRATED receipt (no carry).
+
+    Rehydrated receipts are constructed from DB rows and do not have
+    _canonical_payload_bytes set by sign_decision; insert must fall back to
+    computing the payload rather than failing.
+    """
+    from samantha_server.receipts.signing import SignedReceipt
+    from samantha_server.receipts.store import insert
+
+    receipt = _make_signed_receipt_gh387()
+    assert isinstance(receipt, SignedReceipt)
+
+    # Simulate a rehydrated receipt by constructing a new SignedReceipt from
+    # its fields (no _canonical_payload_bytes carry attribute set by sign_decision).
+    rehydrated = SignedReceipt(
+        receipt_id=receipt.receipt_id,
+        decision=receipt.decision,
+        signer_key_id=receipt.signer_key_id,
+        signature=receipt.signature,
+        signed_at_utc=receipt.signed_at_utc,
+    )
+
+    conn = _make_schema_conn_gh387()
+    # Must not raise — insert falls back to computing the payload.
+    insert(conn, rehydrated)
+    conn.close()
+
+
+def test_insert_fresh_receipt_uses_carry_not_recompute(monkeypatch: pytest.MonkeyPatch) -> None:
+    """store.insert reads canonical_payload_bytes() from the carry
+    when it is present, bypassing the re-computation call.
+
+    Monkeypatches _canonical_signing_payload in the store module to raise if
+    called; if insert correctly uses the carry, the patch is never triggered.
+    """
+    import samantha_server.receipts.store as store_mod
+
+    receipt = _make_signed_receipt_gh387()
+
+    def _should_not_be_called(decision: object) -> bytes:
+        raise AssertionError(
+            "store.insert must not call _canonical_signing_payload when "
+            "canonical_payload_bytes() is already carried on the receipt"
+        )
+
+    monkeypatch.setattr(store_mod, "_canonical_signing_payload", _should_not_be_called)
+
+    conn = _make_schema_conn_gh387()
+    store_mod.insert(conn, receipt)  # type: ignore[arg-type]
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Tampered-carry fail-loud pin
+# ---------------------------------------------------------------------------
+
+
+def test_corrupted_canonical_payload_carry_fails_signature_verification(
+    db_path: Path,
+) -> None:
+    """A corrupted _canonical_payload_bytes carry can never silently verify.
+
+    The property being pinned: if store.insert writes a different (but valid-JSON)
+    canonical payload than was actually signed, then fetching and rehydrating that
+    receipt and calling verify_signature must NOT return VALID. It must return
+    INVALID_SIGNATURE (the payload stored in the DB is the tampered canonical bytes,
+    but the signature was computed over the original payload — they disagree, so
+    verification fails loudly).
+
+    Test sequence:
+      1. Sign decision_A to get receipt_A (carry = payload_A bytes).
+      2. Sign decision_B (different fields) to compute payload_B bytes.
+      3. Corrupt receipt_A's carry with payload_B bytes via object.__setattr__.
+      4. Insert the corrupted receipt (stores payload_B as payload_json in DB).
+      5. Fetch payload_json from DB, parse to get decision_B_rehydrated.
+      6. Reconstruct a SignedReceipt with decision=decision_B_rehydrated and
+         signature=receipt_A.signature (the original signature over payload_A).
+      7. Assert verify_signature returns INVALID_SIGNATURE.
+    """
+    import nacl.signing
+
+    from samantha_server.engine.decision import EngineDecision
+    from samantha_server.receipts.signing import (
+        SignedReceipt,
+        VerificationResult,
+        _canonical_signing_payload,
+        sign_decision,
+        verify_signature,
+    )
+    from samantha_server.receipts.store import _open_write_conn, init_store, insert
+
+    init_store(db_path)
+
+    # Step 1: sign decision_A.
+    signing_key = bytes(nacl.signing.SigningKey.generate())
+    decision_a = EngineDecision(
+        applied_rule_id="ACC-001",
+        next_state="HOLD",
+        flags_added=(),
+        flags_cleared=(),
+        outcome="hold_missing_name",
+        also_matched=(),
+        dispatched_rule_ids=("ACC-001",),
+        event_input_hash="a" * 64,
+        primitive_traces={},
+        latency_us=10,
+    )
+    receipt_a = sign_decision(decision_a, key_id="v1", signing_key=signing_key)
+
+    # Step 2: compute payload_B from a DIFFERENT decision (valid canonical JSON).
+    decision_b = EngineDecision(
+        applied_rule_id="ACC-008",
+        next_state="ACCEPTED",
+        flags_added=(),
+        flags_cleared=(),
+        outcome="accessioning_validations_passed",
+        also_matched=(),
+        dispatched_rule_ids=("ACC-008",),
+        event_input_hash="b" * 64,
+        primitive_traces={},
+        latency_us=99,
+    )
+    payload_b = _canonical_signing_payload(decision_b)
+
+    # Step 3: corrupt receipt_A's carry with payload_B bytes.
+    # payload_b is valid JSON that parses as an EngineDecision, so rehydration
+    # will succeed — the loud failure happens at signature verification, not parsing.
+    object.__setattr__(receipt_a, "_canonical_payload_bytes", payload_b)
+
+    # Step 4: insert the corrupted receipt (payload_json column now holds payload_b).
+    conn = _open_write_conn(db_path)
+    insert(conn, receipt_a)
+    conn.close()
+
+    # Step 5: fetch and parse the tampered payload_json.
+    read_conn = _open_write_conn(db_path)
+    payload_json = read_conn.execute(
+        "SELECT payload_json FROM receipts WHERE receipt_id = ?",
+        (receipt_a.receipt_id,),
+    ).fetchone()[0]
+    read_conn.close()
+
+    rehydrated_decision = EngineDecision.model_validate_json(payload_json)
+
+    # Step 6: reconstruct a receipt with the tampered decision + original signature.
+    rehydrated_receipt = SignedReceipt(
+        receipt_id=receipt_a.receipt_id,
+        decision=rehydrated_decision,
+        signer_key_id=receipt_a.signer_key_id,
+        signature=receipt_a.signature,
+        signed_at_utc=receipt_a.signed_at_utc,
+    )
+
+    # Step 7: verify_signature must NOT return VALID.
+    # The signature was computed over payload_A; verify recomputes over the rehydrated
+    # decision (which encodes payload_B's fields) — they disagree, so the result is
+    # INVALID_SIGNATURE, not VALID (fail-loud property).
+    result = verify_signature(
+        rehydrated_receipt,
+        current_key=signing_key,
+        current_key_id="v1",
+    )
+    assert result == VerificationResult.INVALID_SIGNATURE, (
+        f"A corrupted carry must produce INVALID_SIGNATURE, not {result!r}. "
+        "A tampered canonical payload that stores different fields than were signed "
+        "must never silently verify — this is the fail-loud property being pinned."
     )

@@ -6,10 +6,13 @@
 
 ## Verdict: **PROCEED**
 
-The full 42-rule corpus from [`inventory.md`](inventory.md) is expressible
+The full 44-rule corpus from [`inventory.md`](inventory.md) is expressible
 with **9 atomic primitives**, only **one** of which (`Contains`) is a new
 addition versus the candidate set in the issue.
-(Count updated from 40 → 41, then 41 → 42 (ACC-010).) The original `LengthGTE`
+(Count updated from 40 → 41 by the sweep, then 41 → 42 by ACC-010,
+then 42 → 44 as the shipped IHC/RES corpus grew; all counts in this doc are
+re-derived from `samantha_server/rules/specs/` — see the coverage summary
+for the derivation note.) The original `LengthGTE`
 candidate was dropped (no rule needed it); `ThresholdGT` / `ThresholdLT`
 were collapsed into negations of `ThresholdLTE` / `ThresholdGTE`; and
 `IsNotNull` was inverted to `IsNull` so the dominant "missing X" rules
@@ -57,7 +60,7 @@ following filters in order, applied **before** any primitive predicate runs:
 
 1. **`step` filter** — every rule carries `step: <ACCESSIONING|SAMPLE_PREP|HE_QC|PATHOLOGIST_HE_REVIEW|IHC|RESULTING>`. Rules outside the current step never evaluate.
 2. **`applies_at` filter** — IHC rules carry an explicit `applies_at: <state>` key (IHC_STAINING, IHC_QC, IHC_SCORING, SUGGEST_FISH_REFLEX, FISH_SEND_OUT). Rules whose `applies_at` doesn't match the current state are skipped. Other phases do not use `applies_at` because their state-to-rule mapping is one-to-one (or the event-type filter below is sufficient).
-3. **`event_type` filter** — every event carries an `event_type` (`order_received`, `processing_complete`, `embedding_complete`, `sectioning_complete`, `qc_complete`, `pathologist_he_review`, `ihc_staining_complete`, `ihc_qc`, `ihc_scoring_complete`, `pathologist_decision`, `fish_received`, `resulting_review`, `missing_info_received`, `pathologist_signout`, `report_generated`). Each rule binds to one event_type implicitly via its `step` and `trigger` text. The kernel must dispatch on `event_type` to keep predicates from accidentally firing on the wrong event shape.
+3. **`event_type` filter** — every event carries an `event_type` (`order_received`; `grossing_complete`, `processing_complete`, `embedding_complete`, `sectioning_complete`, `sample_prep_qc`; `he_qc`, `pathologist_he_review`; `ihc_staining_complete`, `ihc_qc`, `ihc_scoring`, `fish_decision`, `fish_result`; `resulting_review`, `missing_info_received`, `pathologist_signout`, `report_generated` — matching the shipped specs exactly). Each rule binds to one event_type implicitly via its `step` and `trigger` text. The kernel must dispatch on `event_type` to keep predicates from accidentally firing on the wrong event shape.
 
 The categorization assumes all three filters have already been applied, so
 predicates do not test `current_state` or `event_type`. **The W2.1.c port
@@ -110,7 +113,7 @@ event producer** (the simulator today; the production event adapter
 tomorrow) from `event.scores`. The contract:
 
 - The event adapter must populate `event.any_equivocal` whenever it emits an
-  `ihc_scoring_complete` event. This is a mandatory derived field, not
+  `ihc_scoring` event. This is a mandatory derived field, not
   optional.
 - The W2.1.c port may **not** read `event.scores` directly inside an
   `Equals(...)` primitive — that would require an `AnyMatch` primitive, which
@@ -121,17 +124,23 @@ tomorrow) from `event.scores`. The contract:
 
 ## Coverage summary
 
+Counts below are distinct rules whose `when` tree uses the primitive,
+re-derived from the shipped specs. To re-derive after the corpus
+changes: walk each spec's `when` mapping and collect the primitive keys per
+`rule_id` (a ~15-line Python/yaml script over
+`samantha_server/rules/specs/*.yaml`).
+
 | primitive | rules using it | role |
 |-----------|----------------|------|
-| `Equals` | 29 / 42 | **load-bearing** — most outcome-driven and diagnosis-driven rules collapse to this. |
-| `Not` | 12 / 42 | **load-bearing** — drives every "X out of tolerance", "exclude QNS", "field-present" check, and ACC-010's fall-through negations (+2: ACC-010 has 2 Not nodes). |
-| `BooleanAnd` | 12 / 42 | **load-bearing** for accessioning compound rules, IHC QC distinction, SP-007's flag-gated preemption, and ACC-010's conjunction (+1). |
-| `Contains` | 7 / 42 | **load-bearing** — every HER2-conditional accessioning rule and order-flag check needs it (including SP-007's recut-clear gate on `flags`). The single primitive added vs. the candidate set. |
-| `IsNull` | 5 / 42 | **moderate** — 3 missing-field rules at accessioning (ACC-001, ACC-002, ACC-009) + 2 event-presence rules at resulting (RES-002, RES-004 use `Not(IsNull(...))`). |
-| `InEnum` | 6 / 42 | **moderate** — anatomic-site / specimen-type whitelists + a couple of multi-outcome triggers. ACC-010 adds 2 new InEnum nodes (blacklist + whitelist). |
-| `BooleanOr` | 3 / 42 | **rare but irreducible** — needed for ACC-006's "outside 6–72 h" range, IHC-001's tolerance disjunction, and ACC-008's negation-over-disjunction. |
-| `ThresholdGTE` | 2 / 42 | **rare but irreducible** — only the fixation-time rules use numeric ranges. |
-| `ThresholdLTE` | 2 / 42 | same as `ThresholdGTE`. |
+| `Equals` | 29 / 44 | **load-bearing** — most outcome-driven and diagnosis-driven rules collapse to this. |
+| `BooleanAnd` | 12 / 44 | **load-bearing** for accessioning compound rules, IHC QC distinction, SP-007's flag-gated preemption, and ACC-010's conjunction. |
+| `Not` | 9 / 44 | **load-bearing** — "X out of tolerance", "exclude QNS", "field-present" checks, and ACC-010's fall-through negations (17 Not nodes total across those 9 rules). |
+| `IsNull` | 9 / 44 | **moderate** — missing-field rules at accessioning plus event-presence checks at resulting (`Not(IsNull(...))`). |
+| `Contains` | 6 / 44 | **load-bearing** — HER2-conditional accessioning rules and order-flag checks (including SP-007's recut-clear gate on `flags`). The single primitive added vs. the candidate set. |
+| `InEnum` | 6 / 44 | **moderate** — anatomic-site / specimen-type whitelists + multi-outcome triggers. ACC-010 contributes 2 InEnum nodes (blacklist + whitelist). |
+| `BooleanOr` | 5 / 44 | **rare but irreducible** — ACC-006's "outside 6–72 h" range, IHC-001's tolerance disjunction, ACC-008's negation-over-disjunction, plus two later corpus additions. |
+| `ThresholdGTE` | 2 / 44 | **rare but irreducible** — only the fixation-time rules use numeric ranges. |
+| `ThresholdLTE` | 2 / 44 | same as `ThresholdGTE`. |
 
 The "rare but irreducible" set (`BooleanOr`, `ThresholdGTE`, `ThresholdLTE`)
 is small but cannot be dropped without losing the fixation-tolerance and
@@ -148,9 +157,11 @@ on whitelist".
 
 What the categorization showed:
 
-1. **Most rules are extremely simple.** 24 of 41 rules collapse to a single
-   `Equals(event.X, literal)` check. The deterministic routing surface is
-   dominated by event-outcome-to-state mappings, not complex predicates.
+1. **Most rules are extremely simple.** 29 of 44 rules have no boolean
+   composite in their `when` tree — a single atomic primitive suffices, and
+   for 21 of those it is a bare `Equals(event.X, literal)` check. The
+   deterministic routing surface is dominated by event-outcome-to-state
+   mappings, not complex predicates.
 2. **Accessioning is the predicate-complexity hot spot.** Five of the nine
    rules using `BooleanAnd` are accessioning rules. The HER2/fixation
    interaction (ACC-005, ACC-006, ACC-009 + IHC-001) is the entire numeric

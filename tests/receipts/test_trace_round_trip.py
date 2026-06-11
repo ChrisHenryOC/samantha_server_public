@@ -84,6 +84,18 @@ def _make_clarification_trace() -> ClarificationTrace:
     )
 
 
+def _make_clarification_trace_llm_failed() -> ClarificationTrace:
+    # llm_failed=True is the only case that puts the
+    # new field on the signed payload (default-False is canonically excluded),
+    # so it needs its own round-trip case. The invariant requires empty
+    # suggested_values when llm_failed is set.
+    return ClarificationTrace(
+        missing_fields=("patient_name",),
+        suggested_values={},
+        llm_failed=True,
+    )
+
+
 def _make_llm_review_trace() -> LLMReviewTrace:
     return LLMReviewTrace(
         skill_doc_hash="d" * 64,
@@ -105,6 +117,9 @@ _TRACE_CASES = [
     ("query", _make_query_trace()),
     ("refusal", _make_refusal_trace()),
     ("clarification", _make_clarification_trace()),
+    # llm_failed=True case — same kind discriminator; pytest suffixes
+    # the duplicate id (clarification0/clarification1).
+    ("clarification", _make_clarification_trace_llm_failed()),
     ("llm_review", _make_llm_review_trace()),
     ("canonicalization_warning", _make_canonicalization_trace()),
 ]

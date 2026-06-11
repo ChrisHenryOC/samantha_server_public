@@ -57,9 +57,10 @@ class QueryTrace(BaseModel, frozen=True):
     parsed_answer_type: the answer_type field from the structured JSON response.
     None under the same conditions as parsed_order_ids.
 
-    parse_failure: short error class name when structured JSON parsing failed.
-    "json_decode" when json.JSONDecodeError, "schema_violation" when
-    pydantic.ValidationError. None on success or in free_text mode.
+    parse_failure: backward-compat only. Production parse failures
+    now emit a RefusalTrace (STAGE_PRE_UNPARSEABLE) instead of a QueryTrace,
+    so new receipts always carry None here; the field remains so legacy
+    stored receipts ("json_decode" / "schema_violation") still deserialize.
     """
 
     kind: Literal["query"] = "query"
@@ -69,12 +70,13 @@ class QueryTrace(BaseModel, frozen=True):
     model_id: str
     response_text_hash: str
     """sha256 hex of canonical JSON of the parsed model on JSON-success;
-    sha256 hex of raw response text on JSON-failure or in free_text mode.
+    sha256 hex of raw response text in free_text mode.
 
-    Three semantic cases:
+    Semantic cases:
     - JSON-success: hash of json.dumps(model.model_dump(), sort_keys=True, separators=(",",":"))
-    - JSON-failure: hash of raw response text (same as free_text)
     - free_text: hash of raw response text
+    - (historical, legacy) JSON-failure receipts stored the raw-text hash;
+      parse failures now emit a RefusalTrace and no QueryTrace at all.
     """
     database_state_hash: str = ""
     # HMAC-SHA256 hex digest of the ISO-8601 prompt_timestamp string
@@ -126,6 +128,10 @@ class ClarificationTrace(BaseModel, frozen=True):
     before storage (see handlers.handle_clarification). Downstream consumers MUST
     still treat the values as advisory — a future Phase 4 orchestrator that auto-
     applies them needs to re-validate against the live pick list.
+
+    llm_failed distinguishes a genuine LLM failure (LLMClientError) from a healthy
+    LLM that returned no usable suggestions. Without this field both cases
+    produce empty suggested_values and are indistinguishable in the receipt.
     """
 
     kind: Literal["clarification"] = "clarification"
@@ -133,6 +139,22 @@ class ClarificationTrace(BaseModel, frozen=True):
     unknown_canonical_fields: tuple[str, ...] = ()
     suggested_values: dict[str, str]
     model_id: str = ""
+    llm_failed: bool = False
+
+    @model_validator(mode="after")
+    def _llm_failed_invariant(self) -> ClarificationTrace:
+        """A failed LLM cannot have produced suggestions.
+
+        Mirrors RefusalTrace._stage_invariants: enforce the cross-field
+        contract at the model so a handler bug can't sign a
+        self-contradictory receipt.
+        """
+        if self.llm_failed and self.suggested_values:
+            raise ValueError(
+                "llm_failed=True requires empty suggested_values — a failed "
+                "LLM call cannot have produced suggestions"
+            )
+        return self
 
 
 _REFUSAL_REASONS = Literal[
@@ -281,7 +303,9 @@ class EngineDecision(BaseModel, frozen=True):
     next_state: str  # workflow state to transition to
     flags_added: tuple[str, ...]
     flags_cleared: tuple[str, ...]
-    outcome: str  # from action.outcome
+    outcome: str  # from action.outcome; deliberately plain str — the vocabulary is
+    # rule-YAML action.outcome-driven; a code Literal would couple the engine to
+    # the corpus and require a code change for every new outcome value.
     also_matched: tuple[str, ...]  # other rule_ids that matched (ACCESSIONING all_match)
     dispatched_rule_ids: tuple[str, ...]  # rules eligible per (step, applies_at, event_type)
     event_input_hash: str  # sha256 hex of canonical-JSON serialisation

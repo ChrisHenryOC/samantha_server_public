@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -115,6 +116,9 @@ def test_receipts_db_path_validator_creates_missing_parent_dir(tmp_path: Path) -
     assert nested.parent.is_dir(), "validator must mkdir parents=True"
 
 
+@pytest.mark.skipif(
+    os.geteuid() == 0, reason="chmod-based unwritability is bypassed by root"
+)
 def test_receipts_db_path_validator_rejects_unwritable_parent(tmp_path: Path) -> None:
     """PR315 review #1+#9: validator raises ArgumentTypeError on permission failure.
 

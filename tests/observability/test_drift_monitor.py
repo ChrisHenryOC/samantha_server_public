@@ -63,7 +63,7 @@ def test_record_appends_to_deque() -> None:
     """``record(routing_path)`` adds an entry to the rolling buffer."""
     monitor = _make_monitor()
     monitor.record(routing_path="llm", monotonic_ns=1_000_000_000)
-    assert monitor.qsize() == 1
+    assert monitor.resident_count() == 1
     assert monitor.routing_paths() == ["llm"]
 
 
@@ -97,7 +97,7 @@ def test_compute_rate_evicts_entries_older_than_window() -> None:
     # Only the deterministic event survives → 0/1 = 0.0.
     assert rate == 0.0
     # And the old entry is gone from the buffer.
-    assert monitor.qsize() == 1
+    assert monitor.resident_count() == 1
 
 
 def test_window_rollover_boundary() -> None:
@@ -106,7 +106,7 @@ def test_window_rollover_boundary() -> None:
     The t=0 event is ``deterministic`` and the rest are ``llm`` so the
     rate value (3/4 vs 3/3) distinguishes "boundary survives" from
     "boundary evicted". A failure of the predicate would have flipped
-    rate by 0.25 — not just the qsize count.
+    rate by 0.25, not just the resident_count.
     """
     one_ns = 1_000_000_000
     window_sec = 3600
@@ -123,14 +123,14 @@ def test_window_rollover_boundary() -> None:
     # ``age > window_sec``, so it survives. All four events remain;
     # rate = 3/4 = 0.75.
     rate = monitor.compute_rate(now_ns=window_ns)
-    assert monitor.qsize() == 4
+    assert monitor.resident_count() == 4
     assert rate == pytest.approx(0.75)
 
     # At now=WINDOW+1ns: the t=0 deterministic event is now strictly
     # older than WINDOW seconds → evicted. Three llm events remain;
     # rate = 3/3 = 1.0.
     rate = monitor.compute_rate(now_ns=window_ns + 1)
-    assert monitor.qsize() == 3
+    assert monitor.resident_count() == 3
     assert rate == pytest.approx(1.0)
 
 
@@ -140,7 +140,7 @@ def test_deque_maxlen_caps_resident_count() -> None:
     for i in range(15):
         monitor.record(routing_path="llm", monotonic_ns=i)
     # 15 appends, maxlen=10 → 10 entries retained.
-    assert monitor.qsize() == 10
+    assert monitor.resident_count() == 10
 
 
 def test_running_llm_counter_consistent_across_maxlen_overflow() -> None:
@@ -174,7 +174,7 @@ def test_running_llm_counter_consistent_across_time_eviction() -> None:
     monitor.record(routing_path="deterministic", monotonic_ns=20 * one_ns)
 
     rate = monitor.compute_rate(now_ns=20 * one_ns)
-    assert monitor.qsize() == 2
+    assert monitor.resident_count() == 2
     assert rate == pytest.approx(0.0)
 
 
@@ -187,7 +187,7 @@ def test_check_and_fire_evicts_when_webhook_url_none() -> None:
     asyncio.run(monitor.check_and_fire(now_ns=20 * one_ns))
 
     # The 20 s gap exceeds window_sec=10 → the lone llm is evicted.
-    assert monitor.qsize() == 0
+    assert monitor.resident_count() == 0
 
 
 # ---------------------------------------------------------------------------

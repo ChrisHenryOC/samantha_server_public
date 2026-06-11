@@ -4,7 +4,7 @@ Renders a clustered bar chart grouped by benchmark category (x-axis), with one
 bar per model in each group. Three x-groups:
   - Published (MMLU-Pro): vendor/HF headline figures
   - Local (composite): our quants under one oMLX harness
-  - samantha (N=5 stable): task accuracy on the 149-fixture corpus
+  - samantha (N=5 stable): task accuracy on the 151-fixture corpus
 
 Models are ordered by samantha stable % descending within each group, so the
 leader flips between groups -- that contrast is the point.

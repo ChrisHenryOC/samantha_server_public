@@ -8,7 +8,7 @@
    "gsm8k": 100,
    "arc_challenge": 300
   },
-  "notes": "local scores are our deployed quants under one harness (thinking off) -> lower than vendor-published best-config numbers (quantization + harness tax). published numbers are vendor/HF-card headline figures, full precision, cross-vendor harnesses (not strictly comparable). samantha = N=5 stable accuracy on the 149-fixture corpus.",
+  "notes": "local scores are our deployed quants under one harness (thinking off) -> lower than vendor-published best-config numbers (quantization + harness tax). published numbers are vendor/HF-card headline figures, full precision, cross-vendor harnesses (not strictly comparable). samantha = N=5 stable accuracy on the 151-fixture corpus.",
   "incumbent": "Qwen3-Next-80B-A3B-Instruct-4bit"
  },
  "models": {
@@ -42,7 +42,7 @@
     "livecodebench": 74.6,
     "aime": 93.3
    },
-   "samantha_stable_pct": 98.66
+   "samantha_stable_pct": 98.01
   },
   "gemma-4-26B-A4B-it-MLX-4bit": {
    "local": {
@@ -58,7 +58,7 @@
     "livecodebench": 77.1,
     "aime": 88.3
    },
-   "samantha_stable_pct": 98.66
+   "samantha_stable_pct": 98.68
   },
   "Qwen2.5-Coder-32B-Instruct-MLX-4bit": {
    "local": {
@@ -75,7 +75,7 @@
     "humaneval": 92.7,
     "_approx": true
    },
-   "samantha_stable_pct": 96.64
+   "samantha_stable_pct": 97.35
   }
  }
 }

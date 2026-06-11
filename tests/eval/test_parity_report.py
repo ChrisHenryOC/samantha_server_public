@@ -2,8 +2,8 @@
 
 Walks one or more `AccuracyReport` instances (multi-model sweep) and
 emits the published-shape JSON + markdown rollup that the parity CLI
-ships against the upstream POC's `results/model_selection_phase1/
-summary.json`.
+ships against the upstream POC's
+`results/model_selection_phase1/summary.json`.
 
 Per the discovery memo:
 - Latency mean/p50/p95: derived from `step_verdicts[*].latency_us`.

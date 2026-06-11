@@ -12,8 +12,8 @@ import time
 from typing import Any
 
 from samantha_server.canonicalization import (
-    _COLLECTION_CANONICAL_FIELDS,
     CANONICAL_FIELDS,
+    COLLECTION_CANONICAL_FIELDS,
     canonicalize,
 )
 from samantha_server.engine.decision import (
@@ -27,6 +27,10 @@ from samantha_server.errors import SamanthaError
 from samantha_server.models.context import SpecimenContext
 from samantha_server.primitives.trace import PrimitiveTrace
 from samantha_server.rules.spec import RuleSpec
+
+# Sort CANONICAL_FIELDS once at module load instead of on
+# every _collect_canonicalization_traces call (evaluate() hot path).
+CANONICAL_FIELDS_SORTED: tuple[str, ...] = tuple(sorted(CANONICAL_FIELDS))
 
 
 class UndispatchedRuleError(SamanthaError):
@@ -59,8 +63,8 @@ def _collect_canonicalization_traces(
 
     order = ctx.order
 
-    for field in sorted(CANONICAL_FIELDS):
-        if field in _COLLECTION_CANONICAL_FIELDS:
+    for field in CANONICAL_FIELDS_SORTED:
+        if field in COLLECTION_CANONICAL_FIELDS:
             # Collection field — canonicalize each element independently.
             raw_collection: tuple[str, ...] = getattr(order, field)
             for raw in raw_collection:
@@ -105,7 +109,7 @@ def evaluate(
     dispatch: DispatchResult,
     ctx: SpecimenContext,
     *,
-    session_id: str | None = None,
+    session_id: str,
     rule_id_filter: str | None = None,
 ) -> EngineDecision:
     """Evaluate the rules in *dispatch* against *ctx* and return an EngineDecision.
@@ -117,14 +121,11 @@ def evaluate(
     ctx:
         The specimen context to evaluate rules against.
     session_id:
-        The caller's session identifier.  When provided, it is compared against
-        the session_id bound in *dispatch*'s HMAC — a mismatch causes
+        The caller's own session identifier.  It is compared against the
+        session_id bound in *dispatch*'s HMAC — a mismatch raises
         UndispatchedRuleError so cross-session replay is rejected at the
-        evaluate boundary.  When ``None`` (the default), falls back to
-        ``dispatch.session_id`` (backward-compatible with callers that verified
-        the session upstream or do not require cross-session protection).
-        Production callers (the router in api/routing.py, scenarios/replay)
-        must pass the caller's own session_id to activate the explicit guard.
+        evaluate boundary.  Required (making this optional allowed
+        callers to silently disarm the guard by omitting the kwarg).
     rule_id_filter:
         When not None, restrict evaluation to the single rule whose
         ``rule_id`` matches this value.  If no rule with this id is present
@@ -136,8 +137,8 @@ def evaluate(
     ------
     UndispatchedRuleError
         If *dispatch* was not produced by list_applicable_rules (HMAC failure),
-        or if the caller-supplied *session_id* does not match the session
-        bound in the dispatch token (cross-session replay rejected).
+        or if *session_id* does not match the session bound in the dispatch
+        token (cross-session replay rejected).
 
     Notes
     -----
@@ -155,14 +156,22 @@ def evaluate(
     None or raises silently.
     """
     # --- Boundary enforcement via HMAC ---
-    # Use the caller-supplied session_id (not dispatch.session_id) so the
-    # cross-session replay guard at verify_dispatch is reachable.
-    # When session_id is None (backward compat), fall back to dispatch.session_id.
-    effective_session_id = session_id if session_id is not None else dispatch.session_id
-    if not verify_dispatch(dispatch, session_id=effective_session_id):
+    # Use the caller-supplied session_id so the cross-session replay guard
+    # at verify_dispatch is unconditionally reachable.
+    if not verify_dispatch(dispatch, session_id=session_id):
+        # Discriminate the session-mismatch case from the
+        # HMAC/TTL case so an operator chasing a stale-session caller is not
+        # misdirected toward a token-forgery investigation. Session ids are
+        # deliberately not echoed (a foreign session id is not the caller's
+        # to see).
+        if session_id != dispatch.session_id:
+            raise UndispatchedRuleError(
+                "DispatchResult session mismatch — the dispatch token was issued "
+                "for a different session (cross-session replay rejected)"
+            )
         raise UndispatchedRuleError(
-            "DispatchResult HMAC verification failed — result was not produced by "
-            "list_applicable_rules in this process"
+            "DispatchResult HMAC verification failed or token expired — result "
+            "was not produced by list_applicable_rules in this process"
         )
 
     start_ns = time.perf_counter_ns()
@@ -179,9 +188,16 @@ def evaluate(
     # Runs once per evaluate() call regardless of rule matching outcome.
     canon_traces = _collect_canonicalization_traces(ctx)
 
+    # Compute event_input_hash once here and pass to all
+    # helpers so _no_match_decision, _evaluate_accessioning, and
+    # _evaluate_first_match share a single computation.
+    event_input_hash = compute_event_input_hash(ctx)
+
     # --- Empty dispatch (no rule fires; hash is still computed for receipt) ---
     if not rules:
-        return _no_match_decision(ctx, dispatched_rule_ids, start_ns, canon_traces)
+        return _no_match_decision(
+            ctx, dispatched_rule_ids, start_ns, canon_traces, event_input_hash
+        )
 
     # Determine the step from the first rule (all rules in a dispatch share the
     # same step by invariant of list_applicable_rules).
@@ -192,8 +208,12 @@ def evaluate(
         raise RuntimeError(f"mixed-step dispatch: {[r.step for r in rules]}")
 
     if step == "ACCESSIONING":
-        return _evaluate_accessioning(rules, ctx, dispatched_rule_ids, start_ns, canon_traces)
-    return _evaluate_first_match(rules, ctx, dispatched_rule_ids, start_ns, canon_traces)
+        return _evaluate_accessioning(
+            rules, ctx, dispatched_rule_ids, start_ns, canon_traces, event_input_hash
+        )
+    return _evaluate_first_match(
+        rules, ctx, dispatched_rule_ids, start_ns, canon_traces, event_input_hash
+    )
 
 
 def _no_match_decision(
@@ -201,9 +221,12 @@ def _no_match_decision(
     dispatched_rule_ids: tuple[str, ...],
     start_ns: int,
     decision_traces: tuple[CanonicalizationTrace, ...] = (),
+    event_input_hash: str | None = None,
 ) -> EngineDecision:
     """Build the no-match / dispatch-empty EngineDecision."""
-    event_hash = compute_event_input_hash(ctx)
+    if event_input_hash is None:
+        event_input_hash = compute_event_input_hash(ctx)
+    event_hash = event_input_hash
     elapsed_us = (time.perf_counter_ns() - start_ns) // 1_000
     return EngineDecision(
         applied_rule_id=None,
@@ -227,8 +250,11 @@ def _evaluate_accessioning(
     dispatched_rule_ids: tuple[str, ...],
     start_ns: int,
     decision_traces: tuple[CanonicalizationTrace, ...] = (),
+    event_input_hash: str | None = None,
 ) -> EngineDecision:
     """all_match mode: evaluate every rule, pick highest-severity match."""
+    if event_input_hash is None:
+        event_input_hash = compute_event_input_hash(ctx)
     matches: list[tuple[Any, Any]] = []
 
     for rule in rules:
@@ -237,9 +263,11 @@ def _evaluate_accessioning(
             matches.append((rule, trace))
 
     if not matches:
-        return _no_match_decision(ctx, dispatched_rule_ids, start_ns, decision_traces)
+        return _no_match_decision(
+            ctx, dispatched_rule_ids, start_ns, decision_traces, event_input_hash
+        )
 
-    # Sort by severity ascending (REJECT=0 < HOLD=1 < PROCEED=2 < ACCEPT=3).
+    # Sort by severity ascending (REJECT=0 < HOLD=1 < REVIEW_HOLD=2 < PROCEED=3 < ACCEPT=4).
     # Stable sort: ties keep iteration order (sorted by priority within same severity
     # is not applicable to ACCESSIONING, so first-encountered wins on ties).
     matches.sort(key=lambda pair: SEVERITY_ORDER.get(pair[0].severity or "", 99))
@@ -248,12 +276,33 @@ def _evaluate_accessioning(
     also_matched = tuple(r.rule_id for r, _ in matches[1:])
     primitive_traces: dict[str, PrimitiveTrace] = {r.rule_id: t for r, t in matches}
 
-    event_hash = compute_event_input_hash(ctx)
+    # Flag-union when winner is REVIEW_HOLD-tier.
+    # Union set_flags from matched-but-demoted PROCEED-tier rules so their
+    # flags (e.g. MISSING_INFO_PROCEED from ACC-007) carry alongside the
+    # winner's flags (e.g. LLM_REVIEW_REQUESTED from ACC-010/011).
+    # Rationale: PENDING_LLM_REVIEW -> ACCEPTED resolves directly and never
+    # re-runs accessioning, so a dropped PROCEED-tier flag is permanently lost.
+    # Only set_flags are unioned; transitions/outcomes/clear_flags from demoted
+    # rules are ignored.
+    flags_added: tuple[str, ...] = winner_rule.action.set_flags
+    if winner_rule.severity == "REVIEW_HOLD":
+        seen_flags: set[str] = set(flags_added)
+        rescued_flags: list[str] = []
+        for demoted_rule, _ in matches[1:]:
+            if SEVERITY_ORDER.get(demoted_rule.severity or "", 99) == SEVERITY_ORDER["PROCEED"]:
+                for flag in demoted_rule.action.set_flags:
+                    if flag not in seen_flags:
+                        seen_flags.add(flag)
+                        rescued_flags.append(flag)
+        if rescued_flags:
+            flags_added = flags_added + tuple(rescued_flags)
+
+    event_hash = event_input_hash
     elapsed_us = (time.perf_counter_ns() - start_ns) // 1_000
     return EngineDecision(
         applied_rule_id=winner_rule.rule_id,
         next_state=winner_rule.action.transition,
-        flags_added=winner_rule.action.set_flags,
+        flags_added=flags_added,
         flags_cleared=winner_rule.action.clear_flags,
         outcome=winner_rule.action.outcome,
         also_matched=also_matched,
@@ -272,12 +321,15 @@ def _evaluate_first_match(
     dispatched_rule_ids: tuple[str, ...],
     start_ns: int,
     decision_traces: tuple[CanonicalizationTrace, ...] = (),
+    event_input_hash: str | None = None,
 ) -> EngineDecision:
     """first_match mode: stop on first rule whose predicate is True."""
+    if event_input_hash is None:
+        event_input_hash = compute_event_input_hash(ctx)
+    event_hash = event_input_hash
     for rule in rules:
         trace = rule.when.trace(ctx)
         if trace.result:
-            event_hash = compute_event_input_hash(ctx)
             elapsed_us = (time.perf_counter_ns() - start_ns) // 1_000
             return EngineDecision(
                 applied_rule_id=rule.rule_id,
@@ -294,7 +346,7 @@ def _evaluate_first_match(
                 order_id=ctx.order.order_id,
             )
 
-    return _no_match_decision(ctx, dispatched_rule_ids, start_ns, decision_traces)
+    return _no_match_decision(ctx, dispatched_rule_ids, start_ns, decision_traces, event_hash)
 
 
 __all__ = ["UndispatchedRuleError", "evaluate"]

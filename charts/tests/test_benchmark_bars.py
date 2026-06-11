@@ -190,17 +190,17 @@ def _four_model_data() -> dict[str, dict]:  # type: ignore[type-arg]
         "Qwen3.5-35B-A3B-8bit": {
             "local": {"composite": 84.3},
             "published": {"mmlu_pro": 85.3},
-            "samantha_stable_pct": 98.66,
+            "samantha_stable_pct": 98.01,
         },
         "gemma-4-26B-A4B-it-MLX-4bit": {
             "local": {"composite": 85.1},
             "published": {"mmlu_pro": 82.6},
-            "samantha_stable_pct": 98.66,
+            "samantha_stable_pct": 98.68,
         },
         "Qwen2.5-Coder-32B-Instruct-MLX-4bit": {
             "local": {"composite": 76.8},
             "published": {"mmlu_pro": 50.0},
-            "samantha_stable_pct": 96.64,
+            "samantha_stable_pct": 97.35,
         },
     }
 

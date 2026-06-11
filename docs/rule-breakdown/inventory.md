@@ -2,7 +2,7 @@
 
 ## Provenance & method
 
-This inventory was built against the upstream `samantha-public` repo at the snapshot taken
+This inventory was built against the upstream POC repo at the snapshot taken
 on 2026-04-25. The canonical source-of-truth for rule definitions is
 `knowledge_base/workflow_states.yaml`; rules are loaded into Python by
 `src/workflow/state_machine.py` (`class Rule`, line 80) and surfaced into LLM
@@ -25,7 +25,7 @@ The `fields_referenced` column was derived by:
 1. Reading the rule's `trigger` text in `workflow_states.yaml`.
 2. Cross-checking against the actual `event_data` keys present in scenarios
    that list the rule under `expected_output.applied_rules` (parsed from every
-   JSON file under `tests/fixtures/scenarios/`).
+   JSON file under the upstream POC repo's `scenarios/`).
 3. Using the simulator (`src/simulator/order_generator.py`) only as a secondary
    reference — many of its `target_rules=(...)` templates encode order-level
    shortcuts that don't survive into the scenario events.
@@ -57,7 +57,7 @@ lists the simulator-supplied booleans so the implementer can match scenarios
 verbatim, with the underlying raw fields where they differ.
 
 The `covering_scenarios` column was generated programmatically by parsing
-every JSON file under `tests/fixtures/scenarios/` and collecting
+every JSON file under the upstream POC repo's `scenarios/` and collecting
 scenarios whose `events[].expected_output.applied_rules` contains the rule_id
 (across all subdirs: `rule_coverage/`, `multi_rule/`, `accumulated_state/`,
 `hallucination/`, `query/`, `unknown_input/`, `unknown_inputs/`).
@@ -117,7 +117,7 @@ scenarios whose `events[].expected_output.applied_rules` contains the rule_id
 | ACC-007 | Billing info missing → MISSING_INFO_PROCEED with flag | `knowledge_base/workflow_states.yaml:rules[ACC-007]` | `knowledge_base/sops/accessioning.md` § 3.1 | `billing_info_present` | severity=PROCEED | true | SC-004, SC-015, SC-016, SC-070, SC-071, SC-072, SC-073, SC-079, SC-082, SC-083, SC-090, SC-091, SC-097, SC-098, SC-104, SC-105 (16) |
 | ACC-008 | All accessioning validations pass → ACCEPTED | `knowledge_base/workflow_states.yaml:rules[ACC-008]` | `knowledge_base/sops/accessioning.md` § 3.4 | `patient_name`, `sex`, `specimen_type`, `anatomic_site`, `fixative`, `fixation_time_hours`, `ordered_tests`, `billing_info_present` (defined as: no other ACC rule fires) | severity=ACCEPT | true | 80 scenarios — SC-001, SC-002, SC-017–SC-069, SC-074–SC-078, SC-084–SC-089, SC-092–SC-096, SC-099, SC-106–SC-113 |
 | ACC-009 | HER2 ordered and fixation time is null → MISSING_INFO_HOLD | `knowledge_base/workflow_states.yaml:rules[ACC-009]` | `knowledge_base/rules/fixation_requirements.md` "ACC-009 — Fixation Time Missing (Null)" | `fixation_time_hours`, `ordered_tests` | severity=HOLD | true | SC-103, SC-105 (2) |
-| ACC-010 | Specimen type unrecognized (not whitelist or blacklist) → PENDING_LLM_REVIEW | `samantha_server/rules/specs/ACC-010.yaml` | Phase 2 spec, Step 8 | `specimen_type` | severity=PROCEED | true | LR-001, LR-002, LR-003 (3) |
+| ACC-010 | Specimen type unrecognized (not whitelist or blacklist) → PENDING_LLM_REVIEW | `samantha_server/rules/specs/ACC-010.yaml` | `docs/plans/phase-2-implementation.md` § Step 8 | `specimen_type` | severity=PROCEED | true | LR-001, LR-002, LR-003 (3) |
 | SP-001 | Sample-prep step completed successfully → advance | `knowledge_base/workflow_states.yaml:rules[SP-001]` | `knowledge_base/sops/sample_prep.md` § 2.1 | `current_state`, `event.outcome` (== `"success"`) | priority=1 | true | 85 scenarios across `rule_coverage/`, `multi_rule/`, `accumulated_state/` |
 | SP-002 | Sample-prep step failed, tissue available → RETRY current | `knowledge_base/workflow_states.yaml:rules[SP-002]` | `knowledge_base/sops/sample_prep.md` § 2.2 | `current_state`, `event.outcome` (encodes `"fail_retry"` / similar) | priority=2 | true | SC-019, SC-020, SC-024, SC-028, SC-029 (5) |
 | SP-003 | Sample-prep step failed, insufficient tissue → ABORT (QNS) | `knowledge_base/workflow_states.yaml:rules[SP-003]` | `knowledge_base/sops/sample_prep.md` § 2.3 | `current_state`, `event.outcome` (== `"fail_qns"`) | priority=3 | true | SC-021, SC-022 (2) |
@@ -159,7 +159,7 @@ reader of `models/context.py` doesn't infer the gap is an oversight.
 
 | flag | tracking issue | predicate (from upstream SOP) |
 |------|----------------|--------------------------------|
-| `FIXATION_WARNING` | Deferred | HER2-bearing order, `next_state == "ACCEPTED"`, `fixation_time_hours` not null, AND fixation in 6.0–8.0 h or 68.0–72.0 h. Authoritative source: the POC knowledge base (`knowledge_base/skills/accessioning.md`). Vocabulary is defined; emitter rule design pending architectural decision (rule-spec schema extension vs. new co-firing rule vs. post-evaluate action handler). |
+| `FIXATION_WARNING` | (vocabulary deferred post-POC) | HER2-bearing order, `next_state == "ACCEPTED"`, `fixation_time_hours` not null, AND fixation in 6.0–8.0 h or 68.0–72.0 h. Authoritative source: the upstream POC repo's `knowledge_base/skills/accessioning.md`. Vocabulary added; emitter rule design pending architectural decision (rule-spec schema extension vs. new co-firing rule vs. post-evaluate action handler). |
 
 ## SOP coverage map
 

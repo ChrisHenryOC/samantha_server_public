@@ -71,7 +71,7 @@ ctx = SpecimenContext(
 
 `event.event_type == "clinical_query"` is the dispatcher key the
 router-shim reads first.
-`router.route()` routes this
+[`router.route()`](../../samantha_server/llm/router.py) routes this
 context to `handle_clinical_query` after the state-precedence check
 (`current_state` is not `PENDING_LLM_REVIEW`) and after preflight
 returns `PreflightOk()` (no missing required fields, no unknown
@@ -98,7 +98,7 @@ boundary between raw `SpecimenContext` and the LLM call:
   scenario, so the guard is a no-op here — the boundary check is
   exercised in [`llm-unknown.md`](llm-unknown.md).
 
-**`order_id` trust-boundary note:** `order_id` is a synthetic LIS
+**order_id trust-boundary note:** `order_id` is a synthetic LIS
 identifier (not a HIPAA Safe Harbor element). The model runs on oMLX
 inside the local trust boundary. The raw
 `order_id` now passes through verbatim to `SafeOrder.order_id`; no
@@ -230,7 +230,7 @@ fields. The skill's grounding clause held.
 `outcome="query_response"`, `applied_rule_id=None`, and
 `next_state=ctx.current_state` (the engine never proposes a transition
 from a query). The router-shim's
-`_finalize` helper signs the
+[`_finalize`](../../samantha_server/llm/router.py) helper signs the
 decision via `sign_decision` and persists the resulting `SignedReceipt`
 to the configured store. The receipt below was generated under the
 dummy signing key (`bytes(32)` — 32 zero bytes) for transcript
@@ -321,7 +321,9 @@ transition is proposed, and `flags` stays empty on both sides.
 The free-text answer is what the fixture's `order_ids` and `reasoning`
 fields anchor against. The accuracy assertion happens at the
 `/replay-scenarios` boundary (developer-side, against the loaded
-local model), not in CI. For this transcript the
+local model), not in CI; see
+`docs/plans/ci-implementation.md` § 5.6
+for the LLM-determinism rationale. For this transcript the
 fake-substituted response matches the expected order list exactly.
 
 ---

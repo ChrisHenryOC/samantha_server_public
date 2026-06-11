@@ -175,33 +175,73 @@ class AppState:
         # rather than hanging until EVENT_DISPATCH_TIMEOUT_SEC fires.
         pending_count = self.queue.qsize()
         if pending_count > 0:
-            _log.info("Draining %d queued payload(s) on shutdown", pending_count)
-        drained = 0
-        for _ in range(pending_count):
+            _log.info(
+                "Draining ~%d queued payload(s) on shutdown"
+                " (estimate; heap may contain tombstones)",
+                pending_count,
+            )
+        resolved = 0
+        failed = 0
+        # Drain the raw heap until it is empty.
+        # range(qsize()) would under-drain when tombstones precede live items
+        # on the heap: qsize() counts live items only, but get_nowait() dequeues
+        # from the raw heap which includes tombstones. Looping until QueueEmpty
+        # guarantees every live item is reached regardless of heap composition.
+        while True:
             try:
-                # Use the underlying asyncio.PriorityQueue.get_nowait() so we
-                # don't block. The loop iterates at most qsize() times (live
-                # items only — tombstones don't count in qsize()).
                 raw_item = self.queue._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                # Normal loop exit — heap exhausted.
+                break
+            # Mirror the tombstone-skip logic from PriorityEventQueue.get():
+            # a QueueItem is a tombstone when it has an event_id that is no
+            # longer present in _id_map (cancel() removed the mapping).
+            # Anonymous items (event_id=None) are always live.
+            event_id = raw_item.event_id
+            if event_id is not None and event_id not in self.queue._id_map:
+                _log.debug("Shutdown drain: skipping tombstone for event_id %r", event_id)
+                continue
+            try:
                 payload: _QueuePayload = raw_item.item
+                # Count only futures this drain actually resolved — a
+                # pre-settled future passing through is not a resolution
+                #.
                 if not payload.future.done():
                     payload.future.set_exception(ShutdownError())
-                drained += 1
+                    resolved += 1
             except Exception:
-                break
-        if drained > 0:
-            _log.info("Resolved %d pending future(s) with ShutdownError", drained)
+                # An error draining this individual item must not strand the
+                # remaining items — log and continue (review #3).
+                failed += 1
+                _log.error(
+                    "Shutdown drain: failed to drain queued payload",
+                    exc_info=True,
+                )
+        if resolved > 0 or failed > 0:
+            if failed > 0:
+                _log.info(
+                    "Resolved %d pending future(s) with ShutdownError (%d failed to drain)",
+                    resolved,
+                    failed,
+                )
+            else:
+                _log.info("Resolved %d pending future(s) with ShutdownError", resolved)
 
-        # Wrap each close in contextlib.suppress(Exception) so that a failure
-        # in receipt_writer.close() never prevents receipt_audit_conn.close()
+        # Wrap each close in try/except so that a failure in
+        # receipt_writer.close() never prevents receipt_audit_conn.close()
         # from running. SQLite connection leaks are worse than a noisy log
         #.
-        import contextlib
-
-        with contextlib.suppress(Exception):
+        # Suppression semantics preserved: neither path may raise out of aclose().
+        # Failures are logged at WARNING with exc_info so they are diagnosable
+        # (a WAL-checkpoint-at-shutdown failure is the expected scenario).
+        try:
             self.receipt_writer.close()
-        with contextlib.suppress(Exception):
+        except Exception:
+            _log.warning("receipt_writer.close() raised during aclose", exc_info=True)
+        try:
             self.receipt_audit_conn.close()
+        except Exception:
+            _log.warning("receipt_audit_conn.close() raised during aclose", exc_info=True)
 
         # Step 8: Flush in-flight spans on shutdown. Provider
         # shutdown is intentionally skipped — the global TracerProvider
@@ -220,10 +260,13 @@ class AppState:
                     self.counters.otel_export_failures.increment()
             except Exception as exc:
                 self.counters.otel_export_failures.increment()
+                # exc_info for parity with the other aclose
+                # failure logs (was message-only).
                 _log.warning(
                     "OTel provider force_flush raised during aclose: %s: %s",
                     type(exc).__name__,
                     exc,
+                    exc_info=True,
                 )
 
 

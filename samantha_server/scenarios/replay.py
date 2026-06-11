@@ -953,13 +953,15 @@ async def _replay_scenario_async(
     flags: frozenset[str] = frozenset()
     step_verdicts: list[StepVerdict] = []
 
-    # Slice 5 / PR205 review #1: a single paired tracker for the
-    # post-loop query content gate. Set ONLY after the step's verdict has been
-    # successfully appended AND a QueryTrace is present. Pairing the index
-    # and decision in one tuple makes desync structurally impossible if a
-    # later step's dispatch succeeds but resolve_transition raises before
-    # `step_verdicts.append(verdict)` runs.
-    _last_query_gate_target: tuple[int, EngineDecision] | None = None
+    # Slice 5 / PR205 review #1: paired (index, decision) trackers for the
+    # post-loop query content gate. Each entry is set ONLY after the step's verdict
+    # has been successfully appended AND a QueryTrace (or tracked RefusalTrace) is
+    # present. Pairing the index and decision makes desync structurally impossible.
+    # Was a single Optional[tuple]; changed to a list so the gate
+    # applies to ALL query steps, not just the last. A two-step scenario where step 1
+    # returns bad JSON and step 2 returns good JSON must surface step 1's failure;
+    # the previous single-tracker silently discarded it when step 2 overwrote it.
+    _query_gate_targets: list[tuple[int, EngineDecision]] = []
 
     for step in scenario.steps:
         event_data = step.event_data
@@ -1003,9 +1005,13 @@ async def _replay_scenario_async(
             # routing_path is determined by the per-step predicate below; it cannot be
             # read from the EventResponse (routing_path lives in EventDispatchContext
             # which is not serialised to the response body).
-            assert harness is not None, (
-                "_replay_scenario_async: harness must be provided (endpoint path is the sole path)"
-            )
+            # explicit raise so the guard survives Python -O.
+            if harness is None:
+                raise RuntimeError(
+                    f"_replay_scenario_async: harness must be provided"
+                    f" (scenario={scenario.scenario_id!r}, step={step.step_index});"
+                    " endpoint path is the sole dispatch path"
+                )
             routing_path = (
                 "llm"
                 if (
@@ -1157,17 +1163,22 @@ async def _replay_scenario_async(
         )
         step_verdicts.append(verdict)
 
-        # Slice 5 / PR205 review #1: pair the (index, decision) tracker
-        # so a later step's dispatch-success-but-post-dispatch-raise cannot
-        # leave the index pointing at one step while the decision advances to
-        # another. Set only AFTER step_verdicts.append above —
-        # if we never reach this line for step N, step N never wins the gate.
+        # Slice 5 / PR205 review #1: append the (index, decision) pair so
+        # a later step's dispatch-success-but-post-dispatch-raise cannot leave the
+        # index pointing at one step while the decision advances to another.
+        # Appended AFTER step_verdicts.append above — if we never reach this line
+        # for step N, step N is never entered in the gate list.
+        # Append (not assign) so every query step is tracked.
         if routing_path == "llm" and any(
             isinstance(t, QueryTrace)
             or (isinstance(t, RefusalTrace) and t.refusal_reason in _OPERATIONAL_REFUSAL_REASONS)
+            # Also track STAGE_PRE_UNPARSEABLE refusals so the post-loop gate fires
+            # and maps them to invalid_json. Without this, a parse-failure RefusalTrace on a
+            # query step is invisible to the gate and the scenario silently passes.
+            or (isinstance(t, RefusalTrace) and t.refusal_reason == "STAGE_PRE_UNPARSEABLE")
             for t in decision.decision_traces
         ):
-            _last_query_gate_target = (len(step_verdicts) - 1, decision)
+            _query_gate_targets.append((len(step_verdicts) - 1, decision))
 
         # Thread forward using EXPECTED values so step failures don't cascade.
         # (Beck pattern from samantha-public harness: advance_order_state uses expected.)
@@ -1175,16 +1186,20 @@ async def _replay_scenario_async(
         flags = frozenset(step.expected_flags)
 
     # Post-loop query content gate.
-    # For query scenarios, apply content correctness checks to the last
-    # LLM-routed step that produced a QueryTrace. This is post-loop (not
-    # per-step) because only the final answer step owns content accountability —
-    # intermediate LLM steps (e.g., routing hops) do not carry expected_order_ids.
+    # For query scenarios, apply content correctness checks to every LLM-routed
+    # step that produced a QueryTrace (or a tracked RefusalTrace).
     # StepVerdict is frozen — use dataclasses.replace to rewrite the verdict.
+    #
+    # The gate now iterates over ALL _query_gate_targets entries
+    # (previously only the last). Each step's content correctness is checked
+    # independently so a parse failure on an early step is never hidden by a
+    # later step passing.
     #
     # Precedence (highest to lowest within the content gate):
     #   invalid_json > empty_response > mismatch_query_response
-    if scenario.category == "query" and _last_query_gate_target is not None:
-        _target_index, _target_decision = _last_query_gate_target
+    for _target_index, _target_decision in (
+        _query_gate_targets if scenario.category == "query" else []
+    ):
         last_verdict = step_verdicts[_target_index]
         # Only apply when the step is currently passing the structural gate —
         # if it's already failing structurally, leave the existing status.
@@ -1196,157 +1211,213 @@ async def _replay_scenario_async(
         # mismatch_state AND mismatch_query_response over-counts in
         # failure_counts. Keep failures attributed to their most-specific cause.
         if last_verdict.status == "pass":
-            # Check for operational refusals BEFORE the QueryTrace branch.
-            # When LLMClient raises, SkillLoaderError is caught, or PHIBoundaryError fires,
-            # the handler returns a RefusalTrace with the corresponding reason and no QueryTrace.
-            # The structural checks pass (state/rules/flags match) so without this
-            # branch the scenario silently passes — the fixture's expected
-            # order_ids are never compared.
-            _refusal_trace: RefusalTrace | None = next(
+            # Check for STAGE_PRE_UNPARSEABLE BEFORE the operational-refusal branch.
+            # When handle_clinical_query returns a RefusalTrace with STAGE_PRE_UNPARSEABLE (JSON
+            # parse failure), the structural checks pass (state/rules/flags match the fixture)
+            # and the query trace is absent. Without this branch the scenario silently passes,
+            # hiding the parse-failure failure mode. This mirrors the llm_review per-step path
+            # in _verdict_for_step (which already handles STAGE_PRE_UNPARSEABLE as invalid_json).
+            _unparseable_refusal: RefusalTrace | None = next(
                 (
                     t
                     for t in _target_decision.decision_traces
-                    if isinstance(t, RefusalTrace)
-                    and t.refusal_reason in _OPERATIONAL_REFUSAL_REASONS
+                    if isinstance(t, RefusalTrace) and t.refusal_reason == "STAGE_PRE_UNPARSEABLE"
                 ),
                 None,
             )
-            if _refusal_trace is not None:
-                # NOTE: query-gate diagnostic includes outcome= but the per-step
-                # llm_review gate (in _verdict_for_step) omits it — intentional
-                # asymmetry. The post-loop query gate is further from the
-                # decision than the per-step path; surfacing outcome here gives
-                # operators an extra hop of context. Keep both formats stable.
-                _refusal_status = _REFUSAL_REASON_TO_STATUS[_refusal_trace.refusal_reason]
-                _diag_parts = [
-                    f"refusal_reason={_refusal_trace.refusal_reason}",
-                    f"outcome={_target_decision.outcome}",
-                    f"latency_us={_target_decision.latency_us}",
-                ]
-                if _refusal_trace.underlying_error_type is not None:
-                    _diag_parts.append(f"underlying={_refusal_trace.underlying_error_type}")
+            if _unparseable_refusal is not None:
                 step_verdicts[_target_index] = dataclasses.replace(
                     last_verdict,
-                    status=_refusal_status,
-                    content_diagnostic=" ".join(_diag_parts),
+                    status="invalid_json",
+                    content_diagnostic=f"refusal_reason={_unparseable_refusal.refusal_reason}",
                 )
             else:
-                query_trace: QueryTrace | None = next(
-                    (t for t in _target_decision.decision_traces if isinstance(t, QueryTrace)),
+                # Check for operational refusals BEFORE the QueryTrace branch.
+                # When LLMClient raises, SkillLoaderError is caught, or PHIBoundaryError fires,
+                # the handler returns a RefusalTrace with the corresponding reason and no
+                # QueryTrace. The structural checks pass (state/rules/flags match) so without
+                # this branch the scenario silently passes — the fixture's expected
+                # order_ids are never compared.
+                _refusal_trace: RefusalTrace | None = next(
+                    (
+                        t
+                        for t in _target_decision.decision_traces
+                        if isinstance(t, RefusalTrace)
+                        and t.refusal_reason in _OPERATIONAL_REFUSAL_REASONS
+                    ),
                     None,
                 )
-                if query_trace is not None:
-                    # PR205 review #8: narrow to the exact branch set so
-                    # dataclasses.replace doesn't need a type: ignore.
-                    # PR286 finding #5: "llm_unavailable" intentionally absent —
-                    # the refusal arm (above the else: this lives in) sets
-                    # StepVerdict.status directly, so this content_status
-                    # local can never produce it. Including it here would
-                    # let a future accidental assignment escape detection.
-                    content_status: (
-                        Literal[
-                            "invalid_json",
-                            "empty_response",
-                            "mismatch_query_response",
-                        ]
-                        | None
-                    ) = None
-                    # Human-readable diagnostic populated alongside content_status.
-                    _query_content_diagnostic: str | None = None
-                    if query_trace.parse_failure is not None:
-                        content_status = "invalid_json"
-                        _query_content_diagnostic = f"parse_failure={query_trace.parse_failure}"
-                    elif (
-                        query_trace.parsed_order_ids is None
-                        and query_trace.response_text_hash == _SHA256_EMPTY
-                    ):
-                        content_status = "empty_response"
-                        # PR211 review #4: the branch fires *because* parse_failure
-                        # is None, so the previous `parse_failure=None ...` key was
-                        # uninformative. The informative field is the hash matching
-                        # sha256('').
-                        _query_content_diagnostic = (
-                            f"response_text_hash={query_trace.response_text_hash} (empty)"
-                        )
-                    else:
-                        # Determine expected order_ids from the scenario's accessor.
-                        # Only apply the check when expected_query_content is present —
-                        # None means the fixture doesn't annotate content, so pass.
-                        #
-                        # PR205 review #5: this uses SET-EQUALITY (§ Task 3).
-                        # Models returning correct IDs plus extras now fail —
-                        # that's the truthfulness-fix design.
-                        #
-                        # PR205 review #6: step-level expected_output.order_ids
-                        # override (§ Task 3 last sentence) is OUT OF
-                        # SCOPE for this PR — no corpus fixture uses it and
-                        # ScenarioStep doesn't carry the field. Add an order_ids
-                        # field to ScenarioStep + plumb it through to override the
-                        # top-level value here when it lands.
-                        #
-                        # Branch on answer_type from the fixture.
-                        # order_status fixtures carry a single subject_id in order_ids;
-                        # the gate must verify (a) model used order_status answer_type
-                        # and (b) model's order_ids matches the subject. This is
-                        # semantically different from order_list set-equality.
-                        _fixture_answer_type = scenario.expected_answer_type
-                        expected_order_ids = scenario.expected_query_content
-                        if _fixture_answer_type in {"no_orders", "uncertain"}:
-                            # no_orders/uncertain branch — check (a) model used the
-                            # correct answer_type AND (b) model returned empty order_ids. Both
-                            # conditions must hold; if the model returns order_list with non-empty
-                            # ids against a no_orders fixture the gate must fire. This branch fires
-                            # BEFORE the order_list/unannotated elif so the empty expected_order_ids
-                            # path cannot accidentally fall through to set-equality (which would
-                            # pass because the empty-set check was skipped by len > 0 guard).
-                            if query_trace.parsed_answer_type != _fixture_answer_type:
-                                content_status = "mismatch_query_response"
-                                _query_content_diagnostic = (
-                                    f"expected_answer_type={_fixture_answer_type}"
-                                    f" parsed_answer_type={query_trace.parsed_answer_type!r}"
-                                )
-                            elif (
-                                # Guard: parsed_order_ids is not None. Under
-                                # QueryTrace._tri_state_invariant this is unreachable
-                                # when parsed_answer_type is set (JSON-success requires
-                                # both fields populated together). The explicit None-check
-                                # defends against a future model_construct() bypass that
-                                # would skip the validator and silently produce a
-                                # parsed_order_ids=None record alongside the matched
-                                # answer_type — mirroring the bypass-rationale comments
-                                # on the order_status (L1226) and prioritized_list
-                                # (L1200) branches.
-                                query_trace.parsed_order_ids is not None
-                                and len(query_trace.parsed_order_ids) > 0
-                            ):
-                                content_status = "mismatch_query_response"
-                                _parsed = _fmt_id_list(sorted(query_trace.parsed_order_ids))
-                                _query_content_diagnostic = (
-                                    f"expected_answer_type={_fixture_answer_type}"
-                                    f" expected_order_ids=[]"
-                                    f" parsed_order_ids={_parsed}"
-                                )
-                        elif _fixture_answer_type == "prioritized_list":
-                            # prioritized_list branch — sequence-equality
-                            # (position-sensitive). The fixture's order_ids is an ordered
-                            # list; the model must emit the same sequence in the same rank.
-                            # Use expected_query_sequence (tuple) rather than
-                            # expected_query_content (frozenset) to preserve order.
-                            expected_sequence = scenario.expected_query_sequence
-                            # PR224 Cluster D: empty-sequence early-exit. An empty
-                            # prioritized_list fixture is degenerate — no meaningful
-                            # sequence to validate. Pass-through aligns with the
-                            # assertion path's early-exit on empty order_ids.
-                            # tuple() is non-None, so the prior `if expected_sequence is not None`
-                            # guard was insufficient — it entered the block and fired the
-                            # parsed_answer_type check even for empty fixtures.
-                            if expected_sequence is not None and len(expected_sequence) > 0:
-                                if query_trace.parsed_answer_type != "prioritized_list":
+                if _refusal_trace is not None:
+                    # NOTE: query-gate diagnostic includes outcome= but the per-step
+                    # llm_review gate (in _verdict_for_step) omits it — intentional
+                    # asymmetry. The post-loop query gate is further from the
+                    # decision than the per-step path; surfacing outcome here gives
+                    # operators an extra hop of context. Keep both formats stable.
+                    _refusal_status = _REFUSAL_REASON_TO_STATUS[_refusal_trace.refusal_reason]
+                    _diag_parts = [
+                        f"refusal_reason={_refusal_trace.refusal_reason}",
+                        f"outcome={_target_decision.outcome}",
+                        f"latency_us={_target_decision.latency_us}",
+                    ]
+                    if _refusal_trace.underlying_error_type is not None:
+                        _diag_parts.append(f"underlying={_refusal_trace.underlying_error_type}")
+                    step_verdicts[_target_index] = dataclasses.replace(
+                        last_verdict,
+                        status=_refusal_status,
+                        content_diagnostic=" ".join(_diag_parts),
+                    )
+                else:
+                    query_trace: QueryTrace | None = next(
+                        (t for t in _target_decision.decision_traces if isinstance(t, QueryTrace)),
+                        None,
+                    )
+                    if query_trace is not None:
+                        # PR205 review #8: narrow to the exact branch set so
+                        # dataclasses.replace doesn't need a type: ignore.
+                        # PR286 finding #5: "llm_unavailable" intentionally absent —
+                        # the refusal arm (above the else: this lives in) sets
+                        # StepVerdict.status directly, so this content_status
+                        # local can never produce it. Including it here would
+                        # let a future accidental assignment escape detection.
+                        content_status: (
+                            Literal[
+                                "invalid_json",
+                                "empty_response",
+                                "mismatch_query_response",
+                            ]
+                            | None
+                        ) = None
+                        # Human-readable diagnostic populated alongside content_status.
+                        _query_content_diagnostic: str | None = None
+                        if query_trace.parse_failure is not None:
+                            content_status = "invalid_json"
+                            _query_content_diagnostic = f"parse_failure={query_trace.parse_failure}"
+                        elif (
+                            query_trace.parsed_order_ids is None
+                            and query_trace.response_text_hash == _SHA256_EMPTY
+                        ):
+                            content_status = "empty_response"
+                            # PR211 review #4: the branch fires *because* parse_failure
+                            # is None, so the previous `parse_failure=None ...` key was
+                            # uninformative. The informative field is the hash matching
+                            # sha256('').
+                            _query_content_diagnostic = (
+                                f"response_text_hash={query_trace.response_text_hash} (empty)"
+                            )
+                        else:
+                            # Determine expected order_ids from the scenario's accessor.
+                            # Only apply the check when expected_query_content is present —
+                            # None means the fixture doesn't annotate content, so pass.
+                            #
+                            # PR205 review #5: this uses SET-EQUALITY (§ Task 3).
+                            # Models returning correct IDs plus extras now fail —
+                            # that's the truthfulness-fix design.
+                            #
+                            # PR205 review #6: step-level expected_output.order_ids
+                            # override (§ Task 3 last sentence) is OUT OF
+                            # SCOPE for this PR — no corpus fixture uses it and
+                            # ScenarioStep doesn't carry the field. Add an order_ids
+                            # field to ScenarioStep + plumb it through to override the
+                            # top-level value here when it lands.
+                            #
+                            # Branch on answer_type from the fixture.
+                            # order_status fixtures carry a single subject_id in order_ids;
+                            # the gate must verify (a) model used order_status answer_type
+                            # and (b) model's order_ids matches the subject. This is
+                            # semantically different from order_list set-equality.
+                            _fixture_answer_type = scenario.expected_answer_type
+                            expected_order_ids = scenario.expected_query_content
+                            if _fixture_answer_type in {"no_orders", "uncertain"}:
+                                # no_orders/uncertain branch — check (a) model used
+                                # the correct answer_type AND (b) model returned empty order_ids.
+                                # Both conditions must hold; if the model returns order_list with
+                                # non-empty ids against a no_orders fixture the gate must fire.
+                                # This branch fires BEFORE the order_list/unannotated elif so the
+                                # empty expected_order_ids path cannot accidentally fall through to
+                                # set-equality (which would pass because the empty-set check was
+                                # skipped by len > 0 guard).
+                                if query_trace.parsed_answer_type != _fixture_answer_type:
                                     content_status = "mismatch_query_response"
                                     _query_content_diagnostic = (
-                                        f"expected_answer_type=prioritized_list"
+                                        f"expected_answer_type={_fixture_answer_type}"
                                         f" parsed_answer_type={query_trace.parsed_answer_type!r}"
-                                        f" expected_sequence={list(expected_sequence)!r}"
+                                    )
+                                elif (
+                                    # Guard: parsed_order_ids is not None. Under
+                                    # QueryTrace._tri_state_invariant this is unreachable
+                                    # when parsed_answer_type is set (JSON-success requires
+                                    # both fields populated together). The explicit None-check
+                                    # defends against a future model_construct() bypass that
+                                    # would skip the validator and silently produce a
+                                    # parsed_order_ids=None record alongside the matched
+                                    # answer_type — mirroring the bypass-rationale comments
+                                    # on the order_status (L1226) and prioritized_list
+                                    # (L1200) branches.
+                                    query_trace.parsed_order_ids is not None
+                                    and len(query_trace.parsed_order_ids) > 0
+                                ):
+                                    content_status = "mismatch_query_response"
+                                    _parsed = _fmt_id_list(sorted(query_trace.parsed_order_ids))
+                                    _query_content_diagnostic = (
+                                        f"expected_answer_type={_fixture_answer_type}"
+                                        f" expected_order_ids=[]"
+                                        f" parsed_order_ids={_parsed}"
+                                    )
+                            elif _fixture_answer_type == "prioritized_list":
+                                # prioritized_list branch — sequence-equality
+                                # (position-sensitive). The fixture's order_ids is an ordered
+                                # list; the model must emit the same sequence in the same rank.
+                                # Use expected_query_sequence (tuple) rather than
+                                # expected_query_content (frozenset) to preserve order.
+                                expected_sequence = scenario.expected_query_sequence
+                                # PR224 Cluster D: empty-sequence early-exit. An empty
+                                # prioritized_list fixture is degenerate — no meaningful
+                                # sequence to validate. Pass-through aligns with the
+                                # assertion path's early-exit on empty order_ids.
+                                # tuple() is non-None, so the prior
+                                # `if expected_sequence is not None` guard was insufficient
+                                # — it entered the block and fired the parsed_answer_type
+                                # check even for empty fixtures.
+                                if expected_sequence is not None and len(expected_sequence) > 0:
+                                    if query_trace.parsed_answer_type != "prioritized_list":
+                                        content_status = "mismatch_query_response"
+                                        _query_content_diagnostic = (
+                                            f"expected_answer_type=prioritized_list"
+                                            f" parsed_answer_type="
+                                            f"{query_trace.parsed_answer_type!r}"
+                                            f" expected_sequence={list(expected_sequence)!r}"
+                                        )
+                                    elif (
+                                        # Guard: parsed_order_ids is not None. Under
+                                        # QueryTrace._tri_state_invariant this is unreachable
+                                        # when parsed_answer_type is set (JSON-success requires
+                                        # both fields populated together). The explicit None-check
+                                        # defends against future model_construct() bypass that
+                                        # would skip the validator and silently skip the sequence
+                                        # comparison. PR224 Cluster D / review #8 pattern.
+                                        query_trace.parsed_order_ids is not None
+                                        and tuple(query_trace.parsed_order_ids) != expected_sequence
+                                    ):
+                                        content_status = "mismatch_query_response"
+                                        _query_content_diagnostic = (
+                                            f"expected_sequence={list(expected_sequence)!r}"
+                                            f" parsed_sequence="
+                                            f"{list(query_trace.parsed_order_ids)!r}"
+                                        )
+                            elif (
+                                _fixture_answer_type == "order_status"
+                                and expected_order_ids is not None
+                            ):
+                                # order_status branch: validate (a) model used correct
+                                # answer_type, then (b) model identified the right subject.
+                                if query_trace.parsed_answer_type != "order_status":
+                                    content_status = "mismatch_query_response"
+                                    _query_content_diagnostic = (
+                                        f"expected_answer_type=order_status"
+                                        f" parsed_answer_type="
+                                        f"{query_trace.parsed_answer_type!r}"
+                                        f" expected_subject="
+                                        f"{_fmt_id_list(sorted(expected_order_ids))}"
                                     )
                                 elif (
                                     # Guard: parsed_order_ids is not None. Under
@@ -1354,96 +1425,72 @@ async def _replay_scenario_async(
                                     # when parsed_answer_type is set (JSON-success requires
                                     # both fields populated together). The explicit None-check
                                     # defends against future model_construct() bypass that
-                                    # would skip the validator and silently skip the sequence
-                                    # comparison. PR224 Cluster D / review #8 pattern.
+                                    # would skip the validator and silently skip the subject
+                                    # comparison.
                                     query_trace.parsed_order_ids is not None
-                                    and tuple(query_trace.parsed_order_ids) != expected_sequence
+                                    and set(query_trace.parsed_order_ids) != expected_order_ids
                                 ):
                                     content_status = "mismatch_query_response"
+                                    _expected_subject = sorted(expected_order_ids)
+                                    _parsed_subject = sorted(query_trace.parsed_order_ids)
                                     _query_content_diagnostic = (
-                                        f"expected_sequence={list(expected_sequence)!r}"
-                                        f" parsed_sequence={list(query_trace.parsed_order_ids)!r}"
+                                        f"expected_subject="
+                                        f"{_fmt_id_list(_expected_subject)}"
+                                        f" parsed_subject={_fmt_id_list(_parsed_subject)}"
                                     )
-                        elif (
-                            _fixture_answer_type == "order_status"
-                            and expected_order_ids is not None
-                        ):
-                            # order_status branch: validate (a) model used correct
-                            # answer_type, then (b) model identified the right subject.
-                            if query_trace.parsed_answer_type != "order_status":
-                                content_status = "mismatch_query_response"
-                                _query_content_diagnostic = (
-                                    f"expected_answer_type=order_status"
-                                    f" parsed_answer_type={query_trace.parsed_answer_type!r}"
-                                    f" expected_subject={_fmt_id_list(sorted(expected_order_ids))}"
-                                )
-                            elif (
-                                # Guard: parsed_order_ids is not None. Under
-                                # QueryTrace._tri_state_invariant this is unreachable
-                                # when parsed_answer_type is set (JSON-success requires
-                                # both fields populated together). The explicit None-check
-                                # defends against future model_construct() bypass that
-                                # would skip the validator and silently skip the subject
-                                # comparison.
-                                query_trace.parsed_order_ids is not None
-                                and set(query_trace.parsed_order_ids) != expected_order_ids
-                            ):
-                                content_status = "mismatch_query_response"
-                                _expected_subject = sorted(expected_order_ids)
-                                _parsed_subject = sorted(query_trace.parsed_order_ids)
-                                _query_content_diagnostic = (
-                                    f"expected_subject={_fmt_id_list(_expected_subject)}"
-                                    f" parsed_subject={_fmt_id_list(_parsed_subject)}"
-                                )
-                        elif expected_order_ids is not None and len(expected_order_ids) > 0:
-                            # order_list branch (or no answer_type annotation — None from the
-                            # typed accessor means either absent or unrecognized, both handled
-                            # by Scenario.expected_answer_type which already warns on unrecognized).
-                            # Check answer_type before set-equality, mirroring the
-                            # order_status branch above. An order_list fixture where the model
-                            # returns order_status (correct IDs, wrong shape) must surface as
-                            # mismatch_query_response rather than passing silently.
-                            if (
-                                _fixture_answer_type == "order_list"
-                                and query_trace.parsed_answer_type != "order_list"
-                            ):
-                                content_status = "mismatch_query_response"
-                                _sorted_expected_ids = sorted(expected_order_ids)
-                                _query_content_diagnostic = (
-                                    f"expected_answer_type=order_list"
-                                    f" parsed_answer_type={query_trace.parsed_answer_type!r}"
-                                    f" expected_order_ids={_fmt_id_list(_sorted_expected_ids)}"
-                                )
-                            elif (
-                                query_trace.parsed_order_ids is not None
-                                and set(query_trace.parsed_order_ids) != expected_order_ids
-                            ):
-                                # Set-equality check for order_list and unannotated fixtures.
-                                content_status = "mismatch_query_response"
-                                _sorted_expected = sorted(expected_order_ids)
-                                _sorted_parsed = sorted(query_trace.parsed_order_ids)
-                                _query_content_diagnostic = (
-                                    f"expected_order_ids={_fmt_id_list(_sorted_expected)}"
-                                    f" parsed_order_ids={_fmt_id_list(_sorted_parsed)}"
-                                )
+                            elif expected_order_ids is not None and len(expected_order_ids) > 0:
+                                # order_list branch (or no answer_type annotation — None from
+                                # the typed accessor means either absent or unrecognized, both
+                                # handled by Scenario.expected_answer_type which already warns
+                                # on unrecognized).
+                                # Check answer_type before set-equality, mirroring
+                                # the order_status branch above. An order_list fixture where the
+                                # model returns order_status (correct IDs, wrong shape) must
+                                # surface as mismatch_query_response rather than passing silently.
+                                if (
+                                    _fixture_answer_type == "order_list"
+                                    and query_trace.parsed_answer_type != "order_list"
+                                ):
+                                    content_status = "mismatch_query_response"
+                                    _sorted_expected_ids = sorted(expected_order_ids)
+                                    _query_content_diagnostic = (
+                                        f"expected_answer_type=order_list"
+                                        f" parsed_answer_type="
+                                        f"{query_trace.parsed_answer_type!r}"
+                                        f" expected_order_ids="
+                                        f"{_fmt_id_list(_sorted_expected_ids)}"
+                                    )
+                                elif (
+                                    query_trace.parsed_order_ids is not None
+                                    and set(query_trace.parsed_order_ids) != expected_order_ids
+                                ):
+                                    # Set-equality check for order_list and unannotated fixtures.
+                                    content_status = "mismatch_query_response"
+                                    _sorted_expected = sorted(expected_order_ids)
+                                    _sorted_parsed = sorted(query_trace.parsed_order_ids)
+                                    _query_content_diagnostic = (
+                                        f"expected_order_ids="
+                                        f"{_fmt_id_list(_sorted_expected)}"
+                                        f" parsed_order_ids={_fmt_id_list(_sorted_parsed)}"
+                                    )
 
-                    if content_status is not None:
-                        # PR211 review #7: every branch that sets content_status
-                        # must also set _query_content_diagnostic — the two travel
-                        # together. A future fourth branch that forgets to populate
-                        # the diagnostic would silently emit content_diagnostic=None
-                        # for that gate's new status, recreating the bug. Pin
-                        # the contract here so the failure surfaces at gate-fire
-                        # time, not via an operator-experience regression.
-                        assert _query_content_diagnostic is not None, (
-                            "Contract: content_status="
-                            f"{content_status!r} set without _query_content_diagnostic"
-                        )
-                        step_verdicts[_target_index] = dataclasses.replace(
-                            last_verdict,
-                            status=content_status,
-                            content_diagnostic=_query_content_diagnostic,
-                        )
+                        if content_status is not None:
+                            # PR211 review #7: every branch that sets content_status
+                            # must also set _query_content_diagnostic — the two travel
+                            # together. A future fourth branch that forgets to populate
+                            # the diagnostic would silently emit content_diagnostic=None
+                            # for that gate's new status, recreating the bug. Pin
+                            # the contract here so the failure surfaces at gate-fire
+                            # time, not via an operator-experience regression.
+                            assert _query_content_diagnostic is not None, (
+                                "Contract: content_status="
+                                f"{content_status!r} set without _query_content_diagnostic"
+                            )
+                            step_verdicts[_target_index] = dataclasses.replace(
+                                last_verdict,
+                                status=content_status,
+                                content_diagnostic=_query_content_diagnostic,
+                            )
 
     scenario_status: Literal["pass", "fail"] = (
         "pass" if all(sv.status == "pass" for sv in step_verdicts) else "fail"

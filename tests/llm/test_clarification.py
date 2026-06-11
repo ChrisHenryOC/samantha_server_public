@@ -1,4 +1,9 @@
-"""Tests for samantha_server.llm.handlers::handle_clarification + parser helpers."""
+"""Tests for samantha_server.llm.handlers::handle_clarification + parser helpers.
+
+additions:
+- LLMClientError → ClarificationTrace.llm_failed is True.
+- Healthy LLM (success or empty suggestions) → llm_failed is False.
+"""
 
 from __future__ import annotations
 
@@ -302,6 +307,68 @@ def test_handle_clarification_llm_error_missing_fields_preserved() -> None:
     assert isinstance(trace, ClarificationTrace)
     assert trace.missing_fields == ("age",)
     assert trace.unknown_canonical_fields == ("fixative",)
+
+
+# ---------------------------------------------------------------------------
+# ClarificationTrace.llm_failed distinguishes LLM failure from
+# genuinely empty suggestions.
+# ---------------------------------------------------------------------------
+
+
+def test_llm_error_sets_llm_failed_true() -> None:
+    """LLMClientError → ClarificationTrace.llm_failed is True.
+
+    Before this fix, an LLM failure was indistinguishable from a healthy LLM that
+    returned no useful suggestions — both produced empty suggested_values. The new
+    llm_failed flag lets operators and consumers tell the difference.
+    """
+    mock = MagicMock()
+    mock.model_id = "test-model"
+    mock.complete.side_effect = LLMInferenceError(model_id="test-model", cause="GPU OOM")
+
+    decision = _h().handle_clarification(
+        _make_ctx(fixative="ethanol"),
+        preflight_result=_missing_fixative(),
+        llm_client=mock,
+    )
+    trace = decision.decision_traces[0]
+    assert isinstance(trace, ClarificationTrace)
+    assert trace.llm_failed is True, (
+        f"LLMClientError must set llm_failed=True, got {trace.llm_failed!r}"
+    )
+
+
+def test_healthy_llm_keeps_llm_failed_false() -> None:
+    """Healthy LLM returning suggestions → llm_failed is False."""
+    decision = _h().handle_clarification(
+        _make_ctx(fixative="ethanol"),
+        preflight_result=_missing_fixative(),
+        llm_client=_make_mock_llm("fixative=formalin"),
+    )
+    trace = decision.decision_traces[0]
+    assert isinstance(trace, ClarificationTrace)
+    assert trace.llm_failed is False, (
+        f"Healthy LLM must keep llm_failed=False, got {trace.llm_failed!r}"
+    )
+
+
+def test_healthy_llm_empty_suggestions_keeps_llm_failed_false() -> None:
+    """Healthy LLM returning unparseable/empty text → llm_failed is False.
+
+    An LLM that returns text that yields no canonical suggestions is different from
+    an LLM that failed to respond. llm_failed must stay False here.
+    """
+    decision = _h().handle_clarification(
+        _make_ctx(fixative="ethanol"),
+        preflight_result=_missing_fixative(),
+        llm_client=_make_mock_llm(""),  # empty text → no suggestions
+    )
+    trace = decision.decision_traces[0]
+    assert isinstance(trace, ClarificationTrace)
+    assert trace.llm_failed is False, (
+        f"Empty suggestions from healthy LLM must keep llm_failed=False, "
+        f"got {trace.llm_failed!r}"
+    )
 
 
 # ---------------------------------------------------------------------------

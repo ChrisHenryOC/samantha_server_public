@@ -101,7 +101,7 @@ def _on_request(request: httpx.Request) -> None:
         if timing is not None:
             timing["request_dispatched_ns"] = time.perf_counter_ns()
     except Exception as exc:
-        _logger.warning("omlx request-timing hook failed: %s", type(exc).__name__)
+        _logger.warning("omlx request-timing hook failed: %s", type(exc).__name__, exc_info=exc)
 
 
 def _on_response(response: httpx.Response) -> None:
@@ -111,7 +111,7 @@ def _on_response(response: httpx.Response) -> None:
         if timing is not None:
             timing["response_received_ns"] = time.perf_counter_ns()
     except Exception as exc:
-        _logger.warning("omlx request-timing hook failed: %s", type(exc).__name__)
+        _logger.warning("omlx response-timing hook failed: %s", type(exc).__name__, exc_info=exc)
 
 
 def _log_timing(

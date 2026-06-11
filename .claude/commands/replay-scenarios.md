@@ -90,7 +90,7 @@ tracking issue URLs.
    status, the description, source `Replay corpus audit`, and any
    currently-open blocking issues in `Depends on`. Insert in
    execution-readiness order among the Open rows. Read
-   `docs/project/implementation-todo-schema.md`
+   [`docs/project/implementation-todo-schema.md`](../../docs/project/implementation-todo-schema.md)
    first if you're unsure what goes in each column or what the em-dash
    sentinel means. Run
    `markdownlint-cli2 --fix "docs/project/implementation-todo.md"` and stage

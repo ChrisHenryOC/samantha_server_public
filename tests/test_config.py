@@ -9,6 +9,20 @@ import sys
 
 import pytest
 
+
+def _ipv4_mapped_loopback_supported() -> bool:
+    """True iff the stdlib treats ::ffff:127.0.0.1 as loopback (review).
+
+    _validate_loopback_url is pure string parsing — it has no kernel IPv6
+    dependency. The only environment axis is the CPython ipaddress behavior:
+    is_loopback for IPv4-mapped IPv6 addresses was fixed upstream and
+    backported mid-3.12.x, so older interpreters return False here.
+    """
+    import ipaddress
+
+    return ipaddress.ip_address("::ffff:127.0.0.1").is_loopback
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -498,6 +512,39 @@ def test_config_warns_when_key_id_bumped_but_previous_key_absent() -> None:
     )
 
 
+def test_config_warns_when_previous_key_set_but_key_id_still_v1() -> None:
+    """forgotten id-bump indicator.
+
+    When RECEIPT_SIGNING_KEY_PREVIOUS is set but RECEIPT_SIGNING_KEY_ID is
+    still 'v1' (the default), config.py must emit a WARNING log. This is the
+    state between playbook steps 2 and 3 where the operator has loaded the
+    previous key but not yet bumped the id — the canonical forgotten-id-bump
+    indicator documented in CLAUDE.md.
+    """
+    env = _make_env_with_valid_secrets(
+        RECEIPT_SIGNING_KEY_PREVIOUS="b" * 64,  # valid 32-byte hex, not a sentinel
+        RECEIPT_SIGNING_KEY_ID="v1",  # still at default — the forgotten-bump state
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-W",
+            "all",
+            "-c",
+            "import logging; logging.basicConfig(level=logging.WARNING); "
+            "import samantha_server.config",
+        ],
+        env=env,
+        capture_output=True,
+    )
+    assert result.returncode == 0, f"Expected zero exit; stderr: {result.stderr.decode()}"
+    stderr = result.stderr.decode()
+    assert "WARNING" in stderr or "v1" in stderr or "previous" in stderr.lower(), (
+        f"Expected a warning about forgotten id-bump when previous key is set and id='v1'.\n"
+        f"stderr: {stderr!r}"
+    )
+
+
 def test_config_module_exposes_receipt_signing_key_previous() -> None:
     """RECEIPT_SIGNING_KEY_PREVIOUS is exported from config (None or bytes)."""
     import samantha_server.config as cfg
@@ -607,7 +654,16 @@ def test_validate_model_path_error_does_not_leak_raw_value(tmp_path: pathlib.Pat
         "http://127.0.0.1:8000",
         "http://127.0.0.2:9999",
         "http://[::1]:8000",
-        "http://[::ffff:127.0.0.1]:8000",
+        # The validator is pure string parsing, so the right
+        # skip axis is the stdlib's IPv4-mapped is_loopback behavior, not
+        # host IPv6 availability.
+        pytest.param(
+            "http://[::ffff:127.0.0.1]:8000",
+            marks=pytest.mark.skipif(
+                not _ipv4_mapped_loopback_supported(),
+                reason="ipaddress predates the upstream IPv4-mapped is_loopback fix",
+            ),
+        ),
     ],
 )
 def test_validate_loopback_url_accepts_loopback(url: str) -> None:

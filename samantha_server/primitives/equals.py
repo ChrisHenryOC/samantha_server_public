@@ -6,6 +6,7 @@ from pydantic import BaseModel, PrivateAttr, model_validator
 
 from samantha_server.canonicalization import canonicalize
 from samantha_server.models import SpecimenContext
+from samantha_server.primitives._cache import set_cached
 from samantha_server.primitives.trace import PrimitiveTrace
 
 
@@ -27,9 +28,7 @@ class Equals(BaseModel, frozen=True):
     @model_validator(mode="after")
     def _populate_canonical(self) -> "Equals":
         if isinstance(self.value, str):
-            object.__setattr__(
-                self, "_canonical_value", canonicalize(self.field, self.value).canonical
-            )
+            set_cached(self, "_canonical_value", canonicalize(self.field, self.value).canonical)
         return self
 
     def evaluate(self, ctx: SpecimenContext) -> bool:

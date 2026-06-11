@@ -366,7 +366,7 @@ class TestPassOneValidation:
 _REAL_SPECS_DIR = Path(__file__).parent.parent.parent / "samantha_server" / "rules" / "specs"
 
 _CANDIDATE_NO_RULE_REF_YAML = textwrap.dedent("""\
-    rule_id: ACC-TEST
+    rule_id: ACC-900
     step: ACCESSIONING
     applies_at: null
     event_type: order_received
@@ -388,10 +388,10 @@ _CANDIDATE_NO_RULE_REF_YAML = textwrap.dedent("""\
 
 class TestLoadCandidateRuleSpec:
     def test_returns_rule_spec_with_correct_rule_id(self, tmp_path: Path) -> None:
-        candidate = tmp_path / "ACC-TEST.yaml"
+        candidate = tmp_path / "ACC-900.yaml"
         candidate.write_text(_CANDIDATE_NO_RULE_REF_YAML)
         spec = load_candidate_rule_spec(candidate, _REAL_SPECS_DIR)
-        assert spec.rule_id == "ACC-TEST"
+        assert spec.rule_id == "ACC-900"
         assert isinstance(spec, RuleSpec)
 
 
@@ -400,7 +400,7 @@ class TestLoadCandidateRuleSpec:
 # ---------------------------------------------------------------------------
 
 _CANDIDATE_WITH_RULE_REF_YAML = textwrap.dedent("""\
-    rule_id: ACC-TEST2
+    rule_id: ACC-901
     step: ACCESSIONING
     applies_at: null
     event_type: order_received
@@ -423,7 +423,7 @@ class TestLoadCandidateRuleSpecWithRuleRef:
     def test_rule_ref_is_resolved_to_isnull_predicate(self, tmp_path: Path) -> None:
         from samantha_server.primitives import IsNull
 
-        candidate = tmp_path / "ACC-TEST2.yaml"
+        candidate = tmp_path / "ACC-901.yaml"
         candidate.write_text(_CANDIDATE_WITH_RULE_REF_YAML)
         spec = load_candidate_rule_spec(candidate, _REAL_SPECS_DIR)
         assert isinstance(spec.when, IsNull)
@@ -455,7 +455,7 @@ _CANDIDATE_COLLIDING_RULE_ID_YAML = textwrap.dedent("""\
 """)
 
 _CANDIDATE_UNKNOWN_RULE_REF_YAML = textwrap.dedent("""\
-    rule_id: ACC-TEST3
+    rule_id: ACC-902
     step: ACCESSIONING
     applies_at: null
     event_type: order_received
@@ -487,10 +487,27 @@ class TestLoadCandidateRuleSpecCollisionGuard:
 
     def test_load_candidate_rule_spec_raises_on_unknown_rule_ref(self, tmp_path: Path) -> None:
         """Candidate referencing an unknown rule_id via rule_ref must raise ValueError."""
-        candidate = tmp_path / "ACC-TEST3.yaml"
+        candidate = tmp_path / "ACC-902.yaml"
         candidate.write_text(_CANDIDATE_UNKNOWN_RULE_REF_YAML)
         with pytest.raises(ValueError, match="ACC-NONEXISTENT"):
             load_candidate_rule_spec(candidate, _REAL_SPECS_DIR)
+
+
+# ---------------------------------------------------------------------------
+# Fix 1 — loader._SEVERITY_ORDER IS dispatch_constants.SEVERITY_ORDER
+# ---------------------------------------------------------------------------
+
+
+class TestSeverityOrderSingleSource:
+    def test_loader_severity_order_is_dispatch_constants_severity_order(self) -> None:
+        """The alias _SEVERITY_ORDER is removed; loader now
+        references SEVERITY_ORDER from dispatch_constants directly.  Assert identity
+        via the module's public name to confirm no rebinding occurs at import time.
+        """
+        from samantha_server.engine import dispatch_constants
+        from samantha_server.rules import loader as loader_mod
+
+        assert loader_mod.SEVERITY_ORDER is dispatch_constants.SEVERITY_ORDER
 
 
 class TestRuleIndexContainment:

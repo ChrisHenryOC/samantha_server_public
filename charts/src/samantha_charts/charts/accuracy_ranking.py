@@ -1,7 +1,7 @@
 """Model accuracy ranking horizontal bar chart (Chart 1).
 
 Ranks the samantha_server candidate models by stable accuracy (a fixture
-passing all 5 sweeps) over the full 149-fixture corpus. Serves Slide 24a of
+passing all 5 sweeps) over the full 151-fixture corpus. Serves Slide 24a of
 the CONVEX deck. Each stable pass already requires content correctness (the
  per-step gate applies regardless of category), so this single number
 is content-checked, not weaker. Values are the locked isolated single-model
@@ -138,13 +138,13 @@ def render_ranking(bars: list[ModelBar], output_path: Path) -> None:
     style.set_title(
         ax,
         "Model accuracy ranking on samantha_server",
-        "149-fixture corpus, N=5 stable · incumbent in green · x-axis starts at 60%",
+        "151-fixture corpus, N=5 stable · incumbent in green · x-axis starts at 60%",
     )
 
     counts = " · ".join(f"{b.passed}/{b.total}" for b in reversed(ordered))
     style.add_footnote(
         fig,
-        "Stable accuracy = a fixture passing all 5 sweeps over the full 149-fixture "
+        "Stable accuracy = a fixture passing all 5 sweeps over the full 151-fixture "
         "corpus; each pass already requires content correctness (the per-step "
         f"gate). Counts, best to worst: {counts}. "
         "Source: charts/data/chart1-accuracy-ranking.json.",

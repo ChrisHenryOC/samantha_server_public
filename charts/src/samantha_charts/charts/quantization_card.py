@@ -237,6 +237,9 @@ def render_cards(left: CardSide, right: CardSide, output_path: Path) -> None:
     fig.text(
         0.04,
         0.84,
+        # Deliberately still the 149-fixture corpus: this card's
+        # measurement (Qwen3.5 4-bit vs 8-bit) was not re-run on the 151
+        # corpus (2026-06-10 re-sweep covered the scoreboard models only).
         "149 fixtures, N=5 sweeps · post-oMLX-0.3.9 baseline",
         transform=fig.transFigure,
         fontsize=10,

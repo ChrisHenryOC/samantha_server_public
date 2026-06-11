@@ -1,7 +1,10 @@
 # Deployment — `samantha_server` Phase 3 (POC)
 
-This is the operator-facing deployment companion: the concrete
-"what to do" steps for a Phase 3 (POC) deployment.
+This is the operator-facing companion to
+`docs/plans/phase-3-implementation.md`.
+Every step in the implementation plan that names a "deployment doc
+names …" or "release-checklist item" reference contributes one
+bullet here. The plan is the *why*; this doc is the *what to do*.
 
 > **POC scope.** This doc covers the lab-network single-worker
 > deployment posture documented in the Phase 3 plan. Production
@@ -31,7 +34,8 @@ Run before bringing the orchestrator up against any real traffic.
       seed produced by
       `python -m samantha_server.receipts.signing --gen-key`. Do
       **not** redirect the output with `>` against an existing key
-      file.
+      file. The rotation playbook lives in
+      [`CLAUDE.md`](../../CLAUDE.md) § "Receipt-signing key rotation".
 - [ ] **RBAC HMAC key.** `RBAC_HMAC_KEY` is a 64-char hex secret;
       issue capability tokens via
       `python -m samantha_server.api.rbac --issue <capability>`
@@ -148,7 +152,8 @@ SIGTERM and resolves in-flight `POST /events` futures with
 `ShutdownError`. The drain is bounded by `SHUTDOWN_DRAIN_TIMEOUT_SEC`
 (default 30 s).
 
-**Sizing rule**: the deployment platform's
+**Sizing rule** (per the canonical statement in
+`phase-3-implementation.md` § 4.2): the deployment platform's
 SIGTERM-to-SIGKILL window must be **≥ `SHUTDOWN_DRAIN_TIMEOUT_SEC`
 + 5 s margin**, i.e. the **platform window is larger than the
 drain**. On k8s set `terminationGracePeriodSeconds` ≥ 35; on
@@ -184,7 +189,16 @@ search Langfuse by `samantha.event_input_hash` → reproduce via
 
 ## 5. Cross-references
 
+- `docs/plans/phase-3-implementation.md`
+  — the *why* behind every checklist item.
+- `docs/plans/phase-3-closeout.md`
+  — final state at Phase 3 close (gate measurements, deltas,
+  process gaps).
 - [`docs/compliance/post-market-monitoring.md`](../compliance/post-market-monitoring.md)
   — EU AI Act Article 17 audit-handoff and operator playbook.
 - [`docs/observability/drift-alarm.md`](../observability/drift-alarm.md)
   — drift-alarm webhook payload + threshold semantics.
+- [`docs/observability/replay-traces.md`](../observability/replay-traces.md)
+  — `replay_to_langfuse` workflow.
+- [`CLAUDE.md`](../../CLAUDE.md) § "Receipt-signing key rotation"
+  — rotation playbook (with key-id-bump ordering rule).

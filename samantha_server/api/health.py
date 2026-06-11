@@ -74,6 +74,9 @@ def register_health_routes(app: FastAPI) -> None:
             failures.append("scenario_index")
         if state.skill_index is None:
             failures.append("skill_index")
+        # is_open() is a liveness FLAG (closed or write-failed), not a deep
+        # connection probe. A dead-but-never-written connection reads True until
+        # the first write fails (issue-preferred design).
         if not state.receipt_writer.is_open():
             failures.append("receipt_writer_sqlite")
         if not _signing_key_present():

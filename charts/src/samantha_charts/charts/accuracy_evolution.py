@@ -1,6 +1,6 @@
 """Chart 14: accuracy evolution across milestones.
 
-Renders a line chart showing how stable accuracy (N=5, 149-fixture corpus)
+Renders a line chart showing how stable accuracy (N=5, vendored corpus)
 changed across real sweep milestones. Points are plotted left-to-right in
 file order (chronological). 100% points are tinted green.
 """
@@ -154,13 +154,13 @@ def render_accuracy_evolution(points: list[EvolutionPoint], output_path: Path) -
     style.set_title(
         ax,
         "Accuracy evolution across milestones",
-        "stable N=5, 149-fixture corpus",
+        "stable N=5, vendored corpus (149 -> 151 fixtures)",
     )
 
     meta_source = "results/baselines/*.txt sweep summaries"
     style.add_footnote(
         fig,
-        f"Metric: stable accuracy (N=5) on the 149-fixture vendored corpus."
+        f"Metric: stable accuracy (N=5) on the vendored corpus (149 -> 151 fixtures)."
         f" Source: {meta_source}. Source file: charts/data/chart14-evolution.json.",
     )
 

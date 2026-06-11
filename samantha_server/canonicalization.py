@@ -115,7 +115,7 @@ CANONICAL_FIELDS, PICK_LISTS = _load_pick_lists(_FIXTURE_PATH)
 # decide whether to iterate the value or compare it directly.  Adding a second
 # tuple-typed canonical field only requires updating this set — no changes to
 # the evaluator branching logic.
-_COLLECTION_CANONICAL_FIELDS: frozenset[str] = frozenset({"ordered_tests"})
+COLLECTION_CANONICAL_FIELDS: frozenset[str] = frozenset({"ordered_tests"})
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +169,6 @@ __all__ = [
     "CANONICAL_FIELDS",
     "PICK_LISTS",
     "CanonicalizationResult",
-    "_COLLECTION_CANONICAL_FIELDS",
+    "COLLECTION_CANONICAL_FIELDS",
     "canonicalize",
 ]

@@ -12,6 +12,13 @@ action:
   transition: MISSING_INFO_PROCEED
   # MISSING_INFO_PROCEED is set as a flag (not just a transition target) so downstream
   # resulting rules can detect that billing info was still unresolved at accessioning.
+  #
+  # Intra-tier resolution with ACC-010/ACC-011: when ACC-010 or ACC-011
+  # (REVIEW_HOLD) co-fires with ACC-007 (PROCEED), the REVIEW_HOLD rule wins the
+  # transition. However, the engine unions ACC-007's MISSING_INFO_PROCEED flag into
+  # flags_added so it is not permanently lost. Review resolution goes
+  # PENDING_LLM_REVIEW -> ACCEPTED directly without re-running accessioning, so
+  # without the union the billing flag would be silently dropped.
   set_flags:
     - MISSING_INFO_PROCEED
   clear_flags: []

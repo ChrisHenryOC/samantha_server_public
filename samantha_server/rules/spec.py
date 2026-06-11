@@ -9,6 +9,7 @@ validation time (mode="before" validator) and stores the resolved Primitive tree
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from typing import Any, Literal
 
@@ -17,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from samantha_server.primitives import Primitive
 
 Step = Literal["ACCESSIONING", "SAMPLE_PREP", "HE_QC", "PATHOLOGIST_HE_REVIEW", "IHC", "RESULTING"]
-Severity = Literal["REJECT", "HOLD", "PROCEED", "ACCEPT"]
+Severity = Literal["REJECT", "HOLD", "REVIEW_HOLD", "PROCEED", "ACCEPT"]
 
 
 def _build_predicate_from_mapping(v: Any) -> Any:
@@ -65,7 +66,9 @@ class ActionSpec(BaseModel):
             "Receipt-grade outcome label (snake_case). For ACCESSIONING rules"
             " the prefix mirrors severity (held_*, rejected_*, proceeding_*,"
             " accessioning_* — note ACCEPT is the deliberate exception, named"
-            " after the step rather than a verdict verb). For non-ACCESSIONING"
+            " after the step rather than a verdict verb, and REVIEW_HOLD keeps"
+            " its original proceeding_* outcomes for receipt-vocabulary"
+            " stability exception). For non-ACCESSIONING"
             " rules the prefix is a past-tense action verb. See"
             " docs/rules/conventions.md for the full table and rationale."
         ),
@@ -101,6 +104,20 @@ class RuleSpec(BaseModel):
 
     rule_id: str
     step: Step
+
+    # Guard rule_id shape so the dispatcher's b"|" HMAC separator
+    # (dispatcher.py) cannot be injected via a rule_id that contains "|".
+    @field_validator("rule_id")
+    @classmethod
+    def _validate_rule_id_shape(cls, v: str) -> str:
+        if not re.fullmatch(r"[A-Z]+-\d+", v):
+            raise ValueError(
+                f"rule_id '{v}' must match [A-Z]+-[0-9]+ in full (e.g. 'ACC-001')"
+                " ('|' is the dispatch-token HMAC field separator and must"
+                " not appear in rule IDs; use uppercase letters, a hyphen, and digits)"
+            )
+        return v
+
     applies_at: str | None
     event_type: tuple[str, ...]
     severity: Severity | None

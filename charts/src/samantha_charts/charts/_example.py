@@ -33,10 +33,10 @@ def render_example(output_path: Path) -> None:
     models = [
         "Qwen3-80B-A3B 4bit",
         "Gemma 4 26B-A4B 4bit",
-        "Qwen2.5-Coder-32B 4bit",
         "Qwen3.5-35B-A3B 8bit",
+        "Qwen2.5-Coder-32B 4bit",
     ]
-    scores = [100.0, 98.66, 96.64, 76.51]
+    scores = [100.0, 98.68, 98.01, 97.35]
     colors = [
         GREEN_ACCENT,
         BLUE_PRIMARY,
@@ -57,7 +57,7 @@ def render_example(output_path: Path) -> None:
     set_title(
         ax,
         "Corpus Accuracy by Model",
-        subtitle="149 fixtures, N=5 sweeps · Apple Silicon, 64GB",
+        subtitle="151 fixtures, N=5 sweeps · Apple Silicon, 64GB",
     )
     add_direction_indicator(fig, "higher")
     add_footnote(

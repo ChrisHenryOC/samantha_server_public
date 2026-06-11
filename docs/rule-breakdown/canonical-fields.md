@@ -31,7 +31,8 @@ checked with `is_null`; no pick list applies.
 
 **Pick-list-only model.** Only trim + casefold + pick-list membership check.
 Synonym maps (e.g., `lumpectomy with margins → lumpectomy`) were considered
-in the original spec but intentionally omitted for POC scope.
+in the original spec but intentionally omitted for POC scope — see the
+[design comment](https://github.com/ChrisHenryOC/samantha_server/issues/35#issuecomment-4407628775).
 
 ---
 

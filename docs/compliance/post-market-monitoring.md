@@ -14,6 +14,9 @@ shipped in Phase 3 Steps 5, 5.5, 10, 11, 12, and 13.
 > model) is documented in § 5 below — it is a known gap, not a hidden
 > one.
 
+Plan reference:
+the Phase 3 plan, Step 14 (private planning doc, not mirrored).
+
 ---
 
 ## 1. Article 17 obligations
@@ -67,9 +70,10 @@ Every `EngineDecision` flows through the orchestrator's
 an Ed25519 signature using the configured signing key. The receipt is
 persisted in `receipts.db` and addressable via
 `GET /receipts/{receipt_id}` (Step 5.5). The signing key is rotated
-via a two-key rolling procedure; receipts carry the signer key id so
-an auditor can verify against the published key catalogue without
-trusting the runtime.
+per the playbook in [`CLAUDE.md`](../../CLAUDE.md) (§ "Receipt-signing
+key rotation"); receipts carry the signer key id so an auditor can
+verify against the published key catalogue without trusting the
+runtime.
 
 ### 2.3 Aggregate dashboards (risk-drift surface)
 
@@ -111,7 +115,8 @@ langfuse_public_key, langfuse_secret_key)` runs the vendored corpus
 through the current engine version and exports one OTel trace per
 scenario step to the same trace store the dashboards query. Replay
 spans carry `samantha.environment="replay"` so dashboards can
-discriminate them from live traffic.
+discriminate them from live traffic. Documented at
+[`docs/observability/replay-traces.md`](../observability/replay-traces.md).
 
 ### 2.6 PHI hygiene (pre-decision boundary)
 
@@ -293,7 +298,8 @@ corpus:
 > **Deterministic-bucket caveat.** Replay spans for deterministic
 > categories (`rule_coverage` / `multi_rule` / `accumulated_state`)
 > do **not** carry `samantha.receipt_id` because the deterministic
-> replay path bypasses `dispatch_event` / `emit_receipt`.
+> replay path bypasses `dispatch_event` / `emit_receipt` — see
+> [`docs/observability/replay-traces.md`](../observability/replay-traces.md).
 > The auditor's pivot for these spans is `event_input_hash` only
 > (still unique per scenario step). LLM-bucket replay spans carry
 > `samantha.receipt_id` as production does.
@@ -303,7 +309,7 @@ the auditor sees the engine emit the same decision, with the same
 trace shape, against a fixed input — independent of the production
 runtime.
 
-### 4.5 Air-gapped audit modality
+### 4.5 Air-gapped audit modality (cut for v0)
 
 An ephemeral-Langfuse audit modality (spinning up Langfuse via
 `docker compose up`/`down` for occasions when no long-running instance
@@ -325,8 +331,8 @@ gap-list is:
 
 | Gap | Tracked at | Disposition |
 |---|---|---|
-| Multi-worker `_session_state` SQLite swap | Deferred (NOT_PLANNED — re-open trigger: multi-worker deployment) | v0 hard-fails on `WEB_CONCURRENCY > 1` (G2). Single-worker FastAPI is the documented v0 deployment shape. |
-| Programmatic skill-body PHI scan at discover-time | Deferred (NOT_PLANNED — re-open trigger: skill-doc PHI incident surfaced via observability) | The `phi_safe` transform handles per-decision payloads; skill bodies are author-vetted today. The discover-time scan is a defense-in-depth follow-up, not a v0 blocker. |
+| Multi-worker `_session_state` SQLite swap | (closed, NOT_PLANNED — re-open trigger: multi-worker deployment) | v0 hard-fails on `WEB_CONCURRENCY > 1` (G2). Single-worker FastAPI is the documented v0 deployment shape. |
+| Programmatic skill-body PHI scan at discover-time | (closed, NOT_PLANNED — re-open trigger: skill-doc PHI incident surfaced via observability) | The `phi_safe` transform handles per-decision payloads; skill bodies are author-vetted today. The discover-time scan is a defense-in-depth follow-up, not a v0 blocker. |
 | RBAC identity model | Not separately tracked; v0 token issuance is manual | Tokens carry capabilities, not identities. Production deployment requires a per-operator identity model so audit logs attribute decisions to operators, not to "the bearer of a `receipts:read` token". |
 | Unscoped `GET /receipts` enumeration | Not separately tracked; v0 receipts API has no per-token scoping | Any valid `receipts:read` token can enumerate the **full receipt corpus** via offset/limit pagination. There is no per-token receipt-scope or owner filter. v0 mitigates by treating `receipts:read` token issuance as a privileged manual operation; production deployment requires either a scoped capability (e.g. `receipts:read:owner=<id>`) or an identity-aware filter on the list endpoint. |
 
@@ -339,8 +345,19 @@ complete, not production-deployed) is the honest description.
 
 ## Cross-references
 
+- The project plan, section 5 (private planning doc) — W1
+  Phase 5 deliverable list (Observability + post-market monitoring).
+- The Phase 3 plan (private planning doc)
+  § Step 5 (RBAC) / § Step 5.5 (`/receipts/{id}`) / § Step 10 (trace
+  schema) / § Step 11 (dashboards) / § Step 12 (drift alarm) /
+  § Step 13 (replay-to-Langfuse) / § Step 14 (this doc).
 - [`docs/observability/trace-schema.md`](../observability/trace-schema.md)
   — per-decision trace schema (the durable contract).
 - [`docs/observability/drift-alarm.md`](../observability/drift-alarm.md)
   — drift-alarm webhook payload, threshold + check-interval
   configuration, and per-tick re-fire behavior.
+- [`docs/observability/replay-traces.md`](../observability/replay-traces.md)
+  — `replay_to_langfuse` workflow.
+- [`CLAUDE.md`](../../CLAUDE.md) § "Receipt-signing key rotation" —
+  signing-key rotation procedure auditors will encounter when
+  verifying older receipts.

@@ -83,8 +83,10 @@ def test_llm_output_mode_invalid_raises_at_startup() -> None:
 def test_mlx_provider_with_json_mode_raises_at_startup() -> None:
     """LLM_PROVIDER=mlx + SAMANTHA_LLM_OUTPUT_MODE=json raises MisconfiguredEnvironmentError.
 
-    MLXClient.complete_json() raises NotImplementedError (not in LLMClientError hierarchy),
-    so this combination must be rejected at startup before any traffic is served.
+    MLXClient.complete_json() raises LLMInferenceError (typed subclass of
+    LLMClientError, not NotImplementedError). This combination is still rejected at
+    startup as a defense-in-depth guard: the MLX backend lacks constrained decoding
+, so json mode is oMLX-only.
     """
     env = _make_env_with_valid_secrets(
         LLM_PROVIDER="mlx",

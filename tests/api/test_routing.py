@@ -79,7 +79,6 @@ def _make_minimal_deps() -> dict[str, Any]:
         "write_lock": asyncio.Lock(),
         "counters": CounterRegistry(),
         "llm_client": _make_mock_llm(),
-        "scenarios_index": {},
         "skills_index": discover(),
         "rule_index": RuleIndex([]),
     }

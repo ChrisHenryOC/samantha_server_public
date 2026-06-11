@@ -39,7 +39,8 @@ Verify before pushing any change that touches the engine:
   fields. Exception: `order_id` is deliberately a pass-through. It is a
   synthetic LIS identifier (not a HIPAA Safe Harbor element) and the
   model runs on oMLX (a local OpenAI-compatible MLX server) inside the
-  local trust boundary.
+  local trust boundary. `patient_name` and `patient_sex` remain
+  STRIPPED; `event_data_hash` remains HASHED.
   `patient_name` and `patient_sex` remain STRIPPED; `event_data_hash`
   remains HASHED.
 

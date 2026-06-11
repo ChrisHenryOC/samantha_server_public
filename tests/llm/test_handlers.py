@@ -8,7 +8,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from samantha_server.models.context import Event, Order, SpecimenContext
-from samantha_server.scenarios.loader import Scenario, ScenarioStep
 from tests.api.helpers import _CANNED_JSON_TEXT
 from tests.llm.specimen_review_helpers import (
     make_mock_llm_review_client as _make_mock_llm_review_client,
@@ -46,29 +45,6 @@ def _make_ctx(
         flags=frozenset(),
         event=Event(event_type=event_type, event_data=event_data or {}, step_index=0),
     )
-
-
-def _make_scenario(scenario_id: str, state: str = "ACCESSIONING") -> Scenario:
-    """Build a minimal Scenario for testing."""
-    step = ScenarioStep(
-        step_index=1,
-        event_type="clinical_query",
-        event_data={"query": f"Sample query for {scenario_id}"},
-        expected_next_state=state,
-        expected_applied_rules=(),
-        expected_flags=(),
-    )
-    return Scenario(
-        scenario_id=scenario_id,
-        category="query",
-        description=f"Test scenario {scenario_id}",
-        steps=(step,),
-    )
-
-
-# ---------------------------------------------------------------------------
-# Slice 2: build_query_prompt
-# ---------------------------------------------------------------------------
 
 
 def test_build_query_prompt_contains_skill_body() -> None:
@@ -324,224 +300,7 @@ def test_build_query_prompt_xml_escapes_user_role() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slice 3: _retrieve_similar
-# ---------------------------------------------------------------------------
-
-
-def _make_query_scenario_with_state(scenario_id: str, state: str) -> Scenario:
-    """Make a query-category scenario whose step has expected_next_state == state."""
-    step = ScenarioStep(
-        step_index=1,
-        event_type="clinical_query",
-        event_data={"query": "test"},
-        expected_next_state=state,
-        expected_applied_rules=(),
-        expected_flags=(),
-    )
-    return Scenario(
-        scenario_id=scenario_id,
-        category="query",
-        description=f"Query scenario {scenario_id} in state {state}",
-        steps=(step,),
-    )
-
-
-def _make_workflow_scenario(scenario_id: str, state: str) -> Scenario:
-    """Make a non-query-category scenario (should not be retrieved)."""
-    step = ScenarioStep(
-        step_index=1,
-        event_type="order_received",
-        event_data={},
-        expected_next_state=state,
-        expected_applied_rules=("ACC-008",),
-        expected_flags=(),
-    )
-    return Scenario(
-        scenario_id=scenario_id,
-        category="rule_coverage",
-        description=f"Workflow scenario {scenario_id}",
-        steps=(step,),
-    )
-
-
-def test_retrieve_similar_returns_at_most_k() -> None:
-    """_retrieve_similar returns at most k scenarios."""
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(current_state="ACCESSIONING")
-    index = {
-        f"QR-00{i}": _make_query_scenario_with_state(f"QR-00{i}", "ACCESSIONING")
-        for i in range(1, 6)
-    }
-    # WF-001 is excluded by the category filter, confirming the k-cap applies
-    # only to query-category scenarios. Under, "TEST-001" is not in the
-    # index so the corpus guard is inert and retrieval reaches the k-cap path.
-    index["WF-001"] = _make_workflow_scenario("WF-001", "ACCESSIONING")
-    result = _retrieve_similar(ctx, index, k=3)
-    assert len(result) == 3
-
-
-def test_retrieve_similar_filters_by_state() -> None:
-    """_retrieve_similar only returns scenarios matching ctx.current_state."""
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(current_state="ACCESSIONING")
-    index = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        "QR-002": _make_query_scenario_with_state("QR-002", "ACCEPTED"),  # wrong state
-        "QR-003": _make_query_scenario_with_state("QR-003", "ACCESSIONING"),
-        # WF-001 is excluded by the category filter. "TEST-001" (the order_id
-        # from _make_ctx) is not in the index, so the guard is inert.
-        "WF-001": _make_workflow_scenario("WF-001", "ACCESSIONING"),
-    }
-    result = _retrieve_similar(ctx, index, k=10)
-    result_ids = {s.scenario_id for s in result}
-    assert "QR-001" in result_ids
-    assert "QR-002" not in result_ids
-    assert "QR-003" in result_ids
-
-
-def test_retrieve_similar_excludes_non_query_categories() -> None:
-    """_retrieve_similar only returns category='query' scenarios."""
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(current_state="ACCESSIONING")
-    index = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        "WF-001": _make_workflow_scenario("WF-001", "ACCESSIONING"),
-    }
-    result = _retrieve_similar(ctx, index, k=10)
-    result_ids = {s.scenario_id for s in result}
-    assert "QR-001" in result_ids
-    assert "WF-001" not in result_ids
-
-
-def test_retrieve_similar_returns_empty_when_no_matches() -> None:
-    """_retrieve_similar returns empty tuple when no scenarios match the state."""
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(current_state="ACCESSIONING")
-    index = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCEPTED"),
-        # WF-001 is excluded by the category filter. "TEST-001" is not in the
-        # index, so the guard is inert; the empty result comes from the
-        # state-filter path (no scenario matches ACCESSIONING).
-        "WF-001": _make_workflow_scenario("WF-001", "ACCEPTED"),
-    }
-    result = _retrieve_similar(ctx, index, k=3)
-    assert result == ()
-
-
-def test_retrieve_similar_returns_fewer_than_k_when_insufficient() -> None:
-    """_retrieve_similar returns what's available if fewer than k match."""
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(current_state="ACCESSIONING")
-    index = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        # WF-001 is excluded by the category filter. "TEST-001" is not in the
-        # index, so the guard is inert; retrieval returns the 1 match.
-        "WF-001": _make_workflow_scenario("WF-001", "ACCESSIONING"),
-    }
-    result = _retrieve_similar(ctx, index, k=5)
-    assert len(result) == 1
-
-
-def test_retrieve_similar_returns_empty_when_index_is_all_query() -> None:
-    """Replay --include-category=query sweep — the current
-    scenario (QR-001) is in the index, so _retrieve_similar must return () to
-    avoid feeding sibling fixtures into the prompt and biasing citations.
-
-    Under, the guard fires because ctx.order.order_id ("QR-001") is a
-    key in the index. The old all-query short-circuit is replaced by
-    this structural "current scenario is in corpus" check.
-    """
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(order_id="QR-001")
-    index = {
-        f"QR-00{i}": _make_query_scenario_with_state(f"QR-00{i}", "ACCESSIONING")
-        for i in range(1, 6)
-    }
-    result = _retrieve_similar(ctx, index, k=3)
-    assert result == ()
-
-
-def test_retrieve_similar_returns_empty_for_multi_category_sweep() -> None:
-    """Replay --include-category=query,llm_review sweep — index
-    contains both QR-* and LR-* scenarios. The current scenario (QR-001) is
-    in the index, so _retrieve_similar must return () to avoid leaking test
-    corpus siblings into the prompt.
-
-    The old all-query short-circuit is False for a mixed index, so
-    retrieval falls through and returns QR-* siblings — this is the bug.
-    """
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(order_id="QR-001")
-    # Mixed-category index: QR-001 and QR-002 are query, LR-001 is workflow.
-    # LR-001's presence makes the old all(category=="query") check False.
-    index = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        "QR-002": _make_query_scenario_with_state("QR-002", "ACCESSIONING"),
-        "LR-001": _make_workflow_scenario("LR-001", "ACCESSIONING"),
-    }
-    result = _retrieve_similar(ctx, index, k=3)
-    assert result == ()
-
-
-def test_retrieve_similar_returns_results_for_production_order_id() -> None:
-    """Production-shape ctx — order_id is a real LIS ID not in the
-    index. The guard is inert, and retrieval returns matching query
-    scenarios from the index.
-
-    Under the old all-query short-circuit, an all-query index would
-    return here too (false guard). Under, the guard only fires when
-    the order_id is in the index (replay-vs-corpus), so production retrieval
-    works correctly.
-    """
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(order_id="ACC-12345")
-    # "ACC-12345" is NOT in the index — guard is inert, retrieval must fire.
-    index = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-    }
-    result = _retrieve_similar(ctx, index, k=3)
-    result_ids = {s.scenario_id for s in result}
-    assert "QR-001" in result_ids
-
-
-def test_retrieve_similar_logs_debug_when_corpus_guard_fires(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """Corpus guard must emit a DEBUG log so operators can distinguish
-    'guard fired' from 'state-filter found nothing'.
-
-    order_id is now a pass-through (synthetic LIS id, not PHI). The
-    log now emits the raw order_id directly instead of the HMAC hash.
-    """
-    import logging
-
-    from samantha_server.llm.handlers import _retrieve_similar
-
-    ctx = _make_ctx(order_id="QR-001")
-    index = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        "LR-001": _make_workflow_scenario("LR-001", "ACCESSIONING"),
-    }
-    with caplog.at_level(logging.DEBUG, logger="samantha_server.llm.handlers"):
-        result = _retrieve_similar(ctx, index)
-
-    assert result == ()
-    debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
-    assert any("Corpus guard fired" in m and "QR-001" in m for m in debug_messages), (
-        f"Expected DEBUG record containing 'Corpus guard fired' and order_id='QR-001'; got: {debug_messages}"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Slice 4: handle_clinical_query — success path
+# Slice 3 (helpers used by Slice 4+): scenario index construction
 # ---------------------------------------------------------------------------
 
 
@@ -582,21 +341,6 @@ def _make_skills_index() -> dict:  # type: ignore[type-arg]
     return discover()
 
 
-def _make_scenarios_index() -> dict[str, Scenario]:
-    """Return a mixed scenarios index: one query + one workflow scenario.
-
-    The workflow scenario ensures tests that call _retrieve_similar with
-    a non-corpus order_id (e.g., "TEST-001") exercise the retrieval path
-    rather than expecting only query-category results. Under, callers
-    that use _make_ctx() (order_id="TEST-001") are not in the index, so the
-     guard is inert and retrieval proceeds normally.
-    """
-    return {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        "WF-001": _make_workflow_scenario("WF-001", "ACCESSIONING"),
-    }
-
-
 def test_handle_clinical_query_returns_engine_decision() -> None:
     """handle_clinical_query returns an EngineDecision instance."""
     from samantha_server.engine.decision import EngineDecision
@@ -605,10 +349,9 @@ def test_handle_clinical_query_returns_engine_decision() -> None:
 
     ctx = _make_ctx(current_state="ACCESSIONING")
     llm = _make_mock_llm_client()
-    scenarios = _make_scenarios_index()
     skills = discover()
 
-    decision = handle_clinical_query(ctx, llm, scenarios, skills)
+    decision = handle_clinical_query(ctx, llm, skills)
     assert isinstance(decision, EngineDecision)
 
 
@@ -619,7 +362,7 @@ def test_handle_clinical_query_applied_rule_id_is_none() -> None:
 
     ctx = _make_ctx()
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
     assert decision.applied_rule_id is None
 
 
@@ -630,7 +373,7 @@ def test_handle_clinical_query_next_state_unchanged() -> None:
 
     ctx = _make_ctx(current_state="ACCESSIONING")
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
     assert decision.next_state == "ACCESSIONING"
 
 
@@ -641,7 +384,7 @@ def test_handle_clinical_query_outcome_is_query_response() -> None:
 
     ctx = _make_ctx()
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
     assert decision.outcome == "query_response"
 
 
@@ -653,7 +396,7 @@ def test_handle_clinical_query_has_query_trace() -> None:
 
     ctx = _make_ctx()
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     assert len(decision.decision_traces) == 1
     trace = decision.decision_traces[0]
@@ -669,7 +412,7 @@ def test_handle_clinical_query_trace_model_id_matches_response() -> None:
 
     ctx = _make_ctx()
     llm = _make_mock_llm_client(model_id="mlx-community/llama-3.2-3B")  # nosec: model-id
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -684,11 +427,10 @@ def test_handle_clinical_query_trace_hashes_are_deterministic() -> None:
 
     ctx = _make_ctx()
     llm = _make_mock_llm_client(text="Fixed response", model_id="test-model")
-    scenarios = _make_scenarios_index()
     skills = discover()
 
-    d1 = handle_clinical_query(ctx, llm, scenarios, skills)
-    d2 = handle_clinical_query(ctx, llm, scenarios, skills)
+    d1 = handle_clinical_query(ctx, llm, skills)
+    d2 = handle_clinical_query(ctx, llm, skills)
 
     t1 = d1.decision_traces[0]
     t2 = d2.decision_traces[0]
@@ -714,7 +456,7 @@ def test_handle_clinical_query_trace_query_text_hash_is_hmac() -> None:
     event_data = {"query": "What orders are ready?"}
     ctx = _make_ctx(event_data=event_data)
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -723,52 +465,19 @@ def test_handle_clinical_query_trace_query_text_hash_is_hmac() -> None:
     assert trace.query_text_hash == expected_hash
 
 
-def test_handle_clinical_query_scenarios_cited() -> None:
-    """scenarios_cited is always () — _retrieve_similar no longer called.
+def test_handle_clinical_query_scenarios_cited_always_empty() -> None:
+    """scenarios_cited is always () since _retrieve_similar was deleted.
 
-    The production scenarios index is empty and the guard always returned
-    (). scenarios_cited is now hardcoded to () in handle_clinical_query.
-    """
-    from samantha_server.engine.decision import QueryTrace
-    from samantha_server.llm.handlers import handle_clinical_query
-    from samantha_server.skills.loader import discover
-
-    ctx = _make_ctx(current_state="ACCESSIONING")
-    scenarios = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        "QR-002": _make_query_scenario_with_state("QR-002", "ACCESSIONING"),
-        "WF-001": _make_workflow_scenario("WF-001", "ACCESSIONING"),
-    }
-    llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, scenarios, discover())
-
-    trace = decision.decision_traces[0]
-    assert isinstance(trace, QueryTrace)
-    assert trace.scenarios_cited == ()
-
-
-def test_handle_clinical_query_scenarios_cited_empty_when_all_query() -> None:
-    """When the current scenario's order_id is in the
-    scenarios_index (i.e., this is a replay-against-corpus sweep), the
-    _retrieve_similar guard fires and QueryTrace.scenarios_cited must be ().
-
-    Pins the data-flow from the guard through to the receipt-bound
-    QueryTrace — the unit test on _retrieve_similar alone does not cover
-    this seam. Under, the guard is structural (order_id in index)
-    rather than the all-query category check.
+    Pins the data-flow invariant: QueryTrace.scenarios_cited must be empty
+    on every handle_clinical_query result.
     """
     from samantha_server.engine.decision import QueryTrace
     from samantha_server.llm.handlers import handle_clinical_query
     from samantha_server.skills.loader import discover
 
     ctx = _make_ctx(order_id="QR-001")
-    scenarios = {
-        "QR-001": _make_query_scenario_with_state("QR-001", "ACCESSIONING"),
-        "QR-002": _make_query_scenario_with_state("QR-002", "ACCESSIONING"),
-        "QR-003": _make_query_scenario_with_state("QR-003", "ACCESSIONING"),
-    }
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, scenarios, discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -791,7 +500,7 @@ def test_handle_clinical_query_skill_loader_error_returns_refusal() -> None:
 
     # Use an empty index so "query-routing" is not found
     empty_skills: dict[str, SkillSpec] = {}
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), empty_skills)
+    decision = handle_clinical_query(ctx, llm, empty_skills)
 
     assert decision.outcome == "refused_skill_unavailable"
     assert decision.applied_rule_id is None
@@ -817,7 +526,7 @@ def test_handle_clinical_query_llm_error_returns_refusal() -> None:
     mock_llm.complete.side_effect = _err
     mock_llm.complete_json.side_effect = _err
 
-    decision = handle_clinical_query(ctx, mock_llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, mock_llm, discover())
 
     assert decision.outcome == "refused_llm_unavailable"
     assert decision.applied_rule_id is None
@@ -843,7 +552,7 @@ def test_handle_clinical_query_timeout_error_returns_llm_refusal() -> None:
     mock_llm.complete.side_effect = _err
     mock_llm.complete_json.side_effect = _err
 
-    decision = handle_clinical_query(ctx, mock_llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, mock_llm, discover())
 
     assert decision.outcome == "refused_llm_unavailable"
     trace = decision.decision_traces[0]
@@ -868,7 +577,7 @@ def test_handle_clinical_query_skill_loader_error_logs_warning(
     llm = _make_mock_llm_client()
 
     with caplog.at_level(logging.WARNING, logger="samantha_server.llm.handlers"):
-        handle_clinical_query(ctx, llm, _make_scenarios_index(), {})
+        handle_clinical_query(ctx, llm, {})
 
     assert any(
         "skill" in r.message.lower() or "unavailable" in r.message.lower() for r in caplog.records
@@ -893,7 +602,7 @@ def test_handle_clinical_query_llm_client_error_logs_warning(
     mock_llm.complete_json.side_effect = _err
 
     with caplog.at_level(logging.WARNING, logger="samantha_server.llm.handlers"):
-        handle_clinical_query(ctx, mock_llm, _make_scenarios_index(), discover())
+        handle_clinical_query(ctx, mock_llm, discover())
 
     assert any(r.levelno >= logging.WARNING for r in caplog.records), (
         "Expected a warning log when LLMClientError fires; found none"
@@ -912,7 +621,7 @@ def test_handle_clinical_query_success_path_latency_is_from_response() -> None:
     ctx = _make_ctx()
     llm = _make_mock_llm_client(text="response text", model_id="test-model")
     # _make_mock_llm_client sets latency_us=1000
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     assert decision.outcome == "query_response"
     assert decision.latency_us == 1000, (
@@ -959,7 +668,7 @@ def test_handle_clinical_query_age_over_89_emits_refusal_receipt() -> None:
     llm = _make_mock_llm_client()
     written: list[object] = []
 
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     # Must not raise — PHIBoundaryError is caught internally
     assert decision.outcome == "refused_phi_boundary"
@@ -1004,7 +713,7 @@ def test_handle_clinical_query_invokes_phi_safe_on_happy_path() -> None:
     # exercised end-to-end) while we observe the invocation count.
     spy = MagicMock(wraps=real_phi_safe)
     with patch("samantha_server.llm.handlers.phi_safe", spy):
-        handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+        handle_clinical_query(ctx, llm, discover())
 
     spy.assert_called_once_with(ctx)
 
@@ -1026,7 +735,7 @@ def test_handle_clinical_query_model_load_error_returns_llm_refusal() -> None:
     mock_llm.complete.side_effect = _err
     mock_llm.complete_json.side_effect = _err
 
-    decision = handle_clinical_query(ctx, mock_llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, mock_llm, discover())
 
     assert decision.outcome == "refused_llm_unavailable"
     assert decision.applied_rule_id is None
@@ -1490,7 +1199,7 @@ def test_handle_clinical_query_orders_reach_prompt() -> None:
         }
     )
     llm = _make_mock_llm_client()
-    handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    handle_clinical_query(ctx, llm, discover())
 
     # JSON mode: complete_json() is called with a messages array;
     # order IDs must appear in the user message content.
@@ -1515,8 +1224,8 @@ def test_query_trace_records_database_state_hash_when_orders_present() -> None:
     ctx_without = _make_ctx(event_data={"query": "ready?"})
     llm = _make_mock_llm_client()
 
-    d_with = handle_clinical_query(ctx_with, llm, _make_scenarios_index(), discover())
-    d_without = handle_clinical_query(ctx_without, llm, _make_scenarios_index(), discover())
+    d_with = handle_clinical_query(ctx_with, llm, discover())
+    d_without = handle_clinical_query(ctx_without, llm, discover())
 
     t_with = d_with.decision_traces[0]
     t_without = d_without.decision_traces[0]
@@ -1536,8 +1245,8 @@ def test_query_trace_database_state_hash_invariant_to_input_order() -> None:
     ctx_b = _make_ctx(event_data={"query": "q", "orders": list(reversed(_SAMPLE_ORDERS))})
     llm = _make_mock_llm_client()
 
-    d_a = handle_clinical_query(ctx_a, llm, _make_scenarios_index(), discover())
-    d_b = handle_clinical_query(ctx_b, llm, _make_scenarios_index(), discover())
+    d_a = handle_clinical_query(ctx_a, llm, discover())
+    d_b = handle_clinical_query(ctx_b, llm, discover())
 
     t_a, t_b = d_a.decision_traces[0], d_b.decision_traces[0]
     assert isinstance(t_a, QueryTrace)
@@ -1555,7 +1264,7 @@ def test_handle_clinical_query_explicit_empty_orders_list() -> None:
 
     ctx = _make_ctx(event_data={"query": "ready?", "orders": []})
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -1799,7 +1508,7 @@ def test_database_state_hash_matches_orders_canonical_json() -> None:
 
     ctx = _make_ctx(event_data={"query": "q", "orders": list(_SAMPLE_ORDERS)})
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     expected_json = _orders_canonical_json(_coerce_orders(list(_SAMPLE_ORDERS)))
     expected_hash = _phi._hmac_hex(expected_json.encode())
@@ -1988,7 +1697,6 @@ def test_free_text_mode_missing_query_emits_sentinel(
     handle_clinical_query(
         _make_ctx(event_data={}),  # no "query" key
         llm,
-        _make_scenarios_index(),
         discover(),
     )
 
@@ -2028,7 +1736,6 @@ def test_query_trace_records_prompt_timestamp_hash_when_provided() -> None:
     decision = handle_clinical_query(
         ctx,
         llm,
-        _make_scenarios_index(),
         discover(),
         prompt_timestamp="2025-01-16T10:00:00Z",
     )
@@ -2058,7 +1765,6 @@ def test_free_text_mode_records_prompt_timestamp_hash(
     decision = handle_clinical_query(
         ctx,
         llm,
-        _make_scenarios_index(),
         discover(),
         prompt_timestamp="2025-01-16T10:00:00Z",
     )
@@ -2082,7 +1788,6 @@ def test_query_trace_prompt_timestamp_hash_is_deterministic() -> None:
         decision = handle_clinical_query(
             ctx,
             _make_mock_llm_client(),
-            _make_scenarios_index(),
             discover(),
             prompt_timestamp=ts,
         )
@@ -2106,7 +1811,6 @@ def test_query_trace_prompt_timestamp_hash_empty_when_none() -> None:
     decision = handle_clinical_query(
         ctx,
         llm,
-        _make_scenarios_index(),
         discover(),
         prompt_timestamp=None,
     )
@@ -2152,7 +1856,7 @@ def test_handle_clinical_query_user_role_in_prompt(caplog: pytest.LogCaptureFixt
 
     with pytest.MonkeyPatch().context() as mp:
         mp.setattr(_cfg, "SAMANTHA_LLM_OUTPUT_MODE", "free_text")
-        decision = handle_clinical_query(ctx, mock, {}, discover())
+        decision = handle_clinical_query(ctx, mock, discover())
 
     assert len(captured_prompts) == 1
     assert "<user_role>pathologist</user_role>" in captured_prompts[0]
@@ -2194,7 +1898,7 @@ def test_handle_clinical_query_user_role_absent_is_none() -> None:
 
     with pytest.MonkeyPatch().context() as mp:
         mp.setattr(_cfg, "SAMANTHA_LLM_OUTPUT_MODE", "free_text")
-        decision = handle_clinical_query(ctx, mock, {}, discover())
+        decision = handle_clinical_query(ctx, mock, discover())
 
     assert len(captured_prompts) == 1
     # The skill body mentions `<user_role>` in documentation; check that the
@@ -2241,7 +1945,7 @@ def test_handle_clinical_query_invalid_role_warns_and_drops(
         pytest.MonkeyPatch().context() as mp,
     ):
         mp.setattr(_cfg, "SAMANTHA_LLM_OUTPUT_MODE", "free_text")
-        decision = handle_clinical_query(ctx, mock, {}, discover())
+        decision = handle_clinical_query(ctx, mock, discover())
 
     warning_msgs = [r.message for r in caplog.records if r.levelno == logging.WARNING]
     assert any("user_role" in m for m in warning_msgs), (
@@ -2291,7 +1995,7 @@ def test_handle_clinical_query_invalid_role_sets_coercion_failure_true(
         pytest.MonkeyPatch().context() as mp,
     ):
         mp.setattr(_cfg, "SAMANTHA_LLM_OUTPUT_MODE", "free_text")
-        decision = handle_clinical_query(ctx, mock, {}, discover(), counters=counters)
+        decision = handle_clinical_query(ctx, mock, discover(), counters=counters)
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -2321,7 +2025,7 @@ def test_handle_clinical_query_valid_role_coercion_failure_false() -> None:
 
     with pytest.MonkeyPatch().context() as mp:
         mp.setattr(_cfg, "SAMANTHA_LLM_OUTPUT_MODE", "free_text")
-        decision = handle_clinical_query(ctx, mock, {}, discover(), counters=counters)
+        decision = handle_clinical_query(ctx, mock, discover(), counters=counters)
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -2351,7 +2055,7 @@ def test_handle_clinical_query_absent_role_coercion_failure_false() -> None:
 
     with pytest.MonkeyPatch().context() as mp:
         mp.setattr(_cfg, "SAMANTHA_LLM_OUTPUT_MODE", "free_text")
-        decision = handle_clinical_query(ctx, mock, {}, discover(), counters=counters)
+        decision = handle_clinical_query(ctx, mock, discover(), counters=counters)
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -2371,7 +2075,8 @@ def test_handle_clinical_query_absent_role_coercion_failure_false() -> None:
 #
 # Pre-sorting at scaffolding time matches production semantics and removes
 # the cross-model sequence-ordering failures (QR-020, QR-021 on every
-# non-Gemma candidate tested here).
+# non-Gemma candidate tested — see docs/eval/model-shortlist-
+# 2026-05-15.md).
 # ---------------------------------------------------------------------------
 
 
@@ -2655,7 +2360,7 @@ def test_handle_clinical_query_prompt_orders_block_uses_priority_sort() -> None:
         }
     )
     llm = _make_mock_llm_client()
-    handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    handle_clinical_query(ctx, llm, discover())
 
     assert llm.complete_json.call_count == 1
     messages = llm.complete_json.call_args.args[0]
@@ -2700,7 +2405,7 @@ def test_query_trace_database_state_hash_uses_canonical_not_priority_order() -> 
         event_data={"query": "ready?", "orders": orders_fixture},
     )
     llm = _make_mock_llm_client()
-    decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+    decision = handle_clinical_query(ctx, llm, discover())
 
     trace = decision.decision_traces[0]
     assert isinstance(trace, QueryTrace)
@@ -2869,7 +2574,7 @@ class TestHandleClinicalQueryOrderIdIsNone:
 
         ctx = _make_ctx()
         llm = _make_mock_llm_client()
-        decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+        decision = handle_clinical_query(ctx, llm, discover())
         assert decision.order_id is None
 
     def test_skill_unavailable_refusal_order_id_is_none(self) -> None:
@@ -2880,7 +2585,7 @@ class TestHandleClinicalQueryOrderIdIsNone:
         ctx = _make_ctx()
         llm = _make_mock_llm_client()
         empty_skills: dict[str, SkillSpec] = {}
-        decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), empty_skills)
+        decision = handle_clinical_query(ctx, llm, empty_skills)
         assert decision.order_id is None
 
     def test_llm_unavailable_refusal_order_id_is_none(self) -> None:
@@ -2895,7 +2600,7 @@ class TestHandleClinicalQueryOrderIdIsNone:
         _err = LLMInferenceError(model_id="test-model", cause="crash")
         mock_llm.complete.side_effect = _err
         mock_llm.complete_json.side_effect = _err
-        decision = handle_clinical_query(ctx, mock_llm, _make_scenarios_index(), discover())
+        decision = handle_clinical_query(ctx, mock_llm, discover())
         assert decision.order_id is None
 
     def test_phi_boundary_refusal_order_id_is_none(self) -> None:
@@ -2930,8 +2635,62 @@ class TestHandleClinicalQueryOrderIdIsNone:
             ),
         )
         llm = _make_mock_llm_client()
-        decision = handle_clinical_query(ctx, llm, _make_scenarios_index(), discover())
+        decision = handle_clinical_query(ctx, llm, discover())
         assert decision.outcome == "refused_phi_boundary"
         trace = decision.decision_traces[0]
         assert isinstance(trace, RefusalTrace)
         assert decision.order_id is None
+
+
+# ---------------------------------------------------------------------------
+# Fix 4 — _llm_error_literal assert → explicit raise (survives -O)
+# ---------------------------------------------------------------------------
+
+
+class TestLlmErrorLiteralUnderOptimizedMode:
+    def test_unknown_llm_error_subclass_raises_assertion_error_under_optimize_flag(
+        self,
+    ) -> None:
+        """Fix 4 (-O semantics): _llm_error_literal must raise AssertionError
+        for an unlisted LLMClientError subclass even when Python is run with -O.
+
+        Today the guard is `assert name in _LLM_ERROR_NAMES, (...)` which is a no-op
+        under -O, so the function returns the bad name and poisons RefusalTrace.
+        After the fix the guard becomes `if name not in _LLM_ERROR_NAMES: raise
+        AssertionError(...)` which fires regardless of optimisation level.
+        """
+        import subprocess
+        import sys
+        import textwrap
+
+        snippet = textwrap.dedent("""\
+            from samantha_server.errors import LLMClientError
+            from samantha_server.llm.handlers import _llm_error_literal
+
+            class LLMUnknownBrandNewError(LLMClientError):
+                def __init__(self) -> None:
+                    super().__init__('unlisted subclass')
+
+            exc = LLMUnknownBrandNewError()
+            try:
+                result = _llm_error_literal(exc)
+                print(f'no_error:{result}')
+            except AssertionError:
+                print('AssertionError')
+            except Exception as e:
+                print(f'other:{type(e).__name__}')
+        """)
+        result = subprocess.run(
+            [sys.executable, "-O", "-c", snippet],
+            capture_output=True,
+            text=True,
+        )
+        # Assert returncode first so an import failure is diagnosable.
+        assert result.returncode == 0, (
+            f"Subprocess exited {result.returncode}; stderr: {result.stderr[:400]!r}"
+        )
+        output = result.stdout.strip()
+        assert output == "AssertionError", (
+            f"Under -O, expected AssertionError but got: {output!r} "
+            f"(stderr: {result.stderr[:200]!r})"
+        )

@@ -642,7 +642,11 @@ def test_replay_included_vs_overall_accuracy(tmp_path: Path) -> None:
     }
     _write_scenario(tmp_path, "llm_review", oob)
 
-    report = replay(tmp_path)
+    # Stub the client so OMLXClient constructor probe does not require a live
+    # server. llm_review is in _LLM_PATH_CATEGORIES so replay builds deps up-front;
+    # the order_received step routes deterministically so the stub is never called.
+    mock_llm = _make_mock_llm_client()
+    report = replay(tmp_path, _llm_client_override=mock_llm)
     assert report.included_total == 1
     assert report.overall_total == 2
     assert report.included_accuracy == 1.0

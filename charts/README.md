@@ -4,6 +4,8 @@ Python charting pipeline for `samantha_server` metrics. Produces publication-qua
 PNGs using the gtan-samantha aesthetic (bold titles, direction indicators, blue/green/red
 palette, methodology footnotes).
 
+Parent issue:
+
 ## Setup
 
 ```sh
@@ -38,7 +40,8 @@ client = LangfuseClient()
 traces = client.fetch_traces(limit=500)
 ```
 
-A standalone `uv run python -m samantha_charts.fetch` entry point is planned.
+A standalone `uv run python -m samantha_charts.fetch` entry point is planned
+(see scope).
 
 ### Receipts
 

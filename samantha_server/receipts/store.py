@@ -9,7 +9,6 @@ No LLM imports. Deterministic path only.
 
 from __future__ import annotations
 
-import contextlib
 import sqlite3
 from pathlib import Path
 
@@ -17,41 +16,6 @@ from samantha_server.errors import ReceiptPersistenceError
 from samantha_server.receipts.signing import SignedReceipt, _canonical_signing_payload
 
 _SCHEMA_SQL = (Path(__file__).resolve().parent / "schema.sql").read_text()
-
-# ---------------------------------------------------------------------------
-# H-04: module-level write connection cache (one SQLite open per process).
-#
-# Lives here (rather than in a caller module) so the receipt-writing path
-# shares a single process-wide connection without cross-module state coupling.
-# ---------------------------------------------------------------------------
-
-_write_conn: sqlite3.Connection | None = None
-_write_conn_path: str | None = None
-
-
-def _get_write_conn() -> sqlite3.Connection:
-    """Return the cached write connection, (re)initialising if the path changed.
-
-    G4: SQLite WAL append-only write path; single connection per process.
-    The store path comes from cfg.RECEIPTS_DB_PATH (lazily imported to avoid
-    triggering the sentinel check at collection time). If the path changes
-    between calls (e.g., test fixtures overriding RECEIPTS_DB_PATH via
-    monkeypatch), the old connection is closed and a new one opened.
-    """
-    global _write_conn, _write_conn_path
-    import samantha_server.config as cfg
-
-    db_path = Path(cfg.RECEIPTS_DB_PATH)
-    if _write_conn_path != str(db_path):
-        if _write_conn is not None:
-            with contextlib.suppress(Exception):
-                _write_conn.close()
-        init_store(db_path)
-        _write_conn = _open_write_conn(db_path)
-        _write_conn_path = str(db_path)
-    # Invariant: _write_conn is non-None after the block above.
-    assert _write_conn is not None
-    return _write_conn
 
 
 # ---------------------------------------------------------------------------
@@ -93,14 +57,22 @@ def _validate_store_path(path: Path, *, allowed_base: Path | None = None) -> Non
 # ---------------------------------------------------------------------------
 
 
-def _open_write_conn(path: Path) -> sqlite3.Connection:
+def _open_write_conn(path: Path, *, check_same_thread: bool = True) -> sqlite3.Connection:
     """Open a write connection to the receipts store.
 
     The connection has NORMAL synchronous mode (safe for WAL) and
     foreign-keys enabled. The caller is responsible for committing
     and closing.
+
+    Parameters
+    ----------
+    path:
+        Full path to the SQLite file.
+    check_same_thread:
+        Passed through to sqlite3.connect. Pass False when the connection
+        will be used from worker threads (e.g., ReceiptWriter.open).
     """
-    conn = sqlite3.connect(str(path))
+    conn = sqlite3.connect(str(path), check_same_thread=check_same_thread)
     conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
@@ -250,7 +222,10 @@ def insert(conn: sqlite3.Connection, receipt: SignedReceipt) -> None:
     ReceiptPersistenceError
         If the insert fails (duplicate receipt_id, DB error, etc.).
     """
-    payload_json = _canonical_signing_payload(receipt.decision).decode()
+    # Reuse carried payload bytes when available (set by sign_decision);
+    # fall back to recomputing for rehydrated receipts that have no carry.
+    _carry = receipt.canonical_payload_bytes()
+    payload_json = (_carry if _carry else _canonical_signing_payload(receipt.decision)).decode()
     try:
         conn.execute(
             """
@@ -314,5 +289,4 @@ __all__ = [
     "init_schema",
     "init_store",
     "insert",
-    "_get_write_conn",
 ]

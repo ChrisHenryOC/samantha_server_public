@@ -93,6 +93,36 @@ def test_clarification_trace_missing_fields_is_tuple() -> None:
     assert isinstance(t.missing_fields, tuple)
 
 
+def test_clarification_trace_llm_failed_with_suggestions_raises() -> None:
+    """llm_failed=True with non-empty suggested_values violates the invariant.
+
+    a failed LLM cannot have produced suggestions — mirror
+    RefusalTrace._stage_invariants' cross-field enforcement so a handler bug
+    can't sign a self-contradictory receipt.
+    """
+    import pytest
+
+    from samantha_server.engine.decision import ClarificationTrace
+
+    with pytest.raises(ValueError, match="llm_failed"):
+        ClarificationTrace(
+            missing_fields=("f1",),
+            suggested_values={"f1": "x"},
+            llm_failed=True,
+        )
+
+
+def test_clarification_trace_llm_failed_with_empty_suggestions_ok() -> None:
+    from samantha_server.engine.decision import ClarificationTrace
+
+    t = ClarificationTrace(
+        missing_fields=("f1",),
+        suggested_values={},
+        llm_failed=True,
+    )
+    assert t.llm_failed is True
+
+
 # ---------------------------------------------------------------------------
 # RefusalTrace
 # ---------------------------------------------------------------------------

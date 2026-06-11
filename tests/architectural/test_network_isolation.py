@@ -16,6 +16,8 @@ Coverage targets:
   libraries to escape via ``connect_ex``.
 - All loopback aliases pass through: ``127.0.0.1``, ``localhost``,
   ``::1``, plus non-canonical loopback IPs like ``127.0.0.2``.
+  (the ``::1`` case is conditionally skipped on hosts whose
+  kernel lacks IPv6 — see ``_ipv6_available``.)
 - The patch is reverted at session teardown so a future ``finally``-less
   refactor can't leak the mock silently. (Verified indirectly here;
   pytest's session-scope teardown runs after this module exits, so the
@@ -25,10 +27,29 @@ Coverage targets:
 
 from __future__ import annotations
 
+import errno
 import os
 import socket
 
 import pytest
+
+
+def _ipv6_available() -> bool:
+    """Return True if the host can bind an IPv6 loopback socket.
+
+    only the errnos that mean "IPv6 is absent on this
+    host" are treated as unavailability; anything else (e.g. EACCES)
+    re-raises so a real environment problem fails loudly instead of
+    masquerading as an IPv6 skip.
+    """
+    try:
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            s.bind(("::1", 0))
+        return True
+    except OSError as exc:
+        if exc.errno in (errno.EAFNOSUPPORT, errno.EADDRNOTAVAIL):
+            return False
+        raise
 
 
 @pytest.mark.skipif(
@@ -74,7 +95,13 @@ def test_real_outbound_connect_ex_is_blocked() -> None:
     [
         "127.0.0.1",
         "localhost",
-        "::1",
+        # Skip on hosts without IPv6 (containers); still runs on lab host.
+        pytest.param(
+            "::1",
+            marks=pytest.mark.skipif(
+                not _ipv6_available(), reason="IPv6 unavailable on this host"
+            ),
+        ),
         # Non-canonical loopback IPs pass through too (the whole 127.0.0.0/8
         # range is loopback per RFC 5735).
         "127.0.0.2",

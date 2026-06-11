@@ -438,7 +438,7 @@ against the Step 11 engine, threading accumulated `flags` and
 accuracy report (`included_accuracy` / `overall_accuracy`).
 
 `scripts/vendor_scenarios.py` does the JSON copy from
-the upstream `samantha-public/scenarios/` into
+the upstream POC repo's `scenarios/` into
 `tests/fixtures/scenarios/`, appends `routing_path: deterministic` to
 every `expected_output`, idempotent with provenance metadata in
 `.vendor.json`.
@@ -480,7 +480,7 @@ LLM-consultable SOP knowledge. Three deliverables in one PR:
    distinguishing rules (deterministic primitive-composed predicates)
    from skills (LLM-consultable prose playbooks).
 2. Vendor + restructure 6 step-skills from
-   the upstream `samantha-public/knowledge_base/skills/` into
+   the upstream POC repo's `knowledge_base/skills/` into
    `samantha_server/skills/specs/<step>/SKILL.md` folders. Frontmatter
    descriptions are pinned in the plan (6-row table, no TBDs).
 3. Build `samantha_server/skills/loader.py` with the agentskills.io

@@ -7,9 +7,10 @@ from pydantic import BaseModel, PrivateAttr, model_validator
 
 from samantha_server.canonicalization import canonicalize
 from samantha_server.models import SpecimenContext
+from samantha_server.primitives._cache import set_cached
 from samantha_server.primitives.trace import PrimitiveTrace
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class InEnum(BaseModel, frozen=True):
@@ -36,7 +37,7 @@ class InEnum(BaseModel, frozen=True):
         canonical: frozenset[Any] = frozenset(
             canonicalize(self.field, v).canonical if isinstance(v, str) else v for v in self.values
         )
-        object.__setattr__(self, "_canonical_values", canonical)
+        set_cached(self, "_canonical_values", canonical)
         return self
 
     def evaluate(self, ctx: SpecimenContext) -> bool:
@@ -60,7 +61,7 @@ class InEnum(BaseModel, frozen=True):
         try:
             return actual in self.values
         except TypeError:
-            logger.warning(
+            _logger.warning(
                 "InEnum got unhashable value for field=%r (type=%s); returning False",
                 self.field,
                 type(actual).__name__,

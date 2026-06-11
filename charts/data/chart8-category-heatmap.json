@@ -1,14 +1,14 @@
 {
  "_meta": {
   "chart": "Chart 8: per-category stable accuracy heatmap",
-  "source": "Locked N=5 stable baseline, 2026-05-26",
+  "source": "Locked N=5 stable baseline, 2026-06-10 (corpus 151)",
   "notes": "Category totals from tests/fixtures/scenarios/. Non-perfect cells only; all other (model, category) pairs are perfect (passed == total). Values from docs/presentation/current-truth.md."
  },
  "category_totals": {
   "accumulated_state": 10,
   "hallucination": 8,
   "llm_review": 6,
-  "multi_rule": 10,
+  "multi_rule": 12,
   "query": 29,
   "rule_coverage": 81,
   "unknown_input": 5
@@ -29,10 +29,25 @@
   "unknown_input"
  ],
  "non_perfect": [
-  {"model": "Qwen3.5-35B\n(35B)", "category": "llm_review", "passed": 5},
-  {"model": "Qwen3.5-35B\n(35B)", "category": "query", "passed": 28},
-  {"model": "gemma-4-26B\n(26B)", "category": "query", "passed": 27},
-  {"model": "Qwen2.5-Coder-32B\n(32B)", "category": "llm_review", "passed": 5},
-  {"model": "Qwen2.5-Coder-32B\n(32B)", "category": "query", "passed": 25}
+  {
+   "model": "Qwen3.5-35B\n(35B)",
+   "category": "llm_review",
+   "passed": 5
+  },
+  {
+   "model": "Qwen3.5-35B\n(35B)",
+   "category": "query",
+   "passed": 27
+  },
+  {
+   "model": "gemma-4-26B\n(26B)",
+   "category": "query",
+   "passed": 27
+  },
+  {
+   "model": "Qwen2.5-Coder-32B\n(32B)",
+   "category": "query",
+   "passed": 25
+  }
  ]
 }

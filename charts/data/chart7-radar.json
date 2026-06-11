@@ -1,19 +1,43 @@
 {
  "_meta": {
   "chart": "Chart 7 model-selection radar (Option B: 3 axes)",
-  "axes": ["accuracy", "robustness", "speed"],
+  "axes": [
+   "accuracy",
+   "robustness",
+   "speed"
+  ],
   "axis_defs": {
-   "accuracy": "overall stable accuracy % on the 149-fixture corpus (higher better)",
+   "accuracy": "overall stable accuracy % on the 151-fixture corpus (higher better)",
    "robustness": "worst-category stable accuracy % across the 7 scenario categories (higher better)",
    "speed": "median LLM-call latency in seconds; inverted on the chart so faster = farther from center (lower better)"
   },
-  "source": "accuracy/robustness from results/baselines/post-fix-isolated-*.txt (Chart 8 per-category); speed from results/baselines/convex-perf-*-n5.txt (Chart 5)",
+  "source": "accuracy/robustness from results/baselines/corpus151-*.txt (Chart 8 per-category); speed from results/baselines/convex-perf-*-n5.txt (Chart 5)",
   "incumbent": "Qwen3-Next-80B-A3B-Instruct-4bit"
  },
  "models": {
-  "Qwen3-Next-80B-A3B-Instruct-4bit": {"accuracy": 100.0, "robustness": 100.0, "worst_category": "(none, all 100%)", "latency_p50_s": 2.9},
-  "Qwen3.5-35B-A3B-8bit": {"accuracy": 98.66, "robustness": 83.33, "worst_category": "llm_review (5/6)", "latency_p50_s": 10.3},
-  "gemma-4-26B-A4B-it-MLX-4bit": {"accuracy": 98.66, "robustness": 93.10, "worst_category": "query (27/29)", "latency_p50_s": 2.3},
-  "Qwen2.5-Coder-32B-Instruct-MLX-4bit": {"accuracy": 96.64, "robustness": 83.33, "worst_category": "llm_review (5/6)", "latency_p50_s": 6.4}
+  "Qwen3-Next-80B-A3B-Instruct-4bit": {
+   "accuracy": 100.0,
+   "robustness": 100.0,
+   "worst_category": "(none, all 100%)",
+   "latency_p50_s": 2.9
+  },
+  "Qwen3.5-35B-A3B-8bit": {
+   "accuracy": 98.01,
+   "robustness": 83.33,
+   "worst_category": "llm_review (5/6)",
+   "latency_p50_s": 10.3
+  },
+  "gemma-4-26B-A4B-it-MLX-4bit": {
+   "accuracy": 98.68,
+   "robustness": 93.1,
+   "worst_category": "query (27/29)",
+   "latency_p50_s": 2.3
+  },
+  "Qwen2.5-Coder-32B-Instruct-MLX-4bit": {
+   "accuracy": 97.35,
+   "robustness": 86.21,
+   "worst_category": "query (25/29)",
+   "latency_p50_s": 6.4
+  }
  }
 }

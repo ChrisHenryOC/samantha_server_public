@@ -1,6 +1,7 @@
 # Design: Route ambiguous anatomic_site values to PENDING_LLM_REVIEW
 
 **Status:** Draft — open questions resolved, ready for implementation
+**Audit reference:** F-5 in `docs/audit/comprehensive-scenario-review-2026-05-13.md`
 **Pattern reference:** ACC-010 + `specimen_review` skill (the specimen_type
 analog of this proposal)
 **Resolution log:** see "Resolved decisions" section at the end of this doc
@@ -31,7 +32,8 @@ Mirror the `ACC-010 + specimen_review` pattern that handles ambiguous
 
 1. Re-author `ACC-003` from a strict whitelist to an explicit
    **blacklist** of definitively-out-of-scope sites.
-2. Add `ACC-011` (new) with `severity: PROCEED` and a "neither
+2. Add `ACC-011` (new) with `severity: PROCEED` (as originally designed;
+   re-classed to `REVIEW_HOLD`) and a "neither
    whitelist nor blacklist, non-null" predicate that routes to
    `PENDING_LLM_REVIEW` with the `LLM_REVIEW_REQUESTED` flag.
 3. Add `ACC-012` (new) with `severity: HOLD` and a `is_null(anatomic_site)`
@@ -108,7 +110,7 @@ when:
   # (Equals primitive fail-safe semantics), so null routes via
   # ACC-012 (HOLD) rather than ACC-003.
   #
-  # Canonicalization: values must be lowercase canonical.
+  # Values must be lowercase canonical.
   # Casefolding happens at comparison time.
   in_enum:
     field: anatomic_site
@@ -135,7 +137,7 @@ rule_id: ACC-011
 step: ACCESSIONING
 applies_at: null
 event_type: order_received
-severity: PROCEED
+severity: REVIEW_HOLD
 priority: null
 when:
   # Fall-through predicate: fires when anatomic_site is non-null and
@@ -145,7 +147,7 @@ when:
   #
   # Disjointness with ACC-003 is guaranteed by the first Not(in_enum)
   # clause: a value on the blacklist makes ACC-003 (REJECT) win;
-  # ACC-011 cannot also fire (SEVERITY_ORDER enforces REJECT > PROCEED).
+  # ACC-011 cannot also fire (SEVERITY_ORDER enforces REJECT > REVIEW_HOLD).
   #
   # Disjointness with ACC-012 (the null branch) is guaranteed by the
   # Not(is_null) clause: null routes via ACC-012 (HOLD), not ACC-011.

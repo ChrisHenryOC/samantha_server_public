@@ -10,10 +10,9 @@ that the evaluator uses to enforce the dispatch boundary.
 Threat model (Phase 3 Step 5 — dispatch-token rebinding):
 - Token HMAC now binds rules, nonce, session_id, and expires_at.
 - Cross-session replay is rejected: token from session A fails session B because
-  the session_id is part of the HMAC input.  NOTE: this guard is only live when
-  the *caller* passes its own session_id to evaluate().  As of Step 5, production
-  callers (POST /events → dispatch_event) do not yet invoke verify_dispatch;
-  enforcement lands with Step 5.5+ wiring.
+  the session_id is part of the HMAC input.  The guard is unconditionally live:
+  evaluate() requires the caller's session_id (keyword-only, no default)
+  and verifies every dispatch before evaluation.
 - TTL replay is rejected: verify_dispatch checks expires_at < time.time().
 - Token forgery requires knowing _DISPATCH_HMAC_KEY (module-private random).
 

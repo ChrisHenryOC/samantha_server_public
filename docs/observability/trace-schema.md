@@ -140,7 +140,7 @@ names are also valid targets for dashboard filters.
 | `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens` | LLM child span |
 | `gen_ai.request.temperature` / `gen_ai.request.max_tokens` | LLM child span |
 | `gen_ai.response.finish_reasons` | LLM child span; omitted when absent |
-| `langfuse.trace.metadata.environment` | parent span; `production` / `replay` / `parity`. Canonical dashboard-filter surface for environment discrimination. (This was moved off `samantha.environment` to the consolidated `langfuse.trace.metadata.*` surface.) |
+| `langfuse.trace.metadata.environment` | parent span; `production` / `replay` / `parity`. Canonical dashboard-filter surface for environment discrimination. (moved off `samantha.environment` to the consolidated `langfuse.trace.metadata.*` surface.) |
 | `langfuse.trace.metadata.routing_path` | parent span; `deterministic` / `llm` |
 | `langfuse.trace.metadata.next_state` | parent span |
 | `langfuse.trace.metadata.outcome` | parent span |
@@ -187,6 +187,7 @@ still produced — observability fails soft.
 
 ## Cross-links
 
+- Plan: `docs/plans/phase-3-implementation.md` § Step 10
 - OTel parent-span attrs (Step 8): [`samantha_server/observability/otel.py`](../../samantha_server/observability/otel.py)
 - Receipt contract: [`samantha_server/receipts/signing.py`](../../samantha_server/receipts/signing.py)
 - Receipt-to-trace join key: `receipt_id` (this schema) ↔ `receipt_id`

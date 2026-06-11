@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, get_args
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from pydantic import ValidationError
 
+from samantha_server.engine.dispatch_constants import SEVERITY_ORDER
 from samantha_server.primitives import (
     PRIMITIVE_REGISTRY,
     BooleanAnd,
@@ -22,15 +23,6 @@ from samantha_server.primitives import (
 
 if TYPE_CHECKING:
     from samantha_server.rules.spec import RuleSpec
-
-
-def _build_severity_order() -> dict[str, int]:
-    from samantha_server.rules.spec import Severity
-
-    return {sev: i for i, sev in enumerate(get_args(Severity))}
-
-
-_SEVERITY_ORDER: dict[str, int] = _build_severity_order()
 
 
 def build_predicate(node: Mapping[str, Any]) -> Primitive:
@@ -351,6 +343,7 @@ class RuleIndex:
     rules_by_applies_at: dict[str, list[RuleSpec]]
     all_rules: list[RuleSpec]
     _rule_id_set: frozenset[str]
+    known_event_types: frozenset[str]
 
     def __init__(self, specs: list[RuleSpec]) -> None:
         from samantha_server.rules.spec import RuleSpec as _RuleSpec
@@ -367,17 +360,26 @@ class RuleIndex:
             by_step.setdefault(spec.step, []).append(spec)
 
             if spec.applies_at is not None:
-                assert spec.step == "IHC", (
-                    f"Rule '{spec.rule_id}' has applies_at='{spec.applies_at}'"
-                    f" but step='{spec.step}' — only IHC rules may have applies_at"
-                )
+                # Explicit raise so the invariant survives -O
+                if spec.step != "IHC":
+                    raise ValueError(
+                        f"Rule '{spec.rule_id}' has applies_at='{spec.applies_at}'"
+                        f" but step='{spec.step}' — only IHC rules may have applies_at"
+                    )
                 by_applies_at.setdefault(spec.applies_at, []).append(spec)
 
         def _sev_key(r: _RuleSpec) -> int:
-            return _SEVERITY_ORDER[r.severity]  # type: ignore[index]
+            # severity is guaranteed non-None here: _sev_key only runs for
+            # ACCESSIONING rules, whose specs require a severity.
+            return SEVERITY_ORDER[r.severity]  # type: ignore[index]
 
         def _pri_key(r: _RuleSpec) -> int:
-            assert r.priority is not None
+            # Explicit raise so the invariant survives -O
+            if r.priority is None:
+                raise ValueError(
+                    f"Rule '{r.rule_id}' in step '{r.step}' has priority=None;"
+                    " non-ACCESSIONING rules require an integer priority"
+                )
             return r.priority
 
         def _check_unique_priorities(rules: list[_RuleSpec], bucket_label: str) -> None:
@@ -435,6 +437,17 @@ class RuleIndex:
         # is called per non-error step by the hallucination gate (~2000+
         # calls per replay run today).
         self._rule_id_set = frozenset(seen_ids)
+
+        # Cache the known event types computed from this index.
+        # Lazy import avoids the circular dependency (transitions.py imports
+        # RuleIndex from this module; importing transitions at class-body scope
+        # would create an import-time cycle). The method-level import holds as
+        # long as no module constructs a RuleIndex at import time — all current
+        # construction happens at runtime (startup/load), after both modules
+        # are fully loaded.
+        from samantha_server.engine.transitions import get_known_event_types
+
+        self.known_event_types = get_known_event_types(self)
 
     def __contains__(self, rule_id: object) -> bool:
         """Return True iff *rule_id* is a known rule in this index. O(1)."""
