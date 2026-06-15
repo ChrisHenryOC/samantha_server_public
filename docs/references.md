@@ -1,7 +1,4 @@
-# External references
-
-Articles, papers, tools, and standards behind Samantha Server, plus further
-reading, organized by subject.
+# References
 
 ## About the author
 
@@ -17,7 +14,7 @@ Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](h
 
 ## The harness is the product
 
-- Claude Code Leak Analysis, by Alfonso de la Rocha:
+- Claude Code leak analysis, by Alfonso de la Rocha:
   [A Glimpse of the New Software Engineering](https://adlrocha.substack.com/p/adlrocha-a-glimpse-of-the-new-software)
 - Models are a new primitive, by Alfonso de la Rocha:
   [The Model is Still Not the Product](https://adlrocha.substack.com/p/adlrocha-the-model-is-still-not-the)
@@ -29,18 +26,13 @@ Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](h
   [Harness Engineering for Coding Agent Users](https://martinfowler.com/articles/harness-engineering.html)
 - Architecture walkthrough:
   [Claude Code From Source](https://claude-code-from-source.com/ch01-architecture/)
-- boringbot:
-  [AI Agent Harnesses Explained: Architecture, Ecosystem, and Multi-User Design](https://boringbot.substack.com/p/ai-agent-harnesses-explained-architecture)
+- [AI Agent Harnesses Explained: Architecture, Ecosystem, and Multi-User Design](https://boringbot.substack.com/p/ai-agent-harnesses-explained-architecture)
 
 ## Agent harnesses
 
-- Terminal coding-agent harness:
-  [Pi](https://pi.dev)
-- Nous Research:
-  [Hermes Agent](https://github.com/NousResearch/hermes-agent)
-- Open-source coding agent (also one of the agents benchmarked in
-  SWE-Bench Mobile):
-  [OpenCode](https://opencode.ai)
+- [Pi agent](https://pi.dev)
+- [Hermes Agent](https://github.com/NousResearch/hermes-agent)
+- [OpenCode](https://opencode.ai)
 
 ## Observability and tooling
 
