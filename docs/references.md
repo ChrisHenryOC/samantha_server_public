@@ -7,26 +7,25 @@ Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](h
 
 ## The Samantha project
 
-- Substack, by Chris Henry:
-  [AI and Laboratory Workflow, Part 1](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-1)
-- Substack, by Chris Henry:
-  [AI and Laboratory Workflow, Part 2](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-2)
+- [AI and Laboratory Workflow, Samantha Part 1](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-1)
+- [AI and Laboratory Workflow, Samantha Part 2](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-2)
+- Samantha Server writeup (coming soon)
 
 ## The harness is the product
 
-- Claude Code leak analysis, by Alfonso de la Rocha:
-  [A Glimpse of the New Software Engineering](https://adlrocha.substack.com/p/adlrocha-a-glimpse-of-the-new-software)
-- Models are a new primitive, by Alfonso de la Rocha:
-  [The Model is Still Not the Product](https://adlrocha.substack.com/p/adlrocha-the-model-is-still-not-the)
-- Rent the model, own the harness, by Doneyli De Jesus:
-  [The Model Doesn't Matter Anymore](https://doneyli.substack.com/p/the-model-doesnt-matter-anymore)
-- Gap is the tooling, not the model, by Sebastian Raschka:
-  [Components of a Coding Agent](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent)
-- Agent = Model + Harness, by Birgitta Böckeler & Martin Fowler:
-  [Harness Engineering for Coding Agent Users](https://martinfowler.com/articles/harness-engineering.html)
+- Claude Code leak analysis:
+  [A Glimpse of the New Software Engineering](https://adlrocha.substack.com/p/adlrocha-a-glimpse-of-the-new-software), by Alfonso de la Rocha
+- Models are a new primitive:
+  [The Model is Still Not the Product](https://adlrocha.substack.com/p/adlrocha-the-model-is-still-not-the), by Alfonso de la Rocha
+- Rent the model, own the harness:
+  [The Model Doesn't Matter Anymore](https://doneyli.substack.com/p/the-model-doesnt-matter-anymore), by Doneyli De Jesus
+- Gap is the tooling, not the model:
+  [Components of a Coding Agent](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent), by Sebastian Raschka
+- Agent = Model + Harness:
+  [Harness Engineering for Coding Agent Users](https://martinfowler.com/articles/harness-engineering.html), by Birgitta Böckeler & Martin Fowler
 - Architecture walkthrough:
-  [Claude Code From Source](https://claude-code-from-source.com/ch01-architecture/)
-- [AI Agent Harnesses Explained: Architecture, Ecosystem, and Multi-User Design](https://boringbot.substack.com/p/ai-agent-harnesses-explained-architecture)
+  [Claude Code From Source](https://claude-code-from-source.com/ch01-architecture/), by Alejandro Balderas
+- [AI Agent Harnesses Explained: Architecture, Ecosystem, and Multi-User Design](https://boringbot.substack.com/p/ai-agent-harnesses-explained-architecture), by Hamza Farooq and Aishwarya Ashok
 
 ## Agent harnesses
 
