@@ -3,9 +3,13 @@
 Articles, papers, tools, and standards behind Samantha Server, plus further
 reading, organized by subject.
 
+## About the author
+
+Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](https://chenryventures.substack.com)) is the founder of CHenry Ventures, LLC and is a seasoned technology leader with over twenty years of experience architecting enterprise platforms for healthcare and life sciences organizations. He has held senior technology and IT leadership roles in numerous organizations and has expertise spanning laboratory information systems, AI-powered digital pathology, cloud-native platform development, and cross-functional engineering leadership. His experience includes evaluating laboratory technology infrastructure, assessing scalability and technical debt, and providing strategic recommendations for technology modernization and operational improvement.
+
+
 ## The Samantha project
 
-- CHenry Ventures (Substack home) <https://chenryventures.substack.com/>
 - AI and Laboratory Workflow, Part 1 (Substack)
   <https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-1>
 - AI and Laboratory Workflow, Part 2 (Substack)
@@ -13,6 +17,9 @@ reading, organized by subject.
 
 ## The harness is the product
 
+- Alfonso de la Rocha, "A Glimpse of the New Software Engineering" (Claude
+  Code leak analysis)
+  <https://adlrocha.substack.com/p/adlrocha-a-glimpse-of-the-new-software>
 - Alfonso de la Rocha, "The Model is Still Not the Product"
   ("models are a new primitive")
   <https://adlrocha.substack.com/p/adlrocha-the-model-is-still-not-the>
@@ -25,9 +32,6 @@ reading, organized by subject.
 - Birgitta Böckeler & Martin Fowler, "Harness Engineering for Coding Agent
   Users" ("Agent = Model + Harness")
   <https://martinfowler.com/articles/harness-engineering.html>
-- Alfonso de la Rocha, "A Glimpse of the New Software Engineering" (Claude
-  Code leak analysis)
-  <https://adlrocha.substack.com/p/adlrocha-a-glimpse-of-the-new-software>
 - Claude Code From Source (architecture walkthrough)
   <https://claude-code-from-source.com/ch01-architecture/>
 - "AI Agent Harnesses Explained: Architecture, Ecosystem, and Multi-User
