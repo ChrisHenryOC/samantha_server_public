@@ -56,7 +56,7 @@ Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](h
   [dataset](https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro), by Wang et al., 2024
 - One model, 6x across harnesses:
   [SWE-Bench Mobile](https://arxiv.org/abs/2602.09540) ·
-  [leaderboard](https://swebenchmobile.com), by Tian et al, Feb 2026
+  [leaderboard](https://swebenchmobile.com), by Tian et al., Feb 2026
 - Automated harness search beat
   hand-built harnesses:
   [Meta-Harness](https://arxiv.org/abs/2603.28052), by Lee et al. (Stanford / MIT), Mar 2026
