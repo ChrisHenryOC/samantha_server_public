@@ -7,26 +7,25 @@ Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](h
 
 ## The Samantha project
 
-- Substack, by Chris Henry:
-  [AI and Laboratory Workflow, Part 1](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-1)
-- Substack, by Chris Henry:
-  [AI and Laboratory Workflow, Part 2](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-2)
+- [AI and Laboratory Workflow, Samantha Part 1](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-1)
+- [AI and Laboratory Workflow, Samantha Part 2](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-2)
+- Samantha Server writeup (coming soon)
 
 ## The harness is the product
 
-- Claude Code leak analysis, by Alfonso de la Rocha:
-  [A Glimpse of the New Software Engineering](https://adlrocha.substack.com/p/adlrocha-a-glimpse-of-the-new-software)
-- Models are a new primitive, by Alfonso de la Rocha:
-  [The Model is Still Not the Product](https://adlrocha.substack.com/p/adlrocha-the-model-is-still-not-the)
-- Rent the model, own the harness, by Doneyli De Jesus:
-  [The Model Doesn't Matter Anymore](https://doneyli.substack.com/p/the-model-doesnt-matter-anymore)
-- Gap is the tooling, not the model, by Sebastian Raschka:
-  [Components of a Coding Agent](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent)
-- Agent = Model + Harness, by Birgitta Böckeler & Martin Fowler:
-  [Harness Engineering for Coding Agent Users](https://martinfowler.com/articles/harness-engineering.html)
+- Claude Code leak analysis:
+  [A Glimpse of the New Software Engineering](https://adlrocha.substack.com/p/adlrocha-a-glimpse-of-the-new-software), by Alfonso de la Rocha
+- Models are a new primitive:
+  [The Model is Still Not the Product](https://adlrocha.substack.com/p/adlrocha-the-model-is-still-not-the), by Alfonso de la Rocha
+- Rent the model, own the harness:
+  [The Model Doesn't Matter Anymore](https://doneyli.substack.com/p/the-model-doesnt-matter-anymore), by Doneyli De Jesus
+- Gap is the tooling, not the model:
+  [Components of a Coding Agent](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent), by Sebastian Raschka
+- Agent = Model + Harness:
+  [Harness Engineering for Coding Agent Users](https://martinfowler.com/articles/harness-engineering.html), by Birgitta Böckeler & Martin Fowler
 - Architecture walkthrough:
-  [Claude Code From Source](https://claude-code-from-source.com/ch01-architecture/)
-- [AI Agent Harnesses Explained: Architecture, Ecosystem, and Multi-User Design](https://boringbot.substack.com/p/ai-agent-harnesses-explained-architecture)
+  [Claude Code From Source](https://claude-code-from-source.com/ch01-architecture/), by Alejandro Balderas
+- [AI Agent Harnesses Explained: Architecture, Ecosystem, and Multi-User Design](https://boringbot.substack.com/p/ai-agent-harnesses-explained-architecture), by Hamza Farooq and Aishwarya Ashok
 
 ## Agent harnesses
 
@@ -44,26 +43,24 @@ Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](h
   monitoring, datasets, experiments, evaluation):
   [Langfuse Workshop](https://langfuse.com/workshop)
 - The tool-design lesson behind the one typed tool,
-  `list_applicable_rules`, by Anthropic:
-  [Writing Effective Tools for Agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
+  `list_applicable_rules`:
+  [Writing Effective Tools for Agents](https://www.anthropic.com/engineering/writing-tools-for-agents), by Anthropic
 - Self-hosted Langfuse via a Claude Code Stop hook (the same OTLP-native
-  backend Samantha exports to), by Doneyli De Jesus:
-  [I Built My Own Observability for Claude Code](https://doneyli.substack.com/p/i-built-my-own-observability-for)
+  backend Samantha exports to):
+  [I Built My Own Observability for Claude Code](https://doneyli.substack.com/p/i-built-my-own-observability-for), by Doneyli De Jesus
 
 ## Benchmarks and research
 
-- Wang et al., 2024:
+- MMLU-Pro Benchmark:
   [MMLU-Pro](https://arxiv.org/abs/2406.01574) ·
-  [dataset](https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro)
-- Tian et al., Feb 2026 (one model, 6x across harnesses):
+  [dataset](https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro), by Wang et al., 2024
+- One model, 6x across harnesses:
   [SWE-Bench Mobile](https://arxiv.org/abs/2602.09540) ·
-  [leaderboard](https://swebenchmobile.com)
-- Lee et al. (Stanford / MIT), Mar 2026 (automated harness search beat
-  hand-built harnesses):
-  [Meta-Harness](https://arxiv.org/abs/2603.28052)
-- Rutgers:
-  [AIOS: LLM Agent Operating System](https://arxiv.org/abs/2403.16971)
-- [Matrix-OS whitepaper](https://matrix-os.com/whitepaper)
+  [leaderboard](https://swebenchmobile.com), by Tian et al, Feb 2026
+- Automated harness search beat
+  hand-built harnesses:
+  [Meta-Harness](https://arxiv.org/abs/2603.28052), by Lee et al. (Stanford / MIT), Mar 2026
+- [AIOS: LLM Agent Operating System](https://arxiv.org/abs/2403.16971), by Kai Mei, et al, Rutgers University, August 2025
 
 ## Regulatory context
 
