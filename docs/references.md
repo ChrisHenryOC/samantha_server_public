@@ -11,6 +11,10 @@ Chris Henry ([LinkedIn](https://www.linkedin.com/in/chrishenry1/)) ([Substack](h
 - [AI and Laboratory Workflow, Samantha Part 2](https://chenryventures.substack.com/p/ai-and-laboratory-workflow-part-2)
 - Samantha Server writeup (coming soon)
 
+## Cancer
+
+- [The Emperor of All Maladies](https://en.wikipedia.org/wiki/The_Emperor_of_All_Maladies)
+
 ## The harness is the product
 
 - Claude Code leak analysis:
