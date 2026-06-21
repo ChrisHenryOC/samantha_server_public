@@ -197,6 +197,55 @@ single sweep on LLM-routed categories is close to a coin flip on borderline
 fixtures, so report results over five sweeps. `--progress` prints one line per
 scenario.
 
+### Alternative: Ollama (or another OpenAI-compatible server)
+
+oMLX is the supported and validated inference server, but the LLM client is a
+plain OpenAI-compatible HTTP client, so other local servers can work too. This
+path is **unsupported and unvalidated** — the accuracy baselines were measured on
+oMLX with specific MLX-quantized models, so "it runs" does not imply "it routes
+identically." Use it for experimentation, not as a substitute for the reference
+setup.
+
+The server must satisfy three contracts the client depends on:
+
+1. `GET /v1/models` returns a JSON body with a `data` array (checked at startup;
+   a failure raises `LLMModelLoadError`).
+2. `POST /v1/chat/completions` honors
+   `response_format: {"type": "json_schema", "json_schema": {"strict": true, ...}}`
+   and returns schema-valid JSON in `choices[0].message.content`. This is the
+   load-bearing requirement: if the server ignores `response_format`, the model
+   emits free-form text, JSON parsing fails, and every LLM scenario refuses.
+3. Responses include `usage.prompt_tokens` and `usage.completion_tokens`.
+
+[Ollama](https://ollama.com) satisfies all three (it does grammar-constrained
+structured output via llama.cpp). To use it:
+
+```bash
+# Install Ollama (see https://ollama.com/download), then pull a model:
+ollama pull llama3.2:3b
+```
+
+Ollama serves an OpenAI-compatible API on port **11434** by default. Point
+`samantha_server` at it via the existing `omlx` provider (there is no separate
+Ollama provider — you reuse the OpenAI-compatible HTTP client). In `.env`:
+
+```ini
+LLM_PROVIDER="omlx"
+LLM_OMLX_BASE_URL="http://127.0.0.1:11434"   # loopback; note Ollama's port
+LLM_OMLX_AUTH_TOKEN=""                         # Ollama needs no auth by default
+LLM_MODEL_NAME="llama3.2:3b"                    # the Ollama model tag, verbatim
+```
+
+Then run the replay exactly as in step 2d.
+
+> **"Thinking" models need token headroom.** Reasoning models (e.g. some Qwen3.x
+> variants) emit a long reasoning stream before the schema-constrained answer. If
+> `LLM_MAX_TOKENS` is too small, the budget is spent reasoning and
+> `message.content` comes back empty, which the harness treats as a refusal. Keep
+> `LLM_MAX_TOKENS` at the default (2048) or higher, or prefer a non-thinking
+> instruct model. oMLX's per-model `enable_thinking=False` handling is not applied
+> to arbitrary Ollama tags.
+
 ## Tier 3 — Development gate (optional)
 
 The repo carries the maintainer's local gate. It is included to document the
