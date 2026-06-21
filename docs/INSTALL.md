@@ -246,6 +246,15 @@ Then run the replay exactly as in step 2d.
 > instruct model. oMLX's per-model `enable_thinking=False` handling is not applied
 > to arbitrary Ollama tags.
 
+> **The same model can route differently across backends.** Accuracy is a function
+> of the (server, model build) pair, not the model name alone. The same model can
+> score noticeably lower under one server than another because of (a) different
+> quantizations of the "same" weights (e.g. an MLX 4-bit build vs a GGUF Q4 build)
+> and (b) how strictly each server's structured-output decoder constrains
+> generation — aggressive grammar enforcement can push some models into degenerate,
+> repetitive output. Treat any non-oMLX backend as a fresh experiment and measure
+> with the replay harness before trusting its results.
+
 ## Tier 3 — Development gate (optional)
 
 The repo carries the maintainer's local gate. It is included to document the
