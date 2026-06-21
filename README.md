@@ -72,8 +72,17 @@ This project uses [`uv`](https://docs.astral.sh/uv/). Python 3.12+.
 
 ```bash
 uv sync --all-extras
-cp .env.example .env          # generic placeholders; fill in to run the LLM path
+cp .env.example .env          # then generate the required keys (see below)
 ```
+
+For a full from-scratch walkthrough (prerequisites, generating the required
+secrets, the deterministic replay, the oMLX LLM path, and the development gate),
+see [`docs/INSTALL.md`](docs/INSTALL.md).
+
+> Three secrets (`RECEIPT_SIGNING_KEY`, `PHI_HASH_SALT`, `RBAC_HMAC_KEY`) are
+> validated at import, so they are required even for the no-LLM replay below;
+> set `LANGFUSE_ENABLED="false"` to run without a Langfuse instance.
+> [`docs/INSTALL.md`](docs/INSTALL.md) covers all of this.
 
 ### Run the replay harness
 
