@@ -37,7 +37,7 @@ All tiers:
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
 
-Tier 2 adds: **Apple Silicon (M1–M4)** and **macOS 15.0+ (Sequoia)** — required
+Tier 2 adds: **Apple Silicon (M1 or newer)** and **macOS 15.0+ (Sequoia)** — required
 by the local inference server (oMLX). Tier 3 adds: **Homebrew** and **`npm`**
 (for the `gitleaks` and `markdownlint-cli2` gate tools), and optionally a
 **Langfuse** instance for tracing.
