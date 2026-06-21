@@ -245,7 +245,7 @@ Then run the replay exactly as in step 2d.
 > `LLM_MAX_TOKENS` at the default (2048) or higher, or prefer a non-thinking
 > instruct model. oMLX's per-model `enable_thinking=False` handling is not applied
 > to arbitrary Ollama tags.
-
+>
 > **The same model can route differently across backends.** Accuracy is a function
 > of the (server, model build) pair, not the model name alone. The same model can
 > score noticeably lower under one server than another because of (a) different
